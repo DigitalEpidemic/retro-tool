@@ -55,10 +55,10 @@ export default function Card({ provided, card, isOwner }: CardProps) {
       ref={provided.innerRef}
       {...provided.draggableProps}
       {...provided.dragHandleProps}
-      className={`${getCardColor()} rounded shadow-sm border-none mb-3 group p-3 min-h-[100px] relative`}
+      className={`${getCardColor()} rounded shadow-sm border-none mb-3 group p-3 min-h-[100px] relative flex flex-col`}
     >
       {isEditing ? (
-        <div className="p-2.5">
+        <div className="p-2.5 flex-grow">
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
@@ -83,45 +83,50 @@ export default function Card({ provided, card, isOwner }: CardProps) {
         </div>
       ) : (
         <>
-          <p className="text-sm text-gray-800 whitespace-pre-wrap break-words leading-relaxed">
-            {card.content}
-          </p>
+          <div className="flex-grow">
+            <p className="text-sm text-gray-800 whitespace-pre-wrap break-words leading-relaxed">
+              {card.content}
+            </p>
+          </div>
           
-          <div className="mt-4 flex justify-between items-center">
-            {/* Author name at bottom of card */}
-            <div className="text-xs text-gray-600 font-medium">
-              {card.authorName || "Wonderful Turtle"}
-            </div>
-            
-            {/* Action buttons - always visible */}
-            <div className="flex space-x-1 items-center">
-              <button
-                onClick={handleVote}
-                className="p-1 rounded text-blue-600 hover:text-blue-700 hover:bg-blue-100 flex items-center transition-colors"
-              >
-                <ThumbsUp className="h-3 w-3" />
-                {card.votes > 0 && (
-                  <span className="text-xs font-medium ml-0.5">
-                    {card.votes}
-                  </span>
+          <div className="mt-auto pt-3">
+            <div className="border-t border-gray-200 opacity-40 mb-2 mt-1"></div>
+            <div className="flex justify-between items-center">
+              {/* Author name at bottom of card */}
+              <div className="text-xs text-gray-600 font-medium">
+                {card.authorName || "Wonderful Turtle"}
+              </div>
+              
+              {/* Action buttons - always visible */}
+              <div className="flex space-x-1 items-center">
+                <button
+                  onClick={handleVote}
+                  className="p-1 rounded text-blue-600 hover:text-blue-700 hover:bg-blue-100 flex items-center transition-colors"
+                >
+                  <ThumbsUp className="h-3 w-3" />
+                  {card.votes > 0 && (
+                    <span className="text-xs font-medium ml-0.5">
+                      {card.votes}
+                    </span>
+                  )}
+                </button>
+                {isOwner && (
+                  <>
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className="p-1 rounded text-blue-600 hover:text-blue-700 hover:bg-blue-100 transition-colors"
+                    >
+                      <Edit2 className="h-3 w-3" />
+                    </button>
+                    <button
+                      onClick={handleDelete}
+                      className="p-1 rounded text-red-600 hover:text-red-700 hover:bg-red-100 transition-colors"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </>
                 )}
-              </button>
-              {isOwner && (
-                <>
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    className="p-1 rounded text-blue-600 hover:text-blue-700 hover:bg-blue-100 transition-colors"
-                  >
-                    <Edit2 className="h-3 w-3" />
-                  </button>
-                  <button
-                    onClick={handleDelete}
-                    className="p-1 rounded text-red-600 hover:text-red-700 hover:bg-red-100 transition-colors"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </button>
-                </>
-              )}
+              </div>
             </div>
           </div>
         </>
