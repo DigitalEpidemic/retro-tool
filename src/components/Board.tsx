@@ -51,6 +51,9 @@ export default function Board() {
   const [error, setError] = useState<string | null>(null);
   const [remainingTime, setRemainingTime] = useState<number | null>(null); // State for countdown display
   const [editableTimeStr, setEditableTimeStr] = useState<string>(""); // State for editable input
+  const [columnSortStates, setColumnSortStates] = useState<
+    Record<string, boolean>
+  >({}); // Track sort by votes per column
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null); // Ref to store interval ID
   const resetTimeoutRef = useRef<NodeJS.Timeout | null>(null); // Ref for delayed reset timeout
   const initialDurationSeconds = 300; // 5 minutes (default)
@@ -616,7 +619,18 @@ export default function Board() {
                 key={column.id}
                 className="border-r border-l border-gray-200 bg-white rounded shadow-sm h-full flex flex-col overflow-hidden"
               >
-                <Column id={column.id} title={column.title} boardId={boardId!}>
+                <Column
+                  id={column.id}
+                  title={column.title}
+                  boardId={boardId!}
+                  sortByVotes={columnSortStates[column.id] || false}
+                  onSortToggle={() =>
+                    setColumnSortStates((prev) => ({
+                      ...prev,
+                      [column.id]: !prev[column.id],
+                    }))
+                  }
+                >
                   <Droppable droppableId={column.id}>
                     {(provided) => (
                       <div
@@ -626,7 +640,11 @@ export default function Board() {
                       >
                         {cards
                           .filter((card) => card.columnId === column.id)
-                          .sort((a, b) => a.position - b.position)
+                          .sort((a, b) =>
+                            columnSortStates[column.id]
+                              ? b.votes - a.votes
+                              : a.position - b.position
+                          )
                           .map((card, index) => (
                             <Draggable
                               key={card.id}

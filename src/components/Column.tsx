@@ -8,10 +8,19 @@ interface ColumnProps {
   id: string;
   title: string;
   boardId: string;
+  sortByVotes: boolean;
+  onSortToggle: () => void;
   children: React.ReactNode; // To render Droppable content from Board.tsx
 }
 
-export default function Column({ id, title, boardId, children }: ColumnProps) {
+export default function Column({
+  id,
+  title,
+  boardId,
+  sortByVotes,
+  onSortToggle,
+  children,
+}: ColumnProps) {
   const { user } = useFirebase();
   const [newCardContent, setNewCardContent] = React.useState("");
   const [isAddingCard, setIsAddingCard] = React.useState(false);
@@ -48,7 +57,11 @@ export default function Column({ id, title, boardId, children }: ColumnProps) {
           {getMappedTitle()}
         </h2>
         <div className="flex items-center space-x-2">
-          <button className="text-blue-600 hover:text-blue-700 cursor-pointer">
+          <button
+            className="flex items-center text-blue-600 hover:text-blue-700 cursor-pointer"
+            onClick={onSortToggle}
+          >
+            {sortByVotes && <span className="text-xs mr-1">Votes</span>}
             <ArrowUpDown className="h-4 w-4" />
             <span className="sr-only">Sort</span>
           </button>
