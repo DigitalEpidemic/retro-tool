@@ -19,14 +19,14 @@ import Column from "./Column";
 import CardComponent from "./Card";
 import { useFirebase } from "../contexts/FirebaseContext";
 import { Board as BoardType, Card as CardType } from "../services/firebase"; // Import types
-import { 
-  Users, 
-  TrendingUp, 
-  Share2, 
-  Settings, 
-  Play, 
-  RotateCcw, 
-  Download 
+import {
+  Users,
+  TrendingUp,
+  Share2,
+  Settings,
+  Play,
+  RotateCcw,
+  Download,
 } from "lucide-react";
 
 export default function Board() {
@@ -253,16 +253,18 @@ export default function Board() {
   type ColumnType = BoardType["columns"][string];
 
   return (
-    <div className="h-full flex flex-col bg-gray-100">
+    <div className="h-full flex flex-col">
       {/* Top Board Header */}
       <div className="px-6 py-3 border-b border-gray-200 bg-white flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <h1 className="text-lg font-semibold text-gray-800">
             {boardId || "test-board"}
           </h1>
-          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">Free retrospective</span>
+          {/* <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+            Free retrospective
+          </span> */}
         </div>
-        
+
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-1">
             <span className="text-gray-700 font-medium">5:00</span>
@@ -273,28 +275,28 @@ export default function Board() {
               <RotateCcw className="h-4 w-4" />
             </button>
           </div>
-          
+
           <div className="flex space-x-5">
             <button className="text-gray-700 hover:text-gray-900 flex items-center">
               <Users className="h-5 w-5" />
               <span className="ml-1 text-sm">Participants</span>
             </button>
-            
+
             <button className="text-gray-700 hover:text-gray-900 flex items-center">
               <TrendingUp className="h-5 w-5" />
               <span className="ml-1 text-sm">Action points</span>
             </button>
-            
+
             <button className="text-gray-700 hover:text-gray-900 flex items-center">
               <Download className="h-5 w-5" />
               <span className="ml-1 text-sm">Export</span>
             </button>
-            
+
             <button className="text-gray-700 hover:text-gray-900 flex items-center">
               <Share2 className="h-5 w-5" />
               <span className="ml-1 text-sm">Share</span>
             </button>
-            
+
             <button className="text-gray-700 hover:text-gray-900 flex items-center">
               <Settings className="h-5 w-5" />
               <span className="ml-1 text-sm">Options</span>
@@ -308,12 +310,11 @@ export default function Board() {
           {Object.values(board.columns)
             .sort((a: ColumnType, b: ColumnType) => a.order - b.order)
             .map((column: ColumnType, index) => (
-              <div key={column.id} className="border-r border-l border-gray-200 bg-white rounded shadow-sm">
-                <Column
-                  id={column.id}
-                  title={column.title}
-                  boardId={boardId!}
-                >
+              <div
+                key={column.id}
+                className="border-r border-l border-gray-200 bg-white rounded shadow-sm"
+              >
+                <Column id={column.id} title={column.title} boardId={boardId!}>
                   <Droppable droppableId={column.id}>
                     {(provided) => (
                       <div

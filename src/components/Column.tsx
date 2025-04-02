@@ -44,7 +44,9 @@ export default function Column({ id, title, boardId, children }: ColumnProps) {
     <div className="w-full bg-white flex flex-col h-[calc(100vh-13rem)]">
       {/* Column header */}
       <div className="flex justify-between items-center px-4 py-3 border-b border-gray-200">
-        <h2 className="text-lg font-medium text-gray-800">{getMappedTitle()}</h2>
+        <h2 className="text-lg font-medium text-gray-800">
+          {getMappedTitle()}
+        </h2>
         <div className="flex items-center space-x-2">
           <button className="text-blue-600 hover:text-blue-700">
             <ArrowUpDown className="h-4 w-4" />
@@ -58,9 +60,7 @@ export default function Column({ id, title, boardId, children }: ColumnProps) {
       </div>
 
       {/* Cards container */}
-      <div className="flex-grow overflow-y-auto p-3 space-y-3">
-        {children}
-      </div>
+      <div className="flex-grow overflow-y-auto p-3 space-y-3">{children}</div>
 
       {/* Add card section */}
       {isAddingCard ? (

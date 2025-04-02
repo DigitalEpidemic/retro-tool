@@ -21,7 +21,7 @@ function Home() {
 
 function App() {
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen">
       {" "}
       {/* Removed p-4 to allow Board to control padding */}
       {/* Header could be moved to a Layout component if needed across routes */}
