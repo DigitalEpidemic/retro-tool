@@ -37,67 +37,62 @@ export default function Card({ provided, card, isOwner }: CardProps) {
       ref={provided.innerRef}
       {...provided.draggableProps}
       {...provided.dragHandleProps}
-      className="bg-neutral-50 rounded-md shadow p-4 hover:shadow-lg transition-shadow mb-4" // Changed bg, rounded, shadow, hover shadow, removed border, added margin-bottom
+      className="bg-white rounded-md shadow-sm border border-gray-200 hover:shadow transition-shadow duration-200 mb-3 group"
     >
       {isEditing ? (
-        <div className="space-y-3">
+        <div className="p-3">
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            className="w-full rounded border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm p-2" // Adjusted border, focus, added text-sm, padding
+            className="w-full rounded-md border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm p-2.5 min-h-[80px] resize-none"
             rows={3}
             autoFocus
           />
-          <div className="flex justify-end space-x-2">
+          <div className="flex justify-end space-x-2 mt-2">
             <button
               onClick={() => setIsEditing(false)}
-              className="px-3 py-1 text-sm text-gray-700 bg-gray-100 rounded hover:bg-gray-200" // Neutral cancel button
+              className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
-              className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700" // Primary save button (using blue)
+              className="px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
             >
               Save
             </button>
           </div>
         </div>
       ) : (
-        <div>
-          <p className="text-sm text-gray-800 whitespace-pre-wrap">
+        <div className="p-3">
+          <p className="text-sm text-gray-800 whitespace-pre-wrap break-words leading-relaxed">
             {card.content}
-          </p>{" "}
-          {/* Adjusted text size and color */}
-          <div className="mt-3 flex justify-between items-center">
-            <div className="text-xs text-gray-500">{card.authorName}</div>{" "}
-            {/* Adjusted text size */}
-            <div className="flex space-x-1 items-center">
-              {" "}
-              {/* Added items-center */}
+          </p>
+          <div className="mt-3 pt-2 border-t border-gray-100 flex justify-between items-center">
+            <div className="text-xs text-gray-500">{card.authorName}</div>
+            <div className="flex space-x-1 items-center opacity-70 group-hover:opacity-100 transition-opacity">
               <button
                 onClick={handleVote}
-                className="p-1.5 rounded text-gray-500 hover:text-blue-600 hover:bg-blue-100 flex items-center transition-colors" // Adjusted padding, hover colors, added transition
+                className="p-1.5 rounded-md text-gray-500 hover:text-blue-600 hover:bg-blue-50 flex items-center transition-colors"
               >
-                <ThumbsUp className="h-4 w-4 mr-1" />
+                <ThumbsUp className="h-3.5 w-3.5 mr-1" />
                 <span className="text-xs font-medium">
                   {card.votes || 0}
-                </span>{" "}
-                {/* Added font-medium */}
+                </span>
               </button>
               {isOwner && (
                 <>
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="p-1.5 rounded text-gray-500 hover:text-blue-600 hover:bg-blue-100 transition-colors" // Adjusted padding, hover colors, added transition
+                    className="p-1.5 rounded-md text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
                   >
-                    <Edit2 className="h-4 w-4" />
+                    <Edit2 className="h-3.5 w-3.5" />
                   </button>
                   <button
                     onClick={handleDelete}
-                    className="p-1.5 rounded text-gray-500 hover:text-red-600 hover:bg-red-100 transition-colors" // Adjusted padding, hover colors, added transition
+                    className="p-1.5 rounded-md text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </>
               )}

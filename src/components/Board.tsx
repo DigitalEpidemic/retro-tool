@@ -202,14 +202,16 @@ export default function Board() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">Loading...</div>
+      <div className="flex justify-center items-center h-64">
+        <div className="text-blue-600 font-medium">Loading...</div>
+      </div>
     );
   }
 
   // Handle auth error state
   if (authError) {
     return (
-      <div className="p-4 text-center text-red-600">
+      <div className="p-4 text-center text-red-500">
         Authentication Error: {authError.message}
       </div>
     );
@@ -218,20 +220,22 @@ export default function Board() {
   // Handle combined loading state (auth + board fetch)
   if (loading || authLoading) {
     return (
-      <div className="flex justify-center items-center h-64">Loading...</div>
+      <div className="flex justify-center items-center h-64">
+        <div className="text-blue-600 font-medium">Loading...</div>
+      </div>
     );
   }
 
   // Handle local error state (e.g., board not found)
   if (error) {
-    return <div className="p-4 text-center text-red-600">Error: {error}</div>;
+    return <div className="p-4 text-center text-red-500">Error: {error}</div>;
   }
 
   // Add null check for board before rendering (should be redundant now with error handling, but safe)
   if (!board) {
     return (
       <div className="flex justify-center items-center h-64">
-        Board data not available.
+        <div className="text-gray-500">Board data not available.</div>
       </div>
     );
   }
@@ -240,27 +244,18 @@ export default function Board() {
   type ColumnType = BoardType["columns"][string];
 
   return (
-    // Added padding to the main container, removed space-y-6
-    <div className="p-4 h-full flex flex-col">
-      <div className="flex justify-between items-center mb-4">
-        {" "}
-        {/* Added margin-bottom */}
-        {/* board is guaranteed to be non-null here */}
-        <h1 className="text-xl font-semibold text-gray-800">
+    <div className="h-full flex flex-col">
+      <div className="flex justify-between items-center px-2 py-4 border-b border-gray-200 bg-white sticky top-0 z-10">
+        <h1 className="text-lg font-medium text-gray-800">
           {board.name}
-        </h1>{" "}
-        {/* Adjusted title style */}
-        <div className="flex space-x-4">{/* Board actions will go here */}</div>
+        </h1>
+        <div className="flex space-x-2">{/* Board actions will go here */}</div>
       </div>
 
       <DragDropContext onDragEnd={handleDragEnd}>
-        {/* Changed grid to flex, added horizontal scroll, spacing, and padding-bottom */}
-        <div className="flex space-x-4 overflow-x-auto pb-4 flex-grow items-start">
-          {/* board is guaranteed to be non-null here */}
+        <div className="flex space-x-6 overflow-x-auto pt-6 pb-4 px-2 flex-grow h-full">
           {Object.values(board.columns)
-            // Use ColumnType for sorting
             .sort((a: ColumnType, b: ColumnType) => a.order - b.order)
-            // Use ColumnType for mapping
             .map((column: ColumnType) => (
               <Column
                 key={column.id}
@@ -273,7 +268,6 @@ export default function Board() {
                     <div
                       {...provided.droppableProps}
                       ref={provided.innerRef}
-                      // Removed space-y and min-h, relying on column flex and card margin
                       className="h-full"
                     >
                       {cards
