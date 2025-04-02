@@ -69,13 +69,13 @@ export default function Card({ provided, card, isOwner }: CardProps) {
           <div className="flex justify-end space-x-2 mt-2">
             <button
               onClick={() => setIsEditing(false)}
-              className="px-2.5 py-1 text-xs font-medium text-gray-700 bg-gray-100 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300"
+              className="px-2.5 py-1 text-xs font-medium text-gray-700 bg-gray-100 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300 cursor-pointer"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
-              className="px-2.5 py-1 text-xs font-medium bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-2.5 py-1 text-xs font-medium bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
             >
               Save
             </button>
@@ -101,7 +101,7 @@ export default function Card({ provided, card, isOwner }: CardProps) {
               <div className="flex space-x-1 items-center">
                 <button
                   onClick={handleVote}
-                  className="p-1 rounded text-blue-600 hover:text-blue-700 hover:bg-blue-100 flex items-center transition-colors"
+                  className="p-1 rounded text-blue-600 hover:text-blue-700 hover:bg-blue-100 flex items-center transition-colors cursor-pointer"
                 >
                   <ThumbsUp className="h-3 w-3" />
                   {card.votes > 0 && (
@@ -114,13 +114,13 @@ export default function Card({ provided, card, isOwner }: CardProps) {
                   <>
                     <button
                       onClick={() => setIsEditing(true)}
-                      className="p-1 rounded text-blue-600 hover:text-blue-700 hover:bg-blue-100 transition-colors"
+                      className="p-1 rounded text-blue-600 hover:text-blue-700 hover:bg-blue-100 transition-colors cursor-pointer"
                     >
                       <Edit2 className="h-3 w-3" />
                     </button>
                     <button
                       onClick={handleDelete}
-                      className="p-1 rounded text-red-600 hover:text-red-700 hover:bg-red-100 transition-colors"
+                      className="p-1 rounded text-red-600 hover:text-red-700 hover:bg-red-100 transition-colors cursor-pointer"
                     >
                       <Trash2 className="h-3 w-3" />
                     </button>

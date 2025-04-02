@@ -48,11 +48,11 @@ export default function Column({ id, title, boardId, children }: ColumnProps) {
           {getMappedTitle()}
         </h2>
         <div className="flex items-center space-x-2">
-          <button className="text-blue-600 hover:text-blue-700">
+          <button className="text-blue-600 hover:text-blue-700 cursor-pointer">
             <ArrowUpDown className="h-4 w-4" />
             <span className="sr-only">Sort</span>
           </button>
-          <button className="text-blue-600 hover:text-blue-700">
+          <button className="text-blue-600 hover:text-blue-700 cursor-pointer">
             <MoreVertical className="h-4 w-4" />
             <span className="sr-only">More options</span>
           </button>
@@ -78,13 +78,13 @@ export default function Column({ id, title, boardId, children }: ColumnProps) {
             <button
               type="button"
               onClick={() => setIsAddingCard(false)}
-              className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded hover:bg-gray-200"
+              className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded hover:bg-gray-200 cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-3 py-1.5 text-xs font-medium bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+              className="px-3 py-1.5 text-xs font-medium bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 cursor-pointer"
               disabled={!newCardContent.trim() || !user}
             >
               Save
@@ -95,7 +95,7 @@ export default function Column({ id, title, boardId, children }: ColumnProps) {
         <div className="p-3 border-t border-gray-200">
           <button
             onClick={() => setIsAddingCard(true)}
-            className="w-full p-2 text-sm text-blue-600 bg-gray-50 hover:bg-gray-100 rounded flex items-center justify-center"
+            className="w-full p-2 text-sm text-blue-600 bg-gray-50 hover:bg-gray-100 rounded flex items-center justify-center cursor-pointer"
           >
             + Add a card
           </button>

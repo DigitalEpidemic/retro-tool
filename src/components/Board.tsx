@@ -268,36 +268,36 @@ export default function Board() {
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-1">
             <span className="text-gray-700 font-medium">5:00</span>
-            <button className="text-blue-500 hover:text-blue-600">
+            <button className="text-blue-500 hover:text-blue-600 cursor-pointer">
               <Play className="h-4 w-4" />
             </button>
-            <button className="text-gray-400 hover:text-gray-600">
+            <button className="text-gray-400 hover:text-gray-600 cursor-pointer">
               <RotateCcw className="h-4 w-4" />
             </button>
           </div>
 
           <div className="flex space-x-5">
-            <button className="text-gray-700 hover:text-gray-900 flex items-center">
+            <button className="text-gray-700 hover:text-gray-900 flex items-center cursor-pointer">
               <Users className="h-5 w-5" />
               <span className="ml-1 text-sm">Participants</span>
             </button>
 
-            <button className="text-gray-700 hover:text-gray-900 flex items-center">
+            <button className="text-gray-700 hover:text-gray-900 flex items-center cursor-pointer">
               <TrendingUp className="h-5 w-5" />
               <span className="ml-1 text-sm">Action points</span>
             </button>
 
-            <button className="text-gray-700 hover:text-gray-900 flex items-center">
+            <button className="text-gray-700 hover:text-gray-900 flex items-center cursor-pointer">
               <Download className="h-5 w-5" />
               <span className="ml-1 text-sm">Export</span>
             </button>
 
-            <button className="text-gray-700 hover:text-gray-900 flex items-center">
+            <button className="text-gray-700 hover:text-gray-900 flex items-center cursor-pointer">
               <Share2 className="h-5 w-5" />
               <span className="ml-1 text-sm">Share</span>
             </button>
 
-            <button className="text-gray-700 hover:text-gray-900 flex items-center">
+            <button className="text-gray-700 hover:text-gray-900 flex items-center cursor-pointer">
               <Settings className="h-5 w-5" />
               <span className="ml-1 text-sm">Options</span>
             </button>
