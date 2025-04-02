@@ -52,6 +52,7 @@ export default function Board() {
   const [remainingTime, setRemainingTime] = useState<number | null>(null); // State for countdown display
   const [editableTimeStr, setEditableTimeStr] = useState<string>(""); // State for editable input
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null); // Ref to store interval ID
+  const resetTimeoutRef = useRef<NodeJS.Timeout | null>(null); // Ref for delayed reset timeout
   const initialDurationSeconds = 300; // 5 minutes (default)
   const inputRef = useRef<HTMLInputElement>(null); // Ref for the input element
 
@@ -141,10 +142,14 @@ export default function Board() {
 
   // Effect for Timer Logic
   useEffect(() => {
-    // Clear any existing interval when board data changes or component unmounts
+    // Clear any existing interval AND reset timeout when board data changes or component unmounts
     if (timerIntervalRef.current) {
       clearInterval(timerIntervalRef.current);
       timerIntervalRef.current = null;
+    }
+    if (resetTimeoutRef.current) {
+      clearTimeout(resetTimeoutRef.current);
+      resetTimeoutRef.current = null;
     }
 
     if (
@@ -160,16 +165,42 @@ export default function Board() {
         const nowMs = Date.now();
         const remainingMs = Math.max(0, endTimeMs - nowMs);
         const remainingSeconds = Math.ceil(remainingMs / 1000);
-        setRemainingTime(remainingSeconds);
 
-        if (remainingMs <= 0) {
+        // Check if the timer has expired
+        if (nowMs >= endTimeMs) {
+          setRemainingTime(0); // Ensure display shows 0:00
+
+          // Clear the interval immediately
           if (timerIntervalRef.current) {
             clearInterval(timerIntervalRef.current);
             timerIntervalRef.current = null;
           }
-          // Optionally call resetTimer here if the timer should auto-reset on finish
-          // if (boardId) resetTimer(boardId);
+
+          // Schedule the reset action slightly delayed to allow 0:00 to display fully
+          // Clear any potentially existing (though unlikely) timeout first
+          if (resetTimeoutRef.current) {
+            clearTimeout(resetTimeoutRef.current);
+          }
+          resetTimeoutRef.current = setTimeout(() => {
+            if (boardId && board) {
+              // Check if boardId and board exist
+              // Reset to the duration that was just used for the countdown
+              resetTimer(
+                boardId,
+                board.timerDurationSeconds ?? initialDurationSeconds
+              ).catch((err: unknown) => {
+                console.error("Error auto-resetting timer:", err);
+                // Optionally set an error state here
+              });
+            }
+            resetTimeoutRef.current = null; // Clear the ref after execution
+          }, 990); // Delay slightly less than 1 second
+
+          return; // Stop further processing for this interval tick
         }
+
+        // If timer hasn't expired, update display using variables declared earlier
+        setRemainingTime(remainingSeconds);
       };
 
       updateTimer(); // Initial update
@@ -190,17 +221,21 @@ export default function Board() {
       setEditableTimeStr(formatTime(initialSeconds)); // Initialize editable string
     }
 
-    // Cleanup interval on unmount or when dependencies change
+    // Cleanup interval AND timeout on unmount or when dependencies change
     return () => {
       if (timerIntervalRef.current) {
         clearInterval(timerIntervalRef.current);
       }
+      if (resetTimeoutRef.current) {
+        clearTimeout(resetTimeoutRef.current);
+      }
     };
   }, [
+    board,
     board?.timerIsRunning,
     board?.timerStartTime,
     board?.timerDurationSeconds,
-    board?.timerPausedDurationSeconds, // Add paused duration as dependency
+    board?.timerPausedDurationSeconds,
     boardId,
   ]); // Re-run when timer state changes in Firestore
 
@@ -238,6 +273,11 @@ export default function Board() {
 
     if (board?.timerIsRunning) {
       // --- Pause Timer ---
+      // Clear any pending delayed reset if pausing manually
+      if (resetTimeoutRef.current) {
+        clearTimeout(resetTimeoutRef.current);
+        resetTimeoutRef.current = null;
+      }
       pauseTimer(boardId, board).catch((err: unknown) => {
         // Type err
         console.error("Error pausing timer:", err);
@@ -328,6 +368,11 @@ export default function Board() {
 
   const handleResetTimer = () => {
     if (boardId) {
+      // Clear any pending delayed reset if resetting manually
+      if (resetTimeoutRef.current) {
+        clearTimeout(resetTimeoutRef.current);
+        resetTimeoutRef.current = null;
+      }
       // Pass the initial duration to resetTimer
       resetTimer(boardId, initialDurationSeconds).catch((err: unknown) => {
         // Type err

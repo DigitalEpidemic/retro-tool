@@ -265,6 +265,7 @@ export const pauseTimer = async (
     timerIsRunning: false,
     timerPausedDurationSeconds: remainingSeconds, // Store remaining time
     timerStartTime: null, // Clear start time as it's paused
+    timerDurationSeconds: currentBoardData.timerDurationSeconds, // Preserve original duration
   });
 };
 
@@ -290,7 +291,13 @@ export const updateTimerDuration = async (
   const boardRef = doc(db, "boards", boardId);
   await updateDoc(boardRef, {
     timerDurationSeconds: newDurationSeconds, // Set the base duration
-    timerPausedDurationSeconds: newDurationSeconds, // Also update paused duration to match edited value
+    ...(newDurationSeconds > 0
+      ? {
+          timerPausedDurationSeconds: newDurationSeconds, // Only update paused duration if valid
+        }
+      : {
+          timerPausedDurationSeconds: 0, // Ensure it doesn't go negative
+        }),
     timerIsRunning: false, // Ensure timer is not marked as running
     timerStartTime: null, // Ensure start time is cleared
   });
