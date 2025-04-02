@@ -15,6 +15,22 @@ export default function Card({ provided, card, isOwner }: CardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [content, setContent] = useState(card.content);
 
+  // Function to determine card color based on column or random assignment
+  const getCardColor = () => {
+    // This is a simple mapping - extend as needed based on your column IDs
+    const columnColors: Record<string, string> = {
+      // Mad column (first column) - mint green
+      "column-1": "bg-[#baf5e3]",
+      // Sad column (second column) - light purple for some cards, mint green for others
+      "column-2": card.id.charCodeAt(0) % 2 === 0 ? "bg-[#baf5e3]" : "bg-[#e3d2f4]",
+      // Glad column (third column) - alternating colors
+      "column-3": card.id.charCodeAt(0) % 2 === 0 ? "bg-[#baf5e3]" : "bg-[#e3d2f4]",
+    };
+    
+    // Return the color for the column or default to white if column not found
+    return columnColors[card.columnId] || "bg-white";
+  };
+
   const handleSave = () => {
     if (content.trim()) {
       updateCard(card.id, { content });
@@ -37,68 +53,76 @@ export default function Card({ provided, card, isOwner }: CardProps) {
       ref={provided.innerRef}
       {...provided.draggableProps}
       {...provided.dragHandleProps}
-      className="bg-white rounded-md shadow-sm border border-gray-200 hover:shadow transition-shadow duration-200 mb-3 group"
+      className={`${getCardColor()} rounded shadow-sm border-none mb-3 group p-3 min-h-[100px] relative`}
     >
       {isEditing ? (
-        <div className="p-3">
+        <div className="p-2.5">
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            className="w-full rounded-md border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm p-2.5 min-h-[80px] resize-none"
+            className="w-full rounded border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm p-2 min-h-[80px] resize-none"
             rows={3}
             autoFocus
           />
           <div className="flex justify-end space-x-2 mt-2">
             <button
               onClick={() => setIsEditing(false)}
-              className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
+              className="px-2.5 py-1 text-xs font-medium text-gray-700 bg-gray-100 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
-              className="px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+              className="px-2.5 py-1 text-xs font-medium bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               Save
             </button>
           </div>
         </div>
       ) : (
-        <div className="p-3">
+        <>
           <p className="text-sm text-gray-800 whitespace-pre-wrap break-words leading-relaxed">
             {card.content}
           </p>
-          <div className="mt-3 pt-2 border-t border-gray-100 flex justify-between items-center">
-            <div className="text-xs text-gray-500">{card.authorName}</div>
-            <div className="flex space-x-1 items-center opacity-70 group-hover:opacity-100 transition-opacity">
+          
+          <div className="mt-4 flex justify-between items-center">
+            {/* Author name at bottom of card */}
+            <div className="text-xs text-gray-600 font-medium">
+              {card.authorName || "Wonderful Turtle"}
+            </div>
+            
+            {/* Action buttons - always visible */}
+            <div className="flex space-x-1 items-center">
               <button
                 onClick={handleVote}
-                className="p-1.5 rounded-md text-gray-500 hover:text-blue-600 hover:bg-blue-50 flex items-center transition-colors"
+                className="p-1 rounded text-gray-500 hover:text-blue-500 hover:bg-blue-50 flex items-center transition-colors"
               >
-                <ThumbsUp className="h-3.5 w-3.5 mr-1" />
-                <span className="text-xs font-medium">
-                  {card.votes || 0}
-                </span>
+                <ThumbsUp className="h-3 w-3" />
+                {card.votes > 0 && (
+                  <span className="text-xs font-medium ml-0.5">
+                    {card.votes}
+                  </span>
+                )}
               </button>
               {isOwner && (
                 <>
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="p-1.5 rounded-md text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                    className="p-1 rounded text-gray-500 hover:text-blue-500 hover:bg-blue-50 transition-colors"
                   >
-                    <Edit2 className="h-3.5 w-3.5" />
+                    <Edit2 className="h-3 w-3" />
                   </button>
                   <button
                     onClick={handleDelete}
-                    className="p-1.5 rounded-md text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors"
+                    className="p-1 rounded text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors"
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
+                    <Trash2 className="h-3 w-3" />
                   </button>
                 </>
               )}
             </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );

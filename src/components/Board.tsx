@@ -19,6 +19,15 @@ import Column from "./Column";
 import CardComponent from "./Card";
 import { useFirebase } from "../contexts/FirebaseContext";
 import { Board as BoardType, Card as CardType } from "../services/firebase"; // Import types
+import { 
+  Users, 
+  TrendingUp, 
+  Share2, 
+  Settings, 
+  Play, 
+  RotateCcw, 
+  Download 
+} from "lucide-react";
 
 export default function Board() {
   const { boardId } = useParams<{ boardId: string }>();
@@ -202,8 +211,8 @@ export default function Board() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-blue-600 font-medium">Loading...</div>
+      <div className="flex justify-center items-center h-screen">
+        <div className="text-blue-500 font-medium">Loading...</div>
       </div>
     );
   }
@@ -220,8 +229,8 @@ export default function Board() {
   // Handle combined loading state (auth + board fetch)
   if (loading || authLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-blue-600 font-medium">Loading...</div>
+      <div className="flex justify-center items-center h-screen">
+        <div className="text-blue-500 font-medium">Loading...</div>
       </div>
     );
   }
@@ -234,7 +243,7 @@ export default function Board() {
   // Add null check for board before rendering (should be redundant now with error handling, but safe)
   if (!board) {
     return (
-      <div className="flex justify-center items-center h-64">
+      <div className="flex justify-center items-center h-screen">
         <div className="text-gray-500">Board data not available.</div>
       </div>
     );
@@ -244,16 +253,58 @@ export default function Board() {
   type ColumnType = BoardType["columns"][string];
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="flex justify-between items-center px-2 py-4 border-b border-gray-200 bg-white sticky top-0 z-10">
-        <h1 className="text-lg font-medium text-gray-800">
-          {board.name}
-        </h1>
-        <div className="flex space-x-2">{/* Board actions will go here */}</div>
+    <div className="h-full flex flex-col bg-white">
+      {/* Top Board Header */}
+      <div className="px-6 py-3 border-b border-gray-200 bg-white flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <h1 className="text-lg font-semibold text-gray-800">
+            {boardId || "test-board"}
+          </h1>
+          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">Free retrospective</span>
+        </div>
+        
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-1">
+            <span className="text-gray-700 font-medium">5:00</span>
+            <button className="text-blue-500 hover:text-blue-600">
+              <Play className="h-4 w-4" />
+            </button>
+            <button className="text-gray-400 hover:text-gray-600">
+              <RotateCcw className="h-4 w-4" />
+            </button>
+          </div>
+          
+          <div className="flex space-x-5">
+            <button className="text-gray-700 hover:text-gray-900 flex items-center">
+              <Users className="h-5 w-5" />
+              <span className="ml-1 text-sm">Participants</span>
+            </button>
+            
+            <button className="text-gray-700 hover:text-gray-900 flex items-center">
+              <TrendingUp className="h-5 w-5" />
+              <span className="ml-1 text-sm">Action points</span>
+            </button>
+            
+            <button className="text-gray-700 hover:text-gray-900 flex items-center">
+              <Download className="h-5 w-5" />
+              <span className="ml-1 text-sm">Export</span>
+            </button>
+            
+            <button className="text-gray-700 hover:text-gray-900 flex items-center">
+              <Share2 className="h-5 w-5" />
+              <span className="ml-1 text-sm">Share</span>
+            </button>
+            
+            <button className="text-gray-700 hover:text-gray-900 flex items-center">
+              <Settings className="h-5 w-5" />
+              <span className="ml-1 text-sm">Options</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       <DragDropContext onDragEnd={handleDragEnd}>
-        <div className="flex space-x-6 overflow-x-auto pt-6 pb-4 px-2 flex-grow h-full">
+        <div className="grid grid-cols-3 gap-6 px-6 py-8 flex-grow">
           {Object.values(board.columns)
             .sort((a: ColumnType, b: ColumnType) => a.order - b.order)
             .map((column: ColumnType) => (
