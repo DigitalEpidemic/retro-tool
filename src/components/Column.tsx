@@ -1,7 +1,5 @@
 import React from "react";
-import { Droppable, DraggableProvided } from "@hello-pangea/dnd";
-import CardComponent from "./Card"; // Assuming Card.tsx exists and exports CardComponent
-import { Card as CardType } from "../services/firebase"; // Import Card type
+// Removed unused imports: Droppable, DraggableProvided, CardComponent, CardType
 import { useFirebase } from "../contexts/FirebaseContext"; // To get user ID
 import { addCard } from "../services/boardService"; // To add new cards
 
@@ -30,28 +28,31 @@ export default function Column({ id, title, boardId, children }: ColumnProps) {
   };
 
   return (
-    <div className="bg-gray-100 rounded-lg shadow p-4 flex flex-col">
-      <h2 className="text-lg font-semibold mb-4 text-gray-800">{title}</h2>
+    // Added fixed width, flex-shrink-0, adjusted bg, shadow, padding
+    <div className="w-72 flex-shrink-0 bg-neutral-100 rounded-lg shadow-sm p-3 flex flex-col max-h-full">
+      {/* Adjusted title style */}
+      <h2 className="text-base font-medium mb-3 px-1 text-gray-700">{title}</h2>
 
       {/* Render the Droppable area passed as children from Board.tsx */}
-      <div className="flex-grow overflow-y-auto mb-4">{children}</div>
+      {/* Added padding inside the scrollable area */}
+      <div className="flex-grow overflow-y-auto px-1 mb-2">{children}</div>
 
       {/* Form to add a new card */}
-      <form
-        onSubmit={handleAddCard}
-        className="mt-auto pt-4 border-t border-gray-200"
-      >
+      {/* Removed border-t, adjusted margin/padding */}
+      <form onSubmit={handleAddCard} className="mt-auto pt-2">
         <textarea
           value={newCardContent}
           onChange={(e) => setNewCardContent(e.target.value)}
           placeholder="Add a new card..."
           rows={2}
-          className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          // Matched style with Card edit textarea
+          className="w-full rounded border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm p-2 mb-2"
           required
         />
         <button
           type="submit"
-          className="mt-2 w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded transition duration-150 ease-in-out disabled:opacity-50"
+          // Matched style with Card save button
+          className="w-full px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-60"
           disabled={!newCardContent.trim() || !user}
         >
           Add Card

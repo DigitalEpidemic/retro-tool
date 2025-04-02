@@ -131,40 +131,40 @@ export default function Board() {
       source,
       destination,
       draggableId,
-      boardId
+      boardId,
     });
 
     const sourceColumnId = source.droppableId;
     const destinationColumnId = destination.droppableId;
-    const sourceIndex = source.index;
+    // const sourceIndex = source.index; // Removed unused variable
     const destinationIndex = destination.index;
 
     // Find the card being moved
-    const draggedCardIndex = cards.findIndex(card => card.id === draggableId);
+    const draggedCardIndex = cards.findIndex((card) => card.id === draggableId);
     if (draggedCardIndex === -1) {
-      console.error('Card not found:', draggableId);
+      console.error("Card not found:", draggableId);
       return;
     }
 
     // Create a clone of cards array for update
     const updatedCards = [...cards];
-    const draggedCard = {...updatedCards[draggedCardIndex]};
-    
+    const draggedCard = { ...updatedCards[draggedCardIndex] };
+
     // Remove card from original position
     updatedCards.splice(draggedCardIndex, 1);
-    
+
     // Update the column ID if needed
     draggedCard.columnId = destinationColumnId;
-    
+
     // Find where to insert the card (simplify this logic)
     // For now we'll just extract cards in the destination column to find the right spot
     const destColumnCards = updatedCards.filter(
-      card => card.columnId === destinationColumnId
+      (card) => card.columnId === destinationColumnId
     );
-    
+
     // Calculate the insert index within the overall array
     let insertIndex;
-    
+
     if (destColumnCards.length === 0) {
       // If the destination column is empty, place at the end of the array
       insertIndex = updatedCards.length;
@@ -175,12 +175,12 @@ export default function Board() {
       // Find the card at the target destination index
       const refCard = destColumnCards[destinationIndex];
       // Find its position in the overall array
-      insertIndex = updatedCards.findIndex(card => card.id === refCard.id);
+      insertIndex = updatedCards.findIndex((card) => card.id === refCard.id);
     }
-    
+
     // Insert the card at the new position
     updatedCards.splice(insertIndex, 0, draggedCard);
-    
+
     // Update state optimistically
     setCards(updatedCards);
     console.log("Updated cards state:", updatedCards);
@@ -240,15 +240,22 @@ export default function Board() {
   type ColumnType = BoardType["columns"][string];
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    // Added padding to the main container, removed space-y-6
+    <div className="p-4 h-full flex flex-col">
+      <div className="flex justify-between items-center mb-4">
+        {" "}
+        {/* Added margin-bottom */}
         {/* board is guaranteed to be non-null here */}
-        <h1 className="text-2xl font-bold text-gray-900">{board.name}</h1>
+        <h1 className="text-xl font-semibold text-gray-800">
+          {board.name}
+        </h1>{" "}
+        {/* Adjusted title style */}
         <div className="flex space-x-4">{/* Board actions will go here */}</div>
       </div>
 
       <DragDropContext onDragEnd={handleDragEnd}>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Changed grid to flex, added horizontal scroll, spacing, and padding-bottom */}
+        <div className="flex space-x-4 overflow-x-auto pb-4 flex-grow items-start">
           {/* board is guaranteed to be non-null here */}
           {Object.values(board.columns)
             // Use ColumnType for sorting
@@ -266,7 +273,8 @@ export default function Board() {
                     <div
                       {...provided.droppableProps}
                       ref={provided.innerRef}
-                      className="space-y-3 min-h-[200px]"
+                      // Removed space-y and min-h, relying on column flex and card margin
+                      className="h-full"
                     >
                       {cards
                         .filter((card) => card.columnId === column.id)
