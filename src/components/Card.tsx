@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ThumbsUp, Edit2, Trash2 } from "lucide-react";
+import { ThumbsUp, ThumbsDown, Edit2, Trash2 } from "lucide-react";
 // Import from boardService instead of cardService
 import { updateCard, deleteCard, voteForCard } from "../services/boardService";
 import { DraggableProvided } from "@hello-pangea/dnd"; // Import DraggableProvided
@@ -22,13 +22,16 @@ export default function Card({ provided, card, isOwner }: CardProps) {
       // Mad column (first column) - mint green
       "column-1": "bg-green-100",
       // Sad column (second column) - light purple for some cards, mint green for others
-      "column-2": card.id.charCodeAt(0) % 2 === 0 ? "bg-green-100" : "bg-purple-100",
+      "column-2":
+        card.id.charCodeAt(0) % 2 === 0 ? "bg-green-100" : "bg-purple-100",
       // Glad column (third column) - alternating colors
-      "column-3": card.id.charCodeAt(0) % 2 === 0 ? "bg-green-100" : "bg-purple-100",
+      "column-3":
+        card.id.charCodeAt(0) % 2 === 0 ? "bg-green-100" : "bg-purple-100",
       // Default fallback for any other columns
-      "default": card.id.charCodeAt(0) % 2 === 0 ? "bg-green-100" : "bg-purple-100",
+      default:
+        card.id.charCodeAt(0) % 2 === 0 ? "bg-green-100" : "bg-purple-100",
     };
-    
+
     // Return the color for the column or default to the fallback if column not found
     return columnColors[card.columnId] || columnColors["default"];
   };
@@ -46,8 +49,10 @@ export default function Card({ provided, card, isOwner }: CardProps) {
     }
   };
 
-  const handleVote = () => {
-    voteForCard(card.id);
+  const handleVote = (voteType: "up" | "down") => {
+    voteForCard(card.id, voteType).catch((error) => {
+      console.error("Vote failed:", error);
+    });
   };
 
   return (
@@ -88,7 +93,7 @@ export default function Card({ provided, card, isOwner }: CardProps) {
               {card.content}
             </p>
           </div>
-          
+
           <div className="mt-auto pt-3">
             <div className="border-t border-gray-200 opacity-40 mb-2 mt-1"></div>
             <div className="flex justify-between items-center">
@@ -96,20 +101,26 @@ export default function Card({ provided, card, isOwner }: CardProps) {
               <div className="text-xs text-gray-600 font-medium">
                 {card.authorName || "Wonderful Turtle"}
               </div>
-              
+
               {/* Action buttons - always visible */}
               <div className="flex space-x-1 items-center">
-                <button
-                  onClick={handleVote}
-                  className="p-1 rounded text-blue-600 hover:text-blue-700 hover:bg-blue-100 flex items-center transition-colors cursor-pointer"
-                >
-                  <ThumbsUp className="h-3 w-3" />
-                  {card.votes > 0 && (
-                    <span className="text-xs font-medium ml-0.5">
-                      {card.votes}
-                    </span>
-                  )}
-                </button>
+                <div className="flex flex-col items-center space-y-1">
+                  <button
+                    onClick={() => handleVote("up")}
+                    className="p-1 rounded flex items-center transition-colors cursor-pointer text-gray-500 hover:text-green-600 hover:bg-green-50"
+                  >
+                    <ThumbsUp className="h-3 w-3" />
+                  </button>
+
+                  <span className="text-xs font-medium">{card.votes}</span>
+
+                  <button
+                    onClick={() => handleVote("down")}
+                    className="p-1 rounded flex items-center transition-colors cursor-pointer text-gray-500 hover:text-red-600 hover:bg-red-50"
+                  >
+                    <ThumbsDown className="h-3 w-3" />
+                  </button>
+                </div>
                 {isOwner && (
                   <>
                     <button

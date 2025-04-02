@@ -12,8 +12,7 @@ import {
   serverTimestamp,
   writeBatch,
   getDocs,
-  // getDoc is used in the component now
-  orderBy,
+  getDoc,
   increment,
 } from "firebase/firestore";
 // nanoid and Timestamp are no longer used directly here
@@ -142,29 +141,30 @@ export const updateCardPosition = async (
     const sourceColumnCards = allCards.filter(
       (card) => card.columnId === oldColumnId && card.id !== cardId
     );
-    
+
     // If same column move, use the same array (minus the moved card)
-    const destColumnCards = oldColumnId === newColumnId
-      ? sourceColumnCards
-      : allCards.filter(
-          (card) => card.columnId === newColumnId && card.id !== cardId
-        );
-    
+    const destColumnCards =
+      oldColumnId === newColumnId
+        ? sourceColumnCards
+        : allCards.filter(
+            (card) => card.columnId === newColumnId && card.id !== cardId
+          );
+
     // 4. Insert the moved card at the new index
     destColumnCards.splice(newIndex, 0, {
       ...movedCard,
-      columnId: newColumnId // Update column ID
+      columnId: newColumnId, // Update column ID
     });
-    
+
     // 5. Batch all updates
     const batch = writeBatch(db);
-    
+
     // Update moved card's column if needed
     if (oldColumnId !== newColumnId) {
       const cardRef = doc(db, "cards", cardId);
       batch.update(cardRef, { columnId: newColumnId });
     }
-    
+
     // Update positions for source column if different from destination
     if (oldColumnId !== newColumnId) {
       sourceColumnCards.forEach((card, index) => {
@@ -172,14 +172,14 @@ export const updateCardPosition = async (
         batch.update(cardRef, { position: index * 1000 });
       });
     }
-    
+
     // Update positions for destination column
     destColumnCards.forEach((card, index) => {
       const cardRef = doc(db, "cards", card.id);
-      batch.update(cardRef, { 
+      batch.update(cardRef, {
         position: index * 1000,
         // Only update columnId for the moved card
-        ...(card.id === cardId ? { columnId: newColumnId } : {})
+        ...(card.id === cardId ? { columnId: newColumnId } : {}),
       });
     });
 
@@ -208,12 +208,13 @@ export const deleteCard = async (cardId: string) => {
   await deleteDoc(cardRef);
 };
 
-// Vote for a card
-export const voteForCard = async (cardId: string) => {
+// Simple voting without user tracking
+export const voteForCard = async (cardId: string, voteType: "up" | "down") => {
   const cardRef = doc(db, "cards", cardId);
-  // Atomically increment the votes field
+  const voteChange = voteType === "up" ? 1 : -1;
+
   await updateDoc(cardRef, {
-    votes: increment(1),
+    votes: increment(voteChange),
   });
 };
 
