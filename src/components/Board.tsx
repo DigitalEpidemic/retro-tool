@@ -22,9 +22,9 @@ import {
   startTimer,
   pauseTimer,
   resetTimer,
-  updateTimerDuration, // Import the new function
+  updateColumnSortState,
 } from "../services/boardService";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "../services/firebase";
 import Column from "./Column";
 import CardComponent from "./Card";
@@ -116,6 +116,15 @@ export default function Board() {
           } else {
             setBoard(boardData);
             setError(null); // Clear error on successful load/update
+
+            // Initialize column sort states from Firestore
+            if (boardData.columns) {
+              const newSortStates: Record<string, boolean> = {};
+              Object.entries(boardData.columns).forEach(([id, column]) => {
+                newSortStates[id] = column.sortByVotes ?? false;
+              });
+              setColumnSortStates(newSortStates);
+            }
           }
           setLoading(false); // Set loading false once we get *any* snapshot (or null)
         });
@@ -298,7 +307,7 @@ export default function Board() {
   };
 
   // Handler for saving edited time
-  const handleSaveEditedTime = () => {
+  const handleSaveEditedTime = async () => {
     if (!boardId || board?.timerIsRunning) return; // Only save if stopped/paused
 
     const newDurationSeconds = parseTime(editableTimeStr);
@@ -314,26 +323,36 @@ export default function Board() {
       return;
     }
 
-    // Call the service function to update Firestore
-    updateTimerDuration(boardId, newDurationSeconds)
-      .then(() => {
-        console.log(
-          "Timer duration updated successfully to:",
-          newDurationSeconds
-        );
-        // Firestore listener will update the local state (remainingTime, editableTimeStr)
-      })
-      .catch((err: unknown) => {
-        // Explicitly type err as unknown
-        console.error("Error updating timer duration:", err);
-        setError("Failed to update timer duration.");
-        // Revert input on error
-        const lastValidTime =
-          board?.timerPausedDurationSeconds ??
-          board?.timerDurationSeconds ??
-          initialDurationSeconds;
-        setEditableTimeStr(formatTime(lastValidTime));
+    // Update Firestore directly
+    const boardRef = doc(db, "boards", boardId);
+    try {
+      await updateDoc(boardRef, {
+        timerDurationSeconds: newDurationSeconds,
+        ...(newDurationSeconds > 0
+          ? {
+              timerPausedDurationSeconds: newDurationSeconds,
+            }
+          : {
+              timerPausedDurationSeconds: 0,
+            }),
+        timerIsRunning: false,
+        timerStartTime: null,
       });
+      console.log(
+        "Timer duration updated successfully to:",
+        newDurationSeconds
+      );
+      // Firestore listener will update the local state (remainingTime, editableTimeStr)
+    } catch (err: unknown) {
+      console.error("Error updating timer duration:", err);
+      setError("Failed to update timer duration.");
+      // Revert input on error
+      const lastValidTime =
+        board?.timerPausedDurationSeconds ??
+        board?.timerDurationSeconds ??
+        initialDurationSeconds;
+      setEditableTimeStr(formatTime(lastValidTime));
+    }
   };
 
   // Handle input change
@@ -624,12 +643,22 @@ export default function Board() {
                   title={column.title}
                   boardId={boardId!}
                   sortByVotes={columnSortStates[column.id] || false}
-                  onSortToggle={() =>
-                    setColumnSortStates((prev) => ({
-                      ...prev,
-                      [column.id]: !prev[column.id],
-                    }))
-                  }
+                  onSortToggle={async () => {
+                    const newSortState = !columnSortStates[column.id];
+                    try {
+                      await updateColumnSortState(
+                        boardId!,
+                        column.id,
+                        newSortState
+                      );
+                      setColumnSortStates((prev) => ({
+                        ...prev,
+                        [column.id]: newSortState,
+                      }));
+                    } catch (error) {
+                      console.error("Error updating sort state:", error);
+                    }
+                  }}
                 >
                   <Droppable droppableId={column.id}>
                     {(provided) => (

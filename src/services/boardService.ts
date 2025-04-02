@@ -283,23 +283,15 @@ export const resetTimer = async (
   });
 };
 
-// Update the timer duration when edited while paused or stopped
-export const updateTimerDuration = async (
+// Update column sort state in Firestore
+export const updateColumnSortState = async (
   boardId: string,
-  newDurationSeconds: number
+  columnId: string,
+  sortByVotes: boolean
 ) => {
   const boardRef = doc(db, "boards", boardId);
   await updateDoc(boardRef, {
-    timerDurationSeconds: newDurationSeconds, // Set the base duration
-    ...(newDurationSeconds > 0
-      ? {
-          timerPausedDurationSeconds: newDurationSeconds, // Only update paused duration if valid
-        }
-      : {
-          timerPausedDurationSeconds: 0, // Ensure it doesn't go negative
-        }),
-    timerIsRunning: false, // Ensure timer is not marked as running
-    timerStartTime: null, // Ensure start time is cleared
+    [`columns.${columnId}.sortByVotes`]: sortByVotes,
   });
 };
 

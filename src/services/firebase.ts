@@ -39,6 +39,7 @@ export interface Board {
       id: string;
       title: string;
       order: number;
+      sortByVotes?: boolean;
     };
   };
   facilitatorId?: string; // optional creator ID
