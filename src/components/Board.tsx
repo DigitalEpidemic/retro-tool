@@ -309,7 +309,7 @@ export default function Board() {
         <div className="grid grid-cols-3 gap-6 px-6 py-4 flex-1 overflow-hidden">
           {Object.values(board.columns)
             .sort((a: ColumnType, b: ColumnType) => a.order - b.order)
-            .map((column: ColumnType, index) => (
+            .map((column: ColumnType) => (
               <div
                 key={column.id}
                 className="border-r border-l border-gray-200 bg-white rounded shadow-sm h-full flex flex-col overflow-hidden"
@@ -320,7 +320,7 @@ export default function Board() {
                       <div
                         {...provided.droppableProps}
                         ref={provided.innerRef}
-                        className="h-full overflow-y-auto"
+                        className="h-full overflow-y-scroll scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400"
                       >
                         {cards
                           .filter((card) => card.columnId === column.id)
