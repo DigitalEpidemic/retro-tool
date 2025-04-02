@@ -218,24 +218,81 @@ export const voteForCard = async (cardId: string, voteType: "up" | "down") => {
   });
 };
 
-// Start the timer for a board
-export const startTimer = async (boardId: string, durationSeconds: number) => {
+// Start or Resume the timer for a board
+export const startTimer = async (
+  boardId: string,
+  currentBoardData: Board | null // Pass current board data to check for paused state
+) => {
   const boardRef = doc(db, "boards", boardId);
+  const durationToUse =
+    currentBoardData?.timerPausedDurationSeconds ?? // Use paused time if available
+    currentBoardData?.timerDurationSeconds ?? // Otherwise use original duration
+    300; // Default to 300 if nothing is set
+
   await updateDoc(boardRef, {
     timerIsRunning: true,
     timerStartTime: serverTimestamp(),
-    timerDurationSeconds: durationSeconds,
+    timerDurationSeconds: durationToUse, // Set the duration for this run
+    timerPausedDurationSeconds: null, // Clear paused duration on start/resume
+  });
+};
+
+// Pause the timer for a board
+export const pauseTimer = async (
+  boardId: string,
+  currentBoardData: Board | null // Pass current board data to calculate remaining time
+) => {
+  if (
+    !currentBoardData ||
+    !currentBoardData.timerIsRunning ||
+    !currentBoardData.timerStartTime ||
+    currentBoardData.timerDurationSeconds === undefined ||
+    currentBoardData.timerDurationSeconds === null
+  ) {
+    console.warn("Timer cannot be paused, invalid state:", currentBoardData);
+    return; // Cannot pause if not running or data missing
+  }
+
+  const boardRef = doc(db, "boards", boardId);
+  const startTimeMs = currentBoardData.timerStartTime.toMillis();
+  const durationMs = currentBoardData.timerDurationSeconds * 1000;
+  const nowMs = Date.now();
+  const elapsedMs = nowMs - startTimeMs;
+  const remainingMs = Math.max(0, durationMs - elapsedMs);
+  const remainingSeconds = Math.ceil(remainingMs / 1000);
+
+  await updateDoc(boardRef, {
+    timerIsRunning: false,
+    timerPausedDurationSeconds: remainingSeconds, // Store remaining time
+    timerStartTime: null, // Clear start time as it's paused
   });
 };
 
 // Reset the timer for a board
-export const resetTimer = async (boardId: string) => {
+export const resetTimer = async (
+  boardId: string,
+  initialDuration: number = 300
+) => {
   const boardRef = doc(db, "boards", boardId);
   await updateDoc(boardRef, {
     timerIsRunning: false,
     timerStartTime: null,
-    // Optionally reset duration, or keep it for next start
-    // timerDurationSeconds: null
+    timerPausedDurationSeconds: null, // Clear paused duration
+    timerDurationSeconds: initialDuration, // Reset to initial duration (e.g., 300s)
+  });
+};
+
+// Update the timer duration when edited while paused or stopped
+export const updateTimerDuration = async (
+  boardId: string,
+  newDurationSeconds: number
+) => {
+  const boardRef = doc(db, "boards", boardId);
+  await updateDoc(boardRef, {
+    timerDurationSeconds: newDurationSeconds, // Set the base duration
+    timerPausedDurationSeconds: newDurationSeconds, // Also update paused duration to match edited value
+    timerIsRunning: false, // Ensure timer is not marked as running
+    timerStartTime: null, // Ensure start time is cleared
   });
 };
 

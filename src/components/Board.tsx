@@ -1,4 +1,11 @@
-import { useState, useEffect, useRef } from "react"; // Add useRef
+import {
+  useState,
+  useEffect,
+  useRef,
+  ChangeEvent,
+  KeyboardEvent,
+  FocusEvent,
+} from "react"; // Add more imports
 import { useParams, useNavigate } from "react-router-dom";
 // Use @hello-pangea/dnd instead of react-beautiful-dnd
 import {
@@ -12,10 +19,12 @@ import {
   subscribeToCards,
   updateCardPosition,
   createBoard,
-  startTimer, // Import startTimer
-  resetTimer, // Import resetTimer
+  startTimer,
+  pauseTimer,
+  resetTimer,
+  updateTimerDuration, // Import the new function
 } from "../services/boardService";
-import { doc, getDoc } from "firebase/firestore"; // Removed Timestamp
+import { doc, getDoc } from "firebase/firestore";
 import { db } from "../services/firebase";
 import Column from "./Column";
 import CardComponent from "./Card";
@@ -27,6 +36,7 @@ import {
   Share2,
   Settings,
   Play,
+  Pause, // Import Pause icon
   RotateCcw,
   Download,
 } from "lucide-react";
@@ -40,8 +50,10 @@ export default function Board() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [remainingTime, setRemainingTime] = useState<number | null>(null); // State for countdown display
+  const [editableTimeStr, setEditableTimeStr] = useState<string>(""); // State for editable input
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null); // Ref to store interval ID
   const initialDurationSeconds = 300; // 5 minutes (default)
+  const inputRef = useRef<HTMLInputElement>(null); // Ref for the input element
 
   useEffect(() => {
     // Don't proceed if auth is still loading or if there's no boardId
@@ -162,9 +174,20 @@ export default function Board() {
 
       updateTimer(); // Initial update
       timerIntervalRef.current = setInterval(updateTimer, 1000); // Update every second
+    } else if (
+      board?.timerPausedDurationSeconds !== undefined &&
+      board?.timerPausedDurationSeconds !== null
+    ) {
+      // Timer is paused, display the paused duration
+      const pausedSeconds = board.timerPausedDurationSeconds;
+      setRemainingTime(pausedSeconds);
+      setEditableTimeStr(formatTime(pausedSeconds)); // Initialize editable string
     } else {
-      // Timer is not running or data is missing, reset local display
-      setRemainingTime(board?.timerDurationSeconds ?? initialDurationSeconds); // Show full duration or default
+      // Timer is not running and not paused (reset state), show initial duration
+      const initialSeconds =
+        board?.timerDurationSeconds ?? initialDurationSeconds;
+      setRemainingTime(initialSeconds);
+      setEditableTimeStr(formatTime(initialSeconds)); // Initialize editable string
     }
 
     // Cleanup interval on unmount or when dependencies change
@@ -177,6 +200,7 @@ export default function Board() {
     board?.timerIsRunning,
     board?.timerStartTime,
     board?.timerDurationSeconds,
+    board?.timerPausedDurationSeconds, // Add paused duration as dependency
     boardId,
   ]); // Re-run when timer state changes in Firestore
 
@@ -190,21 +214,123 @@ export default function Board() {
     return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
   };
 
+  // Helper function to parse "MM:SS" string to total seconds
+  const parseTime = (timeStr: string): number | null => {
+    const parts = timeStr.match(/^(\d{1,2}):(\d{1,2})$/);
+    if (!parts) return null;
+    const minutes = parseInt(parts[1], 10);
+    const seconds = parseInt(parts[2], 10);
+    if (
+      isNaN(minutes) ||
+      isNaN(seconds) ||
+      seconds < 0 ||
+      seconds > 59 ||
+      minutes < 0
+    ) {
+      return null; // Invalid format or values
+    }
+    return minutes * 60 + seconds;
+  };
+
   // Handlers for timer buttons
-  const handleStartTimer = () => {
-    if (boardId && !board?.timerIsRunning) {
-      // Use duration from board if available, otherwise default
-      const duration = board?.timerDurationSeconds ?? initialDurationSeconds;
-      startTimer(boardId, duration).catch((err) => {
-        console.error("Error starting timer:", err);
-        setError("Failed to start timer.");
+  const handleStartPauseTimer = () => {
+    if (!boardId) return;
+
+    if (board?.timerIsRunning) {
+      // --- Pause Timer ---
+      pauseTimer(boardId, board).catch((err: unknown) => {
+        // Type err
+        console.error("Error pausing timer:", err);
+        setError("Failed to pause timer.");
+      });
+    } else {
+      // --- Start or Resume Timer ---
+      // Pass the current board state to startTimer
+      startTimer(boardId, board).catch((err: unknown) => {
+        // Type err
+        console.error("Error starting/resuming timer:", err);
+        setError("Failed to start/resume timer.");
       });
     }
   };
 
+  // Handler for saving edited time
+  const handleSaveEditedTime = () => {
+    if (!boardId || board?.timerIsRunning) return; // Only save if stopped/paused
+
+    const newDurationSeconds = parseTime(editableTimeStr);
+
+    if (newDurationSeconds === null || newDurationSeconds < 0) {
+      // Invalid input, revert to the last known valid time
+      console.warn("Invalid time format entered:", editableTimeStr);
+      const lastValidTime =
+        board?.timerPausedDurationSeconds ??
+        board?.timerDurationSeconds ??
+        initialDurationSeconds;
+      setEditableTimeStr(formatTime(lastValidTime));
+      return;
+    }
+
+    // Call the service function to update Firestore
+    updateTimerDuration(boardId, newDurationSeconds)
+      .then(() => {
+        console.log(
+          "Timer duration updated successfully to:",
+          newDurationSeconds
+        );
+        // Firestore listener will update the local state (remainingTime, editableTimeStr)
+      })
+      .catch((err: unknown) => {
+        // Explicitly type err as unknown
+        console.error("Error updating timer duration:", err);
+        setError("Failed to update timer duration.");
+        // Revert input on error
+        const lastValidTime =
+          board?.timerPausedDurationSeconds ??
+          board?.timerDurationSeconds ??
+          initialDurationSeconds;
+        setEditableTimeStr(formatTime(lastValidTime));
+      });
+  };
+
+  // Handle input change
+  const handleTimeInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setEditableTimeStr(e.target.value);
+  };
+
+  // Handle saving on Enter key press
+  const handleTimeInputKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleSaveEditedTime();
+      inputRef.current?.blur(); // Remove focus after saving
+    } else if (e.key === "Escape") {
+      // Revert to last known valid time on Escape
+      const lastValidTime =
+        board?.timerPausedDurationSeconds ??
+        board?.timerDurationSeconds ??
+        initialDurationSeconds;
+      setEditableTimeStr(formatTime(lastValidTime));
+      inputRef.current?.blur(); // Remove focus
+    }
+  };
+
+  // Handle saving on blur (losing focus)
+  const handleTimeInputBlur = (e: FocusEvent<HTMLInputElement>) => {
+    // Prevent saving if the blur was caused by clicking a timer control button
+    if (
+      e.relatedTarget instanceof HTMLButtonElement &&
+      e.relatedTarget.closest(".timer-controls") // Add a class to the controls container
+    ) {
+      return;
+    }
+    handleSaveEditedTime();
+  };
+
   const handleResetTimer = () => {
     if (boardId) {
-      resetTimer(boardId).catch((err) => {
+      // Pass the initial duration to resetTimer
+      resetTimer(boardId, initialDurationSeconds).catch((err: unknown) => {
+        // Type err
         console.error("Error resetting timer:", err);
         setError("Failed to reset timer.");
       });
@@ -356,23 +482,50 @@ export default function Board() {
 
         <div className="flex items-center space-x-4">
           {/* Timer Display and Controls */}
-          <div className="flex items-center space-x-1">
-            <span className="text-gray-700 font-medium w-12 text-right">
-              {formatTime(remainingTime)}
-            </span>
+          {/* Add timer-controls class for blur logic */}
+          <div className="flex items-center space-x-1 timer-controls">
+            {/* Conditional Rendering: Input vs Span */}
+            {board && !board.timerIsRunning ? (
+              <input
+                ref={inputRef}
+                type="text"
+                value={editableTimeStr}
+                onChange={handleTimeInputChange}
+                onKeyDown={handleTimeInputKeyDown}
+                onBlur={handleTimeInputBlur}
+                className="text-gray-700 font-medium w-12 text-right border border-gray-300 rounded px-1 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                // Add pattern for basic validation if desired, though JS handles parsing
+                // pattern="\d{1,2}:\d{2}"
+                title="Edit time (MM:SS)"
+              />
+            ) : (
+              <span
+                className="text-gray-700 font-medium w-12 text-right"
+                title="Remaining time"
+              >
+                {formatTime(remainingTime)}
+              </span>
+            )}
+            {/* Play/Pause Button */}
             <button
-              onClick={handleStartTimer}
-              disabled={!!board?.timerIsRunning} // Disable if timer is running
+              onClick={handleStartPauseTimer}
               className={`cursor-pointer ${
                 board?.timerIsRunning
-                  ? "text-gray-400 cursor-not-allowed"
-                  : "text-blue-500 hover:text-blue-600"
+                  ? "text-orange-500 hover:text-orange-600" // Style for Pause
+                  : "text-blue-500 hover:text-blue-600" // Style for Play/Resume
               }`}
             >
-              <Play className="h-4 w-4" />
+              {board?.timerIsRunning ? (
+                <Pause className="h-4 w-4" /> // Show Pause icon when running
+              ) : (
+                <Play className="h-4 w-4" /> // Show Play icon when stopped/paused
+              )}
             </button>
+            {/* Reset Button */}
             <button
               onClick={handleResetTimer}
+              // Disable reset if timer is running? Optional UX choice.
+              // disabled={!!board?.timerIsRunning}
               className="text-gray-400 hover:text-gray-600 cursor-pointer"
             >
               <RotateCcw className="h-4 w-4" />
