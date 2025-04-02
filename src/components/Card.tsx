@@ -94,50 +94,48 @@ export default function Card({ provided, card, isOwner }: CardProps) {
             </p>
           </div>
 
+          {/* Edit/Delete buttons in bottom right */}
+          {isOwner && (
+            <div className="absolute right-2 bottom-2 flex space-x-1 z-10">
+              <button
+                onClick={() => setIsEditing(true)}
+                className="p-1 rounded text-blue-600 hover:text-blue-700 hover:bg-blue-100 transition-colors cursor-pointer"
+              >
+                <Edit2 className="h-3 w-3" />
+              </button>
+              <button
+                onClick={handleDelete}
+                className="p-1 rounded text-red-600 hover:text-red-700 hover:bg-red-100 transition-colors cursor-pointer"
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
+            </div>
+          )}
+
+          {/* Voting component on left side */}
+          <div className="absolute left-2 bottom-2 flex flex-col items-center space-y-1">
+            <button
+              onClick={() => handleVote("up")}
+              className="p-1 rounded flex items-center transition-colors cursor-pointer text-gray-500 hover:text-green-600 hover:bg-green-50"
+            >
+              <ThumbsUp className="h-3 w-3" />
+            </button>
+
+            <span className="text-xs font-medium">{card.votes}</span>
+
+            <button
+              onClick={() => handleVote("down")}
+              className="p-1 rounded flex items-center transition-colors cursor-pointer text-gray-500 hover:text-red-600 hover:bg-red-50"
+            >
+              <ThumbsDown className="h-3 w-3" />
+            </button>
+          </div>
+
+          {/* Author name above buttons (right side) */}
           <div className="mt-auto pt-3">
             <div className="border-t border-gray-200 opacity-40 mb-2 mt-1"></div>
-            <div className="flex justify-between items-center">
-              {/* Author name at bottom of card */}
-              <div className="text-xs text-gray-600 font-medium">
-                {card.authorName || "Wonderful Turtle"}
-              </div>
-
-              {/* Action buttons - always visible */}
-              <div className="flex space-x-1 items-center">
-                <div className="flex flex-col items-center space-y-1">
-                  <button
-                    onClick={() => handleVote("up")}
-                    className="p-1 rounded flex items-center transition-colors cursor-pointer text-gray-500 hover:text-green-600 hover:bg-green-50"
-                  >
-                    <ThumbsUp className="h-3 w-3" />
-                  </button>
-
-                  <span className="text-xs font-medium">{card.votes}</span>
-
-                  <button
-                    onClick={() => handleVote("down")}
-                    className="p-1 rounded flex items-center transition-colors cursor-pointer text-gray-500 hover:text-red-600 hover:bg-red-50"
-                  >
-                    <ThumbsDown className="h-3 w-3" />
-                  </button>
-                </div>
-                {isOwner && (
-                  <>
-                    <button
-                      onClick={() => setIsEditing(true)}
-                      className="p-1 rounded text-blue-600 hover:text-blue-700 hover:bg-blue-100 transition-colors cursor-pointer"
-                    >
-                      <Edit2 className="h-3 w-3" />
-                    </button>
-                    <button
-                      onClick={handleDelete}
-                      className="p-1 rounded text-red-600 hover:text-red-700 hover:bg-red-100 transition-colors cursor-pointer"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </button>
-                  </>
-                )}
-              </div>
+            <div className="text-xs text-gray-600 font-medium">
+              {card.authorName || "Wonderful Turtle"}
             </div>
           </div>
         </>
