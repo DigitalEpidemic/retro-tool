@@ -12,7 +12,7 @@ import {
   serverTimestamp,
   writeBatch,
   getDocs,
-  getDoc,
+  // getDoc, // Removed as it's unused after refactoring board creation/subscription
   increment,
 } from "firebase/firestore";
 // nanoid and Timestamp are no longer used directly here
@@ -215,6 +215,27 @@ export const voteForCard = async (cardId: string, voteType: "up" | "down") => {
 
   await updateDoc(cardRef, {
     votes: increment(voteChange),
+  });
+};
+
+// Start the timer for a board
+export const startTimer = async (boardId: string, durationSeconds: number) => {
+  const boardRef = doc(db, "boards", boardId);
+  await updateDoc(boardRef, {
+    timerIsRunning: true,
+    timerStartTime: serverTimestamp(),
+    timerDurationSeconds: durationSeconds,
+  });
+};
+
+// Reset the timer for a board
+export const resetTimer = async (boardId: string) => {
+  const boardRef = doc(db, "boards", boardId);
+  await updateDoc(boardRef, {
+    timerIsRunning: false,
+    timerStartTime: null,
+    // Optionally reset duration, or keep it for next start
+    // timerDurationSeconds: null
   });
 };
 

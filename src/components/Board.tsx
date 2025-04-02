@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react"; // Add useRef
 import { useParams, useNavigate } from "react-router-dom";
 // Use @hello-pangea/dnd instead of react-beautiful-dnd
 import {
@@ -11,10 +11,12 @@ import {
   subscribeToBoard,
   subscribeToCards,
   updateCardPosition,
-  createBoard, // Import createBoard
-} from "../services/boardService"; // Corrected import path
-import { doc, getDoc } from "firebase/firestore"; // Import getDoc and doc
-import { db } from "../services/firebase"; // Import db instance
+  createBoard,
+  startTimer, // Import startTimer
+  resetTimer, // Import resetTimer
+} from "../services/boardService";
+import { doc, getDoc } from "firebase/firestore"; // Removed Timestamp
+import { db } from "../services/firebase";
 import Column from "./Column";
 import CardComponent from "./Card";
 import { useFirebase } from "../contexts/FirebaseContext";
@@ -34,9 +36,12 @@ export default function Board() {
   const { user, loading: authLoading, error: authError } = useFirebase(); // Get auth loading state
   const navigate = useNavigate();
   const [board, setBoard] = useState<BoardType | null>(null); // Use BoardType
-  const [cards, setCards] = useState<CardType[]>([]); // Use CardType array
-  const [loading, setLoading] = useState(true); // Local loading state for board data
-  const [error, setError] = useState<string | null>(null); // Local error state
+  const [cards, setCards] = useState<CardType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [remainingTime, setRemainingTime] = useState<number | null>(null); // State for countdown display
+  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null); // Ref to store interval ID
+  const initialDurationSeconds = 300; // 5 minutes (default)
 
   useEffect(() => {
     // Don't proceed if auth is still loading or if there's no boardId
@@ -121,6 +126,90 @@ export default function Board() {
     };
     // Dependencies for the useEffect hook
   }, [boardId, navigate, user, authLoading]);
+
+  // Effect for Timer Logic
+  useEffect(() => {
+    // Clear any existing interval when board data changes or component unmounts
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+
+    if (
+      board?.timerIsRunning &&
+      board.timerStartTime &&
+      board.timerDurationSeconds
+    ) {
+      const startTimeMs = board.timerStartTime.toMillis();
+      const durationMs = board.timerDurationSeconds * 1000;
+      const endTimeMs = startTimeMs + durationMs;
+
+      const updateTimer = () => {
+        const nowMs = Date.now();
+        const remainingMs = Math.max(0, endTimeMs - nowMs);
+        const remainingSeconds = Math.ceil(remainingMs / 1000);
+        setRemainingTime(remainingSeconds);
+
+        if (remainingMs <= 0) {
+          if (timerIntervalRef.current) {
+            clearInterval(timerIntervalRef.current);
+            timerIntervalRef.current = null;
+          }
+          // Optionally call resetTimer here if the timer should auto-reset on finish
+          // if (boardId) resetTimer(boardId);
+        }
+      };
+
+      updateTimer(); // Initial update
+      timerIntervalRef.current = setInterval(updateTimer, 1000); // Update every second
+    } else {
+      // Timer is not running or data is missing, reset local display
+      setRemainingTime(board?.timerDurationSeconds ?? initialDurationSeconds); // Show full duration or default
+    }
+
+    // Cleanup interval on unmount or when dependencies change
+    return () => {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+      }
+    };
+  }, [
+    board?.timerIsRunning,
+    board?.timerStartTime,
+    board?.timerDurationSeconds,
+    boardId,
+  ]); // Re-run when timer state changes in Firestore
+
+  // Helper function to format time
+  const formatTime = (totalSeconds: number | null): string => {
+    if (totalSeconds === null || totalSeconds < 0) {
+      return "0:00"; // Or some default/loading state
+    }
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+  };
+
+  // Handlers for timer buttons
+  const handleStartTimer = () => {
+    if (boardId && !board?.timerIsRunning) {
+      // Use duration from board if available, otherwise default
+      const duration = board?.timerDurationSeconds ?? initialDurationSeconds;
+      startTimer(boardId, duration).catch((err) => {
+        console.error("Error starting timer:", err);
+        setError("Failed to start timer.");
+      });
+    }
+  };
+
+  const handleResetTimer = () => {
+    if (boardId) {
+      resetTimer(boardId).catch((err) => {
+        console.error("Error resetting timer:", err);
+        setError("Failed to reset timer.");
+      });
+    }
+  };
 
   const handleDragEnd = (result: DropResult) => {
     const { destination, source, draggableId } = result;
@@ -266,16 +355,31 @@ export default function Board() {
         </div>
 
         <div className="flex items-center space-x-4">
+          {/* Timer Display and Controls */}
           <div className="flex items-center space-x-1">
-            <span className="text-gray-700 font-medium">5:00</span>
-            <button className="text-blue-500 hover:text-blue-600 cursor-pointer">
+            <span className="text-gray-700 font-medium w-12 text-right">
+              {formatTime(remainingTime)}
+            </span>
+            <button
+              onClick={handleStartTimer}
+              disabled={!!board?.timerIsRunning} // Disable if timer is running
+              className={`cursor-pointer ${
+                board?.timerIsRunning
+                  ? "text-gray-400 cursor-not-allowed"
+                  : "text-blue-500 hover:text-blue-600"
+              }`}
+            >
               <Play className="h-4 w-4" />
             </button>
-            <button className="text-gray-400 hover:text-gray-600 cursor-pointer">
+            <button
+              onClick={handleResetTimer}
+              className="text-gray-400 hover:text-gray-600 cursor-pointer"
+            >
               <RotateCcw className="h-4 w-4" />
             </button>
           </div>
 
+          {/* Other Board Controls */}
           <div className="flex space-x-5">
             <button className="text-gray-700 hover:text-gray-900 flex items-center cursor-pointer">
               <Users className="h-5 w-5" />

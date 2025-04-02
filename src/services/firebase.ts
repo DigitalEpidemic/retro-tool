@@ -42,6 +42,9 @@ export interface Board {
     };
   };
   facilitatorId?: string; // optional creator ID
+  timerStartTime?: Timestamp | null; // When the timer was started (null if not running)
+  timerDurationSeconds?: number; // Duration in seconds (e.g., 300 for 5 mins)
+  timerIsRunning?: boolean; // True if the timer is currently active
 }
 
 // cards collection
