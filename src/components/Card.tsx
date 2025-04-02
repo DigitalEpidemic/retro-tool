@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { ThumbsUp, ThumbsDown, Edit2, Trash2 } from "lucide-react";
 // Import from boardService instead of cardService
 import { updateCard, deleteCard, voteForCard } from "../services/boardService";
@@ -14,6 +14,8 @@ interface CardProps {
 export default function Card({ provided, card, isOwner }: CardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [content, setContent] = useState(card.content);
+  const [cardHeight, setCardHeight] = useState(0);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   // Function to determine card color based on column or random assignment
   const getCardColor = () => {
@@ -43,6 +45,14 @@ export default function Card({ provided, card, isOwner }: CardProps) {
     }
   };
 
+  const handleEdit = () => {
+    if (cardRef.current) {
+      const height = cardRef.current.clientHeight;
+      setCardHeight(height);
+    }
+    setIsEditing(true);
+  };
+
   const handleDelete = () => {
     if (window.confirm("Are you sure you want to delete this card?")) {
       deleteCard(card.id);
@@ -57,18 +67,20 @@ export default function Card({ provided, card, isOwner }: CardProps) {
 
   return (
     <div
-      ref={provided.innerRef}
+      ref={(node) => {
+        provided.innerRef(node);
+        cardRef.current = node;
+      }}
       {...provided.draggableProps}
       {...provided.dragHandleProps}
       className={`${getCardColor()} rounded shadow-sm border-none mb-3 group p-0 min-h-[100px] relative flex flex-col overflow-hidden`}
     >
       {isEditing ? (
-        <div className="p-3 flex-grow">
+        <div className="p-3" style={{ height: `${cardHeight}px` }}>
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            className="w-full rounded border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm p-2 min-h-[80px] resize-none"
-            rows={3}
+            className="w-full h-[calc(100%-40px)] rounded border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm p-2 resize-none"
             autoFocus
           />
           <div className="flex justify-end space-x-2 mt-2">
@@ -99,10 +111,10 @@ export default function Card({ provided, card, isOwner }: CardProps) {
                 >
                   <Trash2 className="h-3 w-3" />
                 </button>
-                
+
                 {/* Edit button below delete */}
                 <button
-                  onClick={() => setIsEditing(true)}
+                  onClick={handleEdit}
                   className="p-1 mt-2 rounded text-blue-600 hover:text-blue-700 hover:bg-blue-100 transition-colors cursor-pointer"
                 >
                   <Edit2 className="h-3 w-3" />
@@ -112,8 +124,8 @@ export default function Card({ provided, card, isOwner }: CardProps) {
           </div>
 
           {/* Card content with padding to accommodate action buttons */}
-          <div className="flex-grow px-3 py-3 mr-[30px] ml-[30px]">
-            <p className="text-sm text-gray-900 whitespace-pre-wrap break-words leading-relaxed">
+          <div className="flex-grow py-3 mr-[30px] ml-[30px]">
+            <p className="text-sm text-gray-900 whitespace-pre-wrap break-words leading-relaxed text-left">
               {card.content}
             </p>
           </div>
@@ -139,7 +151,7 @@ export default function Card({ provided, card, isOwner }: CardProps) {
                   <ThumbsDown className="h-3 w-3" />
                 </button>
               </div>
-              
+
               {/* Author name on right */}
               <div className="text-right">
                 <div className="text-xs text-gray-500 italic">
