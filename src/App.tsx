@@ -21,16 +21,8 @@ function Home() {
 
 function App() {
   return (
-    <div className="min-h-screen">
-      {" "}
-      {/* Removed p-4 to allow Board to control padding */}
-      {/* Header could be moved to a Layout component if needed across routes */}
-      <header className="bg-white shadow p-4 mb-4">
-        <h1 className="text-2xl font-bold text-center text-gray-800">
-          Real-Time Retrospective Board
-        </h1>
-      </header>
-      <main>
+    <div className="h-screen">
+      <main className="h-full">
         <Routes>
           <Route path="/" element={<Home />} /> {/* Root path */}
           <Route path="/board/:boardId" element={<Board />} />{" "}

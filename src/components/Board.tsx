@@ -253,7 +253,7 @@ export default function Board() {
   type ColumnType = BoardType["columns"][string];
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-screen flex flex-col">
       {/* Top Board Header */}
       <div className="px-6 py-3 border-b border-gray-200 bg-white flex items-center justify-between">
         <div className="flex items-center space-x-3">
@@ -306,13 +306,13 @@ export default function Board() {
       </div>
 
       <DragDropContext onDragEnd={handleDragEnd}>
-        <div className="grid grid-cols-3 gap-6 px-6 py-8 flex-grow">
+        <div className="grid grid-cols-3 gap-6 px-6 py-4 flex-1">
           {Object.values(board.columns)
             .sort((a: ColumnType, b: ColumnType) => a.order - b.order)
             .map((column: ColumnType, index) => (
               <div
                 key={column.id}
-                className="border-r border-l border-gray-200 bg-white rounded shadow-sm"
+                className="border-r border-l border-gray-200 bg-white rounded shadow-sm h-full flex flex-col"
               >
                 <Column id={column.id} title={column.title} boardId={boardId!}>
                   <Droppable droppableId={column.id}>

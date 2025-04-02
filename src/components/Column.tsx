@@ -41,7 +41,7 @@ export default function Column({ id, title, boardId, children }: ColumnProps) {
   };
 
   return (
-    <div className="w-full bg-white flex flex-col h-[calc(100vh-13rem)]">
+    <div className="w-full bg-white flex flex-col h-full">
       {/* Column header */}
       <div className="flex justify-between items-center px-4 py-3 border-b border-gray-200">
         <h2 className="text-lg font-medium text-gray-800">
@@ -59,10 +59,11 @@ export default function Column({ id, title, boardId, children }: ColumnProps) {
         </div>
       </div>
 
-      {/* Cards container */}
+      {/* Cards container - allow scrolling */}
       <div className="flex-grow overflow-y-auto p-3 space-y-3">{children}</div>
 
       {/* Add card section */}
+      {/* TODO: Enter to save */}
       {isAddingCard ? (
         <form onSubmit={handleAddCard} className="p-3 border-t border-gray-200">
           <textarea
@@ -70,7 +71,7 @@ export default function Column({ id, title, boardId, children }: ColumnProps) {
             onChange={(e) => setNewCardContent(e.target.value)}
             placeholder="Type here... Press Enter to save."
             rows={3}
-            className="w-full rounded-none border-none bg-green-100 text-sm p-3 mb-2 resize-none focus:ring-0"
+            className="w-full rounded-none border-none bg-gray-100 text-sm p-3 mb-2 resize-none focus:ring-0"
             required
             autoFocus
           />
