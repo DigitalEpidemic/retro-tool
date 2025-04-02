@@ -25,10 +25,12 @@ export default function Card({ provided, card, isOwner }: CardProps) {
       "column-2": card.id.charCodeAt(0) % 2 === 0 ? "bg-[#baf5e3]" : "bg-[#e3d2f4]",
       // Glad column (third column) - alternating colors
       "column-3": card.id.charCodeAt(0) % 2 === 0 ? "bg-[#baf5e3]" : "bg-[#e3d2f4]",
+      // Default fallback for any other columns
+      "default": card.id.charCodeAt(0) % 2 === 0 ? "bg-[#baf5e3]" : "bg-[#e3d2f4]",
     };
     
-    // Return the color for the column or default to white if column not found
-    return columnColors[card.columnId] || "bg-white";
+    // Return the color for the column or default to the fallback if column not found
+    return columnColors[card.columnId] || columnColors["default"];
   };
 
   const handleSave = () => {
@@ -95,7 +97,7 @@ export default function Card({ provided, card, isOwner }: CardProps) {
             <div className="flex space-x-1 items-center">
               <button
                 onClick={handleVote}
-                className="p-1 rounded text-gray-500 hover:text-blue-500 hover:bg-blue-50 flex items-center transition-colors"
+                className="p-1 rounded text-blue-600 hover:text-blue-700 hover:bg-blue-100 flex items-center transition-colors"
               >
                 <ThumbsUp className="h-3 w-3" />
                 {card.votes > 0 && (
@@ -108,13 +110,13 @@ export default function Card({ provided, card, isOwner }: CardProps) {
                 <>
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="p-1 rounded text-gray-500 hover:text-blue-500 hover:bg-blue-50 transition-colors"
+                    className="p-1 rounded text-blue-600 hover:text-blue-700 hover:bg-blue-100 transition-colors"
                   >
                     <Edit2 className="h-3 w-3" />
                   </button>
                   <button
                     onClick={handleDelete}
-                    className="p-1 rounded text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors"
+                    className="p-1 rounded text-red-600 hover:text-red-700 hover:bg-red-100 transition-colors"
                   >
                     <Trash2 className="h-3 w-3" />
                   </button>

@@ -41,16 +41,16 @@ export default function Column({ id, title, boardId, children }: ColumnProps) {
   };
 
   return (
-    <div className="w-full bg-white border-none flex flex-col h-[calc(100vh-13rem)] min-h-[24rem]">
+    <div className="w-full bg-white flex flex-col h-[calc(100vh-13rem)]">
       {/* Column header */}
-      <div className="flex justify-between items-center px-4 py-2 border-b border-gray-100">
+      <div className="flex justify-between items-center px-4 py-3 border-b border-gray-200">
         <h2 className="text-lg font-medium text-gray-800">{getMappedTitle()}</h2>
         <div className="flex items-center space-x-2">
-          <button className="text-gray-400 hover:text-gray-600">
+          <button className="text-blue-600 hover:text-blue-700">
             <ArrowUpDown className="h-4 w-4" />
             <span className="sr-only">Sort</span>
           </button>
-          <button className="text-gray-400 hover:text-gray-600">
+          <button className="text-blue-600 hover:text-blue-700">
             <MoreVertical className="h-4 w-4" />
             <span className="sr-only">More options</span>
           </button>
@@ -64,7 +64,7 @@ export default function Column({ id, title, boardId, children }: ColumnProps) {
 
       {/* Add card section */}
       {isAddingCard ? (
-        <form onSubmit={handleAddCard} className="p-3 border-t border-gray-100">
+        <form onSubmit={handleAddCard} className="p-3 border-t border-gray-200">
           <textarea
             value={newCardContent}
             onChange={(e) => setNewCardContent(e.target.value)}
@@ -92,10 +92,10 @@ export default function Column({ id, title, boardId, children }: ColumnProps) {
           </div>
         </form>
       ) : (
-        <div className="p-3 border-t border-gray-100">
+        <div className="p-3 border-t border-gray-200">
           <button
             onClick={() => setIsAddingCard(true)}
-            className="w-full p-2 text-sm text-gray-600 bg-gray-50 hover:bg-gray-100 rounded flex items-center justify-center"
+            className="w-full p-2 text-sm text-blue-600 bg-gray-50 hover:bg-gray-100 rounded flex items-center justify-center"
           >
             + Add a card
           </button>

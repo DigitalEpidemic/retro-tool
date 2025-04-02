@@ -253,7 +253,7 @@ export default function Board() {
   type ColumnType = BoardType["columns"][string];
 
   return (
-    <div className="h-full flex flex-col bg-white">
+    <div className="h-full flex flex-col bg-[#f5f6f8]">
       {/* Top Board Header */}
       <div className="px-6 py-3 border-b border-gray-200 bg-white flex items-center justify-between">
         <div className="flex items-center space-x-3">
@@ -307,43 +307,44 @@ export default function Board() {
         <div className="grid grid-cols-3 gap-6 px-6 py-8 flex-grow">
           {Object.values(board.columns)
             .sort((a: ColumnType, b: ColumnType) => a.order - b.order)
-            .map((column: ColumnType) => (
-              <Column
-                key={column.id}
-                id={column.id}
-                title={column.title}
-                boardId={boardId!}
-              >
-                <Droppable droppableId={column.id}>
-                  {(provided) => (
-                    <div
-                      {...provided.droppableProps}
-                      ref={provided.innerRef}
-                      className="h-full"
-                    >
-                      {cards
-                        .filter((card) => card.columnId === column.id)
-                        .sort((a, b) => a.position - b.position)
-                        .map((card, index) => (
-                          <Draggable
-                            key={card.id}
-                            draggableId={card.id}
-                            index={index}
-                          >
-                            {(provided) => (
-                              <CardComponent
-                                provided={provided}
-                                card={card}
-                                isOwner={card.authorId === user?.uid}
-                              />
-                            )}
-                          </Draggable>
-                        ))}
-                      {provided.placeholder}
-                    </div>
-                  )}
-                </Droppable>
-              </Column>
+            .map((column: ColumnType, index) => (
+              <div key={column.id} className="border-r border-l border-gray-200 bg-white rounded shadow-sm">
+                <Column
+                  id={column.id}
+                  title={column.title}
+                  boardId={boardId!}
+                >
+                  <Droppable droppableId={column.id}>
+                    {(provided) => (
+                      <div
+                        {...provided.droppableProps}
+                        ref={provided.innerRef}
+                        className="h-full"
+                      >
+                        {cards
+                          .filter((card) => card.columnId === column.id)
+                          .sort((a, b) => a.position - b.position)
+                          .map((card, index) => (
+                            <Draggable
+                              key={card.id}
+                              draggableId={card.id}
+                              index={index}
+                            >
+                              {(provided) => (
+                                <CardComponent
+                                  provided={provided}
+                                  card={card}
+                                  isOwner={card.authorId === user?.uid}
+                                />
+                              )}
+                            </Draggable>
+                          ))}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
+                </Column>
+              </div>
             ))}
         </div>
       </DragDropContext>
