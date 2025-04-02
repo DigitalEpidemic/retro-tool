@@ -41,7 +41,7 @@ export default function Column({ id, title, boardId, children }: ColumnProps) {
   };
 
   return (
-    <div className="w-full bg-white flex flex-col h-full">
+    <div className="w-full bg-white flex flex-col h-full overflow-hidden">
       {/* Column header */}
       <div className="flex justify-between items-center px-4 py-3 border-b border-gray-200">
         <h2 className="text-lg font-medium text-gray-800">
