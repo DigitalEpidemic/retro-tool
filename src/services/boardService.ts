@@ -75,6 +75,7 @@ export const subscribeToCards = (
   const cardsQuery = query(
     collection(db, "cards"),
     where("boardId", "==", boardId)
+    // Removed orderBy temporarily as it might be causing indexing issues
   );
   return onSnapshot(cardsQuery, (querySnapshot) => {
     const cards: Card[] = []; // Use Card interface
@@ -82,7 +83,7 @@ export const subscribeToCards = (
       // Cast data to Card, assuming it matches the interface
       cards.push({ id: doc.id, ...doc.data() } as Card);
     });
-    // Sort cards by position initially, though drag-and-drop will manage order later
+    // Sort cards by position client-side instead
     cards.sort((a, b) => (a.position || 0) - (b.position || 0));
     callback(cards);
   });
@@ -115,65 +116,83 @@ export const updateCardPosition = async (
   newColumnId: string,
   newIndex: number,
   oldColumnId: string,
-  boardId: string // Need boardId to query relevant cards for reordering
+  boardId: string
 ) => {
-  const cardRef = doc(db, "cards", cardId);
-  const batch = writeBatch(db);
-
-  // 1. Update the target card's column and potentially position (initially)
-  batch.update(cardRef, { columnId: newColumnId });
-
-  // 2. Get all cards in the source and destination columns to recalculate positions
-  const cardsQuery = query(
-    collection(db, "cards"),
-    where("boardId", "==", boardId),
-    where("columnId", "in", [oldColumnId, newColumnId]),
-    orderBy("position")
-  );
-
-  const querySnapshot = await getDocs(cardsQuery);
-  const allCards: Card[] = [];
-  querySnapshot.forEach((doc) => {
-    allCards.push({ id: doc.id, ...doc.data() } as Card);
-  });
-
-  // Separate cards by column
-  const sourceColumnCards = allCards.filter(
-    (c) => c.columnId === oldColumnId && c.id !== cardId
-  );
-  const destColumnCards = allCards.filter(
-    (c) => c.columnId === newColumnId && c.id !== cardId
-  );
-
-  // Insert the moved card into the destination column at the correct index
-  const movedCard = allCards.find((c) => c.id === cardId);
-  if (movedCard) {
-    movedCard.columnId = newColumnId; // Ensure columnId is updated locally
-    destColumnCards.splice(newIndex, 0, movedCard);
-  }
-
-  // 3. Recalculate positions for both columns
-  // Using a simple incrementing approach for now. Could use fractional indexing for robustness.
-  let currentPos = 10; // Start position
-  const posIncrement = 10; // Increment
-
-  sourceColumnCards.forEach((card) => {
-    batch.update(doc(db, "cards", card.id), { position: currentPos });
-    currentPos += posIncrement;
-  });
-
-  currentPos = 10; // Reset for destination column
-  destColumnCards.forEach((card) => {
-    batch.update(doc(db, "cards", card.id), { position: currentPos });
-    currentPos += posIncrement;
-  });
-
-  // 4. Commit the batch
   try {
+    // 1. Get all cards for this board
+    const cardsQuery = query(
+      collection(db, "cards"),
+      where("boardId", "==", boardId)
+    );
+
+    const querySnapshot = await getDocs(cardsQuery);
+    const allCards: Card[] = [];
+    querySnapshot.forEach((doc) => {
+      allCards.push({ id: doc.id, ...doc.data() } as Card);
+    });
+
+    // 2. Find the moved card
+    const movedCard = allCards.find((card) => card.id === cardId);
+    if (!movedCard) {
+      console.error(`Card with ID ${cardId} not found`);
+      return;
+    }
+
+    // 3. Separate cards into source and destination columns
+    const sourceColumnCards = allCards.filter(
+      (card) => card.columnId === oldColumnId && card.id !== cardId
+    );
+    
+    // If same column move, use the same array (minus the moved card)
+    const destColumnCards = oldColumnId === newColumnId
+      ? sourceColumnCards
+      : allCards.filter(
+          (card) => card.columnId === newColumnId && card.id !== cardId
+        );
+    
+    // 4. Insert the moved card at the new index
+    destColumnCards.splice(newIndex, 0, {
+      ...movedCard,
+      columnId: newColumnId // Update column ID
+    });
+    
+    // 5. Batch all updates
+    const batch = writeBatch(db);
+    
+    // Update moved card's column if needed
+    if (oldColumnId !== newColumnId) {
+      const cardRef = doc(db, "cards", cardId);
+      batch.update(cardRef, { columnId: newColumnId });
+    }
+    
+    // Update positions for source column if different from destination
+    if (oldColumnId !== newColumnId) {
+      sourceColumnCards.forEach((card, index) => {
+        const cardRef = doc(db, "cards", card.id);
+        batch.update(cardRef, { position: index * 1000 });
+      });
+    }
+    
+    // Update positions for destination column
+    destColumnCards.forEach((card, index) => {
+      const cardRef = doc(db, "cards", card.id);
+      batch.update(cardRef, { 
+        position: index * 1000,
+        // Only update columnId for the moved card
+        ...(card.id === cardId ? { columnId: newColumnId } : {})
+      });
+    });
+
+    // 6. Commit all updates
     await batch.commit();
+    console.log("Card positions updated successfully");
   } catch (error) {
     console.error("Error updating card positions:", error);
-    // Handle error appropriately
+    // Log more detailed error for debugging
+    if (error instanceof Error) {
+      console.error(error.message);
+      console.error(error.stack);
+    }
   }
 };
 

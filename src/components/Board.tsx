@@ -127,75 +127,77 @@ export default function Board() {
       return;
     }
 
-    // --- Optimistic Update ---
-    // const startColumnId = source.droppableId; // Unused
-    const finishColumnId = destination.droppableId;
-    // const startIndex = source.index; // Unused
-    const finishIndex = destination.index;
-
-    // Find the dragged card
-    const draggedCard = cards.find((card) => card.id === draggableId);
-    if (!draggedCard) return; // Should not happen if draggableId is valid
-
-    // Create a mutable copy of the cards array for manipulation
-    const currentCards = Array.from(cards);
-
-    // Find the actual card object being moved
-    const cardToMoveIndex = currentCards.findIndex((c) => c.id === draggableId);
-    if (cardToMoveIndex === -1) return; // Should not happen
-
-    const cardToMove = {
-      ...currentCards[cardToMoveIndex],
-      columnId: finishColumnId,
-    }; // Update columnId optimistically
-
-    // Remove the card from its original position
-    currentCards.splice(cardToMoveIndex, 1);
-
-    // Find the correct index in the overall list based on the destination column and index
-    // Get cards currently in the destination column, sorted by position
-    const destColumnCards = currentCards
-      .filter((c) => c.columnId === finishColumnId)
-      .sort((a, b) => a.position - b.position);
-
-    let targetIndex = -1;
-    if (destColumnCards.length === 0) {
-      // If destination column is empty, it's the first card
-      // Find the first card of the next column (if any) or just add to end
-      targetIndex = currentCards.length; // Add to the end if no cards in dest column
-    } else if (finishIndex >= destColumnCards.length) {
-      // If dropped at the end of the destination column
-      const lastCardInDest = destColumnCards[destColumnCards.length - 1];
-      targetIndex =
-        currentCards.findIndex((c) => c.id === lastCardInDest.id) + 1;
-    } else {
-      // If dropped within the destination column
-      const cardAtIndex = destColumnCards[finishIndex];
-      targetIndex = currentCards.findIndex((c) => c.id === cardAtIndex.id);
-    }
-
-    // Insert the card at the calculated target index
-    if (targetIndex === -1) {
-      // Fallback: add to the end if index calculation failed (shouldn't happen ideally)
-      currentCards.push(cardToMove);
-    } else {
-      currentCards.splice(targetIndex, 0, cardToMove);
-    }
-
-    // Update the local state immediately
-    // Note: We don't recalculate 'position' numbers here, just the order and columnId.
-    // The backend `updateCardPosition` handles the actual 'position' field update.
-    setCards(currentCards);
-    // --- End Optimistic Update ---
-
-    // Update card position in Firestore (this will handle the actual position recalculation)
-    updateCardPosition(
+    console.log("Drag end event:", {
+      source,
+      destination,
       draggableId,
-      destination.droppableId,
-      destination.index, // Pass the visual index for backend calculation
-      source.droppableId,
-      boardId!
+      boardId
+    });
+
+    const sourceColumnId = source.droppableId;
+    const destinationColumnId = destination.droppableId;
+    const sourceIndex = source.index;
+    const destinationIndex = destination.index;
+
+    // Find the card being moved
+    const draggedCardIndex = cards.findIndex(card => card.id === draggableId);
+    if (draggedCardIndex === -1) {
+      console.error('Card not found:', draggableId);
+      return;
+    }
+
+    // Create a clone of cards array for update
+    const updatedCards = [...cards];
+    const draggedCard = {...updatedCards[draggedCardIndex]};
+    
+    // Remove card from original position
+    updatedCards.splice(draggedCardIndex, 1);
+    
+    // Update the column ID if needed
+    draggedCard.columnId = destinationColumnId;
+    
+    // Find where to insert the card (simplify this logic)
+    // For now we'll just extract cards in the destination column to find the right spot
+    const destColumnCards = updatedCards.filter(
+      card => card.columnId === destinationColumnId
     );
+    
+    // Calculate the insert index within the overall array
+    let insertIndex;
+    
+    if (destColumnCards.length === 0) {
+      // If the destination column is empty, place at the end of the array
+      insertIndex = updatedCards.length;
+    } else if (destinationIndex >= destColumnCards.length) {
+      // If dropped after all existing cards, place at the end
+      insertIndex = updatedCards.length;
+    } else {
+      // Find the card at the target destination index
+      const refCard = destColumnCards[destinationIndex];
+      // Find its position in the overall array
+      insertIndex = updatedCards.findIndex(card => card.id === refCard.id);
+    }
+    
+    // Insert the card at the new position
+    updatedCards.splice(insertIndex, 0, draggedCard);
+    
+    // Update state optimistically
+    setCards(updatedCards);
+    console.log("Updated cards state:", updatedCards);
+
+    // Update Firestore
+    try {
+      updateCardPosition(
+        draggableId,
+        destinationColumnId,
+        destinationIndex,
+        sourceColumnId,
+        boardId!
+      );
+    } catch (error) {
+      console.error("Error updating card position:", error);
+      // Revert state if needed
+    }
   };
 
   if (loading) {
