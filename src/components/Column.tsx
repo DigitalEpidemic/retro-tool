@@ -70,7 +70,7 @@ export default function Column({ id, title, boardId, children }: ColumnProps) {
             onChange={(e) => setNewCardContent(e.target.value)}
             placeholder="Type here... Press Enter to save."
             rows={3}
-            className="w-full rounded-none border-none bg-[#baf5e3] text-sm p-3 mb-2 resize-none focus:ring-0"
+            className="w-full rounded-none border-none bg-green-100 text-sm p-3 mb-2 resize-none focus:ring-0"
             required
             autoFocus
           />

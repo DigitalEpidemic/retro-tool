@@ -20,13 +20,13 @@ export default function Card({ provided, card, isOwner }: CardProps) {
     // This is a simple mapping - extend as needed based on your column IDs
     const columnColors: Record<string, string> = {
       // Mad column (first column) - mint green
-      "column-1": "bg-[#baf5e3]",
+      "column-1": "bg-green-100",
       // Sad column (second column) - light purple for some cards, mint green for others
-      "column-2": card.id.charCodeAt(0) % 2 === 0 ? "bg-[#baf5e3]" : "bg-[#e3d2f4]",
+      "column-2": card.id.charCodeAt(0) % 2 === 0 ? "bg-green-100" : "bg-purple-100",
       // Glad column (third column) - alternating colors
-      "column-3": card.id.charCodeAt(0) % 2 === 0 ? "bg-[#baf5e3]" : "bg-[#e3d2f4]",
+      "column-3": card.id.charCodeAt(0) % 2 === 0 ? "bg-green-100" : "bg-purple-100",
       // Default fallback for any other columns
-      "default": card.id.charCodeAt(0) % 2 === 0 ? "bg-[#baf5e3]" : "bg-[#e3d2f4]",
+      "default": card.id.charCodeAt(0) % 2 === 0 ? "bg-green-100" : "bg-purple-100",
     };
     
     // Return the color for the column or default to the fallback if column not found

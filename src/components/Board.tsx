@@ -253,7 +253,7 @@ export default function Board() {
   type ColumnType = BoardType["columns"][string];
 
   return (
-    <div className="h-full flex flex-col bg-[#f5f6f8]">
+    <div className="h-full flex flex-col bg-gray-100">
       {/* Top Board Header */}
       <div className="px-6 py-3 border-b border-gray-200 bg-white flex items-center justify-between">
         <div className="flex items-center space-x-3">
