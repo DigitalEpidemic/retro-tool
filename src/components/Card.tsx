@@ -85,12 +85,14 @@ export default function Card({ provided, card, isOwner }: CardProps) {
           />
           <div className="flex justify-end space-x-2 mt-2">
             <button
+              aria-label="Cancel"
               onClick={() => setIsEditing(false)}
               className="px-2.5 py-1 text-xs font-medium text-gray-700 bg-gray-100 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300 cursor-pointer"
             >
               Cancel
             </button>
             <button
+              aria-label="Save"
               onClick={handleSave}
               className="px-2.5 py-1 text-xs font-medium bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
             >
@@ -106,6 +108,7 @@ export default function Card({ provided, card, isOwner }: CardProps) {
               <>
                 {/* Delete button at top */}
                 <button
+                  aria-label="Delete"
                   onClick={handleDelete}
                   className="p-1 rounded text-red-600 hover:text-red-700 hover:bg-red-100 transition-colors cursor-pointer"
                 >
@@ -114,6 +117,7 @@ export default function Card({ provided, card, isOwner }: CardProps) {
 
                 {/* Edit button below delete */}
                 <button
+                  aria-label="Edit"
                   onClick={handleEdit}
                   className="p-1 mt-2 rounded text-blue-600 hover:text-blue-700 hover:bg-blue-100 transition-colors cursor-pointer"
                 >
@@ -139,7 +143,7 @@ export default function Card({ provided, card, isOwner }: CardProps) {
                   onClick={() => handleVote("up")}
                   className="p-1 rounded flex items-center transition-colors cursor-pointer text-gray-500 hover:text-green-600 hover:bg-green-50"
                 >
-                  <ThumbsUp className="h-3 w-3" />
+                  <ThumbsUp aria-label="Upvote" className="h-3 w-3" />
                 </button>
 
                 <span className="text-xs font-medium mx-1">{card.votes}</span>
@@ -148,7 +152,7 @@ export default function Card({ provided, card, isOwner }: CardProps) {
                   onClick={() => handleVote("down")}
                   className="p-1 rounded flex items-center transition-colors cursor-pointer text-gray-500 hover:text-red-600 hover:bg-red-50"
                 >
-                  <ThumbsDown className="h-3 w-3" />
+                  <ThumbsDown aria-label="Downvote" className="h-3 w-3" />
                 </button>
               </div>
 
