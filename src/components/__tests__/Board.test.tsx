@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { User as FirebaseUser } from "firebase/auth";
-import { Timestamp } from "firebase/firestore";
+import { Timestamp, updateDoc } from "firebase/firestore";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as FirebaseContext from "../../contexts/FirebaseContext";
@@ -538,6 +538,18 @@ describe("Board", () => {
 
     // Simulate pressing Enter
     fireEvent.keyDown(timerInput, { key: "Enter" });
+
+    // Verify that updateDoc was called with the correct timer values
+    // 3:30 equals 210 seconds (3 minutes * 60 + 30 seconds)
+    expect(vi.mocked(updateDoc)).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        timerDurationSeconds: 210,
+        timerPausedDurationSeconds: 210,
+        timerIsRunning: false,
+        timerStartTime: null,
+      })
+    );
   });
 
   it("handles toggling column sort state", async () => {
