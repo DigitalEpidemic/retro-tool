@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`Card Component > matches snapshot when editing 1`] = `
+exports[`Card > matches snapshot when editing 1`] = `
 <div
   aria-describedby="id"
   class="bg-green-100 rounded shadow-sm border-none mb-3 group p-0 min-h-[100px] relative flex flex-col overflow-hidden"
@@ -41,7 +41,7 @@ exports[`Card Component > matches snapshot when editing 1`] = `
 </div>
 `;
 
-exports[`Card Component > matches snapshot when not owner 1`] = `
+exports[`Card > matches snapshot when not owner 1`] = `
 <div
   aria-describedby="id"
   class="bg-green-100 rounded shadow-sm border-none mb-3 group p-0 min-h-[100px] relative flex flex-col overflow-hidden"
@@ -142,7 +142,7 @@ exports[`Card Component > matches snapshot when not owner 1`] = `
 </div>
 `;
 
-exports[`Card Component > matches snapshot when owner 1`] = `
+exports[`Card > matches snapshot when owner 1`] = `
 <div
   aria-describedby="id"
   class="bg-green-100 rounded shadow-sm border-none mb-3 group p-0 min-h-[100px] relative flex flex-col overflow-hidden"

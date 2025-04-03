@@ -208,7 +208,7 @@ const mockCards = [
   },
 ];
 
-describe("Board Component", () => {
+describe("Board", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 

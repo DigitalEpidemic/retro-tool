@@ -42,7 +42,7 @@ const mockDraggableProvided = (): DraggableProvided => ({
   }, // Removed 'as any'
 });
 
-describe("Card Component", () => {
+describe("Card", () => {
   let mockCard: CardType;
   let provided: DraggableProvided;
 
