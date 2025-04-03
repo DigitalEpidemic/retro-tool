@@ -1,0 +1,304 @@
+import React from "react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { User } from "firebase/auth"; // Import User type
+import Column from "../Column"; // Adjust the import path as necessary
+import { useFirebase } from "../../contexts/FirebaseContext"; // Adjust the import path
+import { addCard } from "../../services/boardService"; // Adjust the import path
+
+// Mock dependencies
+vi.mock("../../contexts/FirebaseContext", () => ({
+  useFirebase: vi.fn(),
+}));
+
+vi.mock("../../services/boardService", () => ({
+  addCard: vi.fn(),
+}));
+
+// Mock lucide-react icons
+vi.mock("lucide-react", async (importOriginal) => {
+  const original = await importOriginal<typeof import("lucide-react")>();
+  return {
+    ...original,
+    ArrowUpDown: (props: React.SVGProps<SVGSVGElement>) => (
+      <svg data-testid="arrow-up-down-icon" {...props} />
+    ),
+    MoreVertical: (props: React.SVGProps<SVGSVGElement>) => (
+      <svg data-testid="more-vertical-icon" {...props} />
+    ),
+  };
+});
+
+// Mock user data
+const mockUser = { uid: "test-user-123" };
+const mockBoardId = "board-abc";
+const mockColumnId = "column-1"; // Corresponds to "Mad" title
+
+describe("Column", () => {
+  const mockOnSortToggle = vi.fn();
+
+  beforeEach(() => {
+    // Reset mocks before each test
+    vi.clearAllMocks();
+    // Provide the mock user via the mocked hook
+    vi.mocked(useFirebase).mockReturnValue({
+      user: mockUser as User, // Cast partial mock
+      loading: false,
+      error: null,
+    });
+    // Mock addCard to resolve successfully (returns void)
+    vi.mocked(addCard).mockResolvedValue(undefined);
+  });
+
+  const defaultProps = {
+    id: mockColumnId,
+    title: "Default Title", // This should be overridden by the mapped title
+    boardId: mockBoardId,
+    sortByVotes: false,
+    onSortToggle: mockOnSortToggle,
+  };
+
+  // Helper function to render the component
+  const renderColumn = (props = {}, children = <div>Card Content</div>) => {
+    return render(
+      <Column {...defaultProps} {...props}>
+        {children}
+      </Column>
+    );
+  };
+
+  // --- Rendering Tests ---
+  it("renders correctly with the mapped title", () => {
+    renderColumn();
+    expect(screen.getByText("Mad")).toBeInTheDocument(); // Mapped title for column-1
+    expect(screen.queryByText("Default Title")).not.toBeInTheDocument();
+  });
+
+  it("renders children correctly", () => {
+    renderColumn({}, <div data-testid="child-card">Test Card</div>);
+    expect(screen.getByTestId("child-card")).toBeInTheDocument();
+    expect(screen.getByText("Test Card")).toBeInTheDocument();
+  });
+
+  it("renders icons", () => {
+    renderColumn();
+    expect(screen.getByTestId("arrow-up-down-icon")).toBeInTheDocument();
+    expect(screen.getByTestId("more-vertical-icon")).toBeInTheDocument();
+  });
+
+  it('renders "Add a card" button initially', () => {
+    renderColumn();
+    expect(
+      screen.getByRole("button", { name: "+ Add a card" })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByPlaceholderText("Type here... Press Enter to save.")
+    ).not.toBeInTheDocument();
+  });
+
+  // --- User Interaction Tests ---
+  it('shows the add card form when "Add a card" button is clicked', () => {
+    renderColumn();
+    const addButton = screen.getByRole("button", { name: "+ Add a card" });
+    fireEvent.click(addButton);
+
+    expect(
+      screen.getByPlaceholderText("Type here... Press Enter to save.")
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "+ Add a card" })
+    ).not.toBeInTheDocument();
+  });
+
+  it('hides the add card form when "Cancel" button is clicked', () => {
+    renderColumn();
+    // Open the form first
+    fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+    expect(
+      screen.getByPlaceholderText("Type here... Press Enter to save.")
+    ).toBeInTheDocument();
+
+    // Click Cancel
+    const cancelButton = screen.getByRole("button", { name: "Cancel" });
+    fireEvent.click(cancelButton);
+
+    expect(
+      screen.queryByPlaceholderText("Type here... Press Enter to save.")
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "+ Add a card" })
+    ).toBeInTheDocument();
+  });
+
+  it("updates textarea value on change", () => {
+    renderColumn();
+    fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+    const textarea = screen.getByPlaceholderText(
+      "Type here... Press Enter to save."
+    ) as HTMLTextAreaElement;
+
+    fireEvent.change(textarea, { target: { value: "New card idea" } });
+    expect(textarea.value).toBe("New card idea");
+  });
+
+  it("calls addCard and hides form on submit with valid content", async () => {
+    renderColumn();
+    fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+    const textarea = screen.getByPlaceholderText(
+      "Type here... Press Enter to save."
+    );
+    const saveButton = screen.getByRole("button", { name: "Save" });
+    const form = screen.getByTestId("add-card-form"); // Use data-testid
+
+    // Enter content
+    fireEvent.change(textarea, {
+      target: { value: "  A valid card content  " },
+    });
+    expect(saveButton).not.toBeDisabled();
+
+    // Submit form
+    fireEvent.submit(form); // Use form submit event
+
+    // Check if addCard was called correctly
+    await waitFor(() => {
+      expect(addCard).toHaveBeenCalledTimes(1);
+      expect(vi.mocked(addCard)).toHaveBeenCalledWith(
+        // Use vi.mocked here too for consistency if needed, though not strictly necessary for the call check
+        mockBoardId,
+        mockColumnId,
+        "A valid card content", // Content should be trimmed
+        mockUser.uid
+      );
+    });
+
+    // Check if form is hidden and input cleared
+    expect(
+      screen.queryByPlaceholderText("Type here... Press Enter to save.")
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "+ Add a card" })
+    ).toBeInTheDocument();
+  });
+
+  it("calls onSortToggle when sort button is clicked", () => {
+    renderColumn();
+    const sortButton = screen.getByRole("button", { name: /Sort/ }); // Use regex to find button containing "Sort"
+    fireEvent.click(sortButton);
+    expect(mockOnSortToggle).toHaveBeenCalledTimes(1);
+  });
+
+  // --- State/Prop Change Tests ---
+  it('shows "Votes" text when sortByVotes is true', () => {
+    renderColumn({ sortByVotes: true });
+    expect(screen.getByText("Votes")).toBeInTheDocument();
+  });
+
+  it('does not show "Votes" text when sortByVotes is false', () => {
+    renderColumn({ sortByVotes: false });
+    expect(screen.queryByText("Votes")).not.toBeInTheDocument();
+  });
+
+  // --- Firestore Integration (Mocked) Tests ---
+  it("handles error when addCard fails", async () => {
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const errorMessage = "Failed to add card";
+    vi.mocked(addCard).mockRejectedValue(new Error(errorMessage)); // Use vi.mocked
+
+    renderColumn();
+    fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+    const textarea = screen.getByPlaceholderText(
+      "Type here... Press Enter to save."
+    );
+    const form = screen.getByTestId("add-card-form"); // Use data-testid
+
+    fireEvent.change(textarea, { target: { value: "Card content" } });
+    fireEvent.submit(form);
+
+    await waitFor(() => {
+      expect(addCard).toHaveBeenCalledTimes(1);
+    });
+
+    // Check if error was logged (or handle UI feedback if implemented)
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "Error adding card:",
+      expect.any(Error)
+    );
+    expect(consoleErrorSpy.mock.calls[0][1].message).toBe(errorMessage);
+
+    // Form should potentially remain open on error, depending on desired UX
+    expect(
+      screen.getByPlaceholderText("Type here... Press Enter to save.")
+    ).toBeInTheDocument();
+
+    consoleErrorSpy.mockRestore(); // Clean up spy
+  });
+
+  // --- Edge Case Tests ---
+  it("does not call addCard if content is empty or whitespace", () => {
+    renderColumn();
+    fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+    const textarea = screen.getByPlaceholderText(
+      "Type here... Press Enter to save."
+    );
+    const saveButton = screen.getByRole("button", { name: "Save" });
+    const form = screen.getByTestId("add-card-form"); // Use data-testid
+
+    // Test with empty string
+    fireEvent.change(textarea, { target: { value: "" } });
+    expect(saveButton).toBeDisabled();
+    fireEvent.submit(form);
+    expect(addCard).not.toHaveBeenCalled();
+
+    // Test with whitespace
+    fireEvent.change(textarea, { target: { value: "   " } });
+    expect(saveButton).toBeDisabled();
+    fireEvent.submit(form);
+    expect(addCard).not.toHaveBeenCalled();
+  });
+
+  it("disables Save button if user is null", () => {
+    // Simulate no user, but provide full context type
+    vi.mocked(useFirebase).mockReturnValue({
+      user: null,
+      loading: false,
+      error: null,
+    });
+    renderColumn();
+    fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+    const textarea = screen.getByPlaceholderText(
+      "Type here... Press Enter to save."
+    );
+    const saveButton = screen.getByRole("button", { name: "Save" });
+
+    // Even with content, button should be disabled if no user
+    fireEvent.change(textarea, { target: { value: "Some content" } });
+    expect(saveButton).toBeDisabled();
+  });
+
+  it("uses default title if id does not match mapped titles", () => {
+    renderColumn({ id: "unknown-column", title: "Fallback Title" });
+    expect(screen.getByText("Fallback Title")).toBeInTheDocument();
+    expect(screen.queryByText("Mad")).not.toBeInTheDocument();
+  });
+
+  // --- Snapshot Testing ---
+  it("matches snapshot", () => {
+    const { container } = renderColumn();
+    expect(container).toMatchSnapshot();
+  });
+
+  it("matches snapshot when adding card", () => {
+    const { container } = renderColumn();
+    fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+    expect(container).toMatchSnapshot();
+  });
+
+  it("matches snapshot when sorted by votes", () => {
+    const { container } = renderColumn({ sortByVotes: true });
+    expect(container).toMatchSnapshot();
+  });
+});

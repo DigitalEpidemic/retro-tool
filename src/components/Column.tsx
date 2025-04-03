@@ -78,7 +78,11 @@ export default function Column({
       {/* Add card section */}
       {/* TODO: Enter to save */}
       {isAddingCard ? (
-        <form onSubmit={handleAddCard} className="p-3 border-t border-gray-200">
+        <form
+          onSubmit={handleAddCard}
+          className="p-3 border-t border-gray-200"
+          data-testid="add-card-form" // Add data-testid here
+        >
           <textarea
             value={newCardContent}
             onChange={(e) => setNewCardContent(e.target.value)}
