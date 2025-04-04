@@ -27,6 +27,8 @@ export default defineConfig({
         "**/public/**",
         "**/src/test/setup.ts",
         "**/src/vite-env.d.ts",
+        "**/src/main.tsx",
+        "**/src/services/firebase.ts",
       ],
     },
   },
