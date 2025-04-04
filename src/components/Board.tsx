@@ -404,14 +404,26 @@ export default function Board() {
   };
 
   const handleResetTimer = () => {
-    if (boardId) {
+    // Check inputRef.current exists along with boardId
+    if (boardId && inputRef.current) {
+      // REMOVED: Explicit blur call - rely on natural blur and the check in handleTimeInputBlur
+
       // Clear any pending delayed reset if resetting manually
       if (resetTimeoutRef.current) {
         clearTimeout(resetTimeoutRef.current);
         resetTimeoutRef.current = null;
       }
-      // Pass the initial duration to resetTimer
-      resetTimer(boardId, initialDurationSeconds).catch((err: unknown) => {
+
+      // Reset to the last saved duration from the board state
+      // Fallback to initialDurationSeconds only if board.timerDurationSeconds is undefined/null
+      const durationToResetTo =
+        board?.timerDurationSeconds ?? initialDurationSeconds;
+
+      // Update local state immediately for responsiveness
+      setEditableTimeStr(formatTime(durationToResetTo));
+
+      // Pass the determined duration to resetTimer
+      resetTimer(boardId, durationToResetTo).catch((err: unknown) => {
         // Type err
         console.error("Error resetting timer:", err);
         setError("Failed to reset timer.");
