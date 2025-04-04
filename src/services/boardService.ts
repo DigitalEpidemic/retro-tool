@@ -268,7 +268,8 @@ export const pauseTimer = async (
   const nowMs = Date.now();
   const elapsedMs = nowMs - startTimeMs;
   const remainingMs = Math.max(0, durationMs - elapsedMs);
-  const remainingSeconds = Math.ceil(remainingMs / 1000);
+  // Use parseInt instead of Math.ceil to truncate decimal portion consistently
+  const remainingSeconds = parseInt((remainingMs / 1000).toString(), 10);
 
   // Ensure we maintain the original duration
   const originalDuration = currentBoardData.timerOriginalDurationSeconds ?? currentBoardData.timerDurationSeconds;

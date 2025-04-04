@@ -177,7 +177,8 @@ export default function Board() {
       const updateTimer = () => {
         const nowMs = Date.now();
         const remainingMs = Math.max(0, endTimeMs - nowMs);
-        const remainingSeconds = Math.floor(remainingMs / 1000); // Use floor for more intuitive countdown start
+        // Use parseInt to truncate the decimal instead of Math.floor to maintain consistency
+        const remainingSeconds = parseInt((remainingMs / 1000).toString(), 10);
 
         // Check if the timer has expired
         if (nowMs >= endTimeMs) {
