@@ -1,11 +1,17 @@
+import React from "react"; // Import React
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { User as FirebaseUser } from "firebase/auth";
 import { Timestamp, updateDoc } from "firebase/firestore";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { DropResult } from "@hello-pangea/dnd"; // Import DropResult
 import * as FirebaseContext from "../../contexts/FirebaseContext";
 import * as boardService from "../../services/boardService";
+import type {
+  Board as BoardType,
+  Card as CardType,
+} from "../../services/firebase"; // Import types from firebase
 import Board from "../Board";
 
 // Create a mock document snapshot that implements the exists() method
@@ -29,29 +35,58 @@ vi.mock("../../services/firebase", () => {
 });
 
 // Mock hello-pangea/dnd
-vi.mock("@hello-pangea/dnd", () => ({
-  DragDropContext: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="drag-drop-context">{children}</div>
-  ),
-  Droppable: ({ children }: { children: (provided: any) => React.ReactNode }) =>
-    children({
-      innerRef: vi.fn(),
-      droppableProps: { "data-testid": "droppable" },
-      placeholder: null,
-    }),
-  Draggable: ({
-    children,
-    draggableId,
-  }: {
-    children: (provided: any) => React.ReactNode;
-    draggableId: string;
-  }) =>
-    children({
-      innerRef: vi.fn(),
-      draggableProps: { "data-testid": `draggable-${draggableId}` },
-      dragHandleProps: null,
-    }),
-}));
+// Variable to store the onDragEnd handler
+let capturedOnDragEnd: ((result: DropResult) => void) | null = null;
+
+vi.mock("@hello-pangea/dnd", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@hello-pangea/dnd")>();
+  return {
+    ...actual, // Keep actual implementations for types etc.
+    // Correctly define DragDropContext as a function component
+    DragDropContext: ({
+      children,
+      onDragEnd,
+    }: {
+      children: React.ReactNode;
+      onDragEnd: (result: DropResult) => void;
+    }) => {
+      // Capture the onDragEnd handler passed by the Board component
+      capturedOnDragEnd = onDragEnd; // Store the handler in the variable
+      // Return the children wrapped in a div for testing purposes
+      return <div data-testid="drag-drop-context">{children}</div>;
+    },
+    // Correctly define Droppable as a function component
+    // Correctly define Droppable as a function component
+    Droppable: ({
+      children,
+    }: {
+      children: (provided: any) => React.ReactNode; // Keep 'any' for mock simplicity
+    }) => {
+      // Call the children function with mock provided data
+      return children({
+        innerRef: vi.fn(),
+        droppableProps: { "data-testid": "droppable" },
+        placeholder: null,
+      });
+    },
+    // Correctly define Draggable as a function component
+    // Correctly define Draggable as a function component
+    Draggable: ({
+      children,
+      draggableId,
+    }: {
+      children: (provided: any) => React.ReactNode; // Keep 'any' for mock simplicity
+      draggableId: string;
+    }) => {
+      // Call the children function with mock provided data
+      return children({
+        innerRef: vi.fn(),
+        draggableProps: { "data-testid": `draggable-${draggableId}` },
+        dragHandleProps: null,
+      });
+    },
+  };
+});
 
 // Mock the services
 vi.mock("../../services/boardService", () => ({
@@ -110,7 +145,19 @@ vi.mock("firebase/firestore", () => {
 
 // Mock the Child components
 vi.mock("../Column", () => ({
-  default: ({ children, title, id, sortByVotes, onSortToggle }: any) => (
+  default: ({
+    children,
+    title,
+    id,
+    sortByVotes,
+    onSortToggle,
+  }: {
+    children: React.ReactNode;
+    title: string;
+    id: string;
+    sortByVotes: boolean;
+    onSortToggle: () => void;
+  }) => (
     <div
       data-testid={`column-${id}`}
       data-title={title}
@@ -125,7 +172,15 @@ vi.mock("../Column", () => ({
 }));
 
 vi.mock("../Card", () => ({
-  default: ({ card, isOwner, provided }: any) => (
+  default: ({
+    card,
+    isOwner,
+    provided,
+  }: {
+    card: CardType; // Use imported Card type
+    isOwner: boolean;
+    provided: any; // Keep any for mock simplicity
+  }) => (
     <div
       data-testid={`card-${card.id}`}
       data-content={card.content}
@@ -156,13 +211,19 @@ const mockUser = {
   toJSON: vi.fn(),
 } as unknown as FirebaseUser;
 
-const mockBoard = {
+const mockBoard: BoardType = {
+  // Use imported Board type
   id: "test-board-id",
   name: "Test Board",
   columns: {
-    col1: { id: "col1", title: "What went well", order: 0 },
-    col2: { id: "col2", title: "What can be improved", order: 1 },
-    col3: { id: "col3", title: "Action items", order: 2 },
+    col1: { id: "col1", title: "What went well", order: 0, sortByVotes: false }, // Add sortByVotes
+    col2: {
+      id: "col2",
+      title: "What can be improved",
+      order: 1,
+      sortByVotes: false,
+    }, // Add sortByVotes
+    col3: { id: "col3", title: "Action items", order: 2, sortByVotes: false }, // Add sortByVotes
   },
   createdAt: Timestamp.now(),
   isActive: true,
@@ -383,16 +444,39 @@ describe("Board", () => {
       }
     );
 
+    // Mock createBoard to trigger the second subscribeToBoard callback
     vi.mocked(boardService.createBoard).mockImplementation(
       async (name, creatorId, boardId) => {
-        // Simulate creating the board
-        act(() => {
-          boardCallCount++; // Trigger the second callback in subscribeToBoard
-        });
+        // Simulate async creation
+        await Promise.resolve();
+        // Trigger the state update by incrementing the counter
+        // The subscribeToBoard mock handles the act wrapping internally now
+        boardCallCount++;
         return boardId || "test-board-id";
       }
     );
 
+    // Reset the subscribeToBoard mock to its default behavior for this test,
+    // as the specific redefinition is no longer needed with the act fix above.
+    vi.mocked(boardService.subscribeToBoard).mockImplementation(
+      (boardId, callback) => {
+        if (boardCallCount === 0) {
+          // First call: board not found (mockDocExists is false)
+          act(() => {
+            callback(null);
+          });
+        } else {
+          // Second call (after createBoard): board exists
+          act(() => {
+            // Wrap the state update
+            callback(mockBoard);
+          });
+        }
+        return vi.fn();
+      }
+    );
+
+    // Wrap the render and potential async updates in act
     await act(async () => {
       render(
         <MemoryRouter initialEntries={["/boards/test-board-id"]}>
@@ -401,6 +485,8 @@ describe("Board", () => {
           </Routes>
         </MemoryRouter>
       );
+      // Allow promises inside the render/useEffect to resolve
+      await Promise.resolve();
     });
 
     // The createBoard function should be called eventually
@@ -409,6 +495,11 @@ describe("Board", () => {
       mockUser.uid,
       "test-board-id"
     );
+
+    // Add assertions to check if the board eventually renders after creation
+    // This might require waiting for the second subscribeToBoard callback
+    await screen.findByTestId("drag-drop-context");
+    expect(screen.getByTestId("column-col1")).toBeInTheDocument();
   });
 
   it("handles timer controls correctly", async () => {
@@ -577,7 +668,17 @@ describe("Board", () => {
     );
   });
 
-  it("handles card drag and drop operations", async () => {
+  // --- Drag and Drop Tests ---
+
+  // Helper to get the onDragEnd handler (now uses the captured variable)
+  const getOnDragEndHandler = (): ((result: DropResult) => void) => {
+    if (!capturedOnDragEnd) {
+      throw new Error("onDragEnd handler was not captured by the mock");
+    }
+    return capturedOnDragEnd;
+  };
+
+  it("handleDragEnd: does nothing if destination is null", async () => {
     await act(async () => {
       render(
         <MemoryRouter initialEntries={["/boards/test-board-id"]}>
@@ -588,26 +689,152 @@ describe("Board", () => {
       );
     });
 
-    // Directly call the service method to test the functionality
+    const handleDragEnd = getOnDragEndHandler();
+
+    // Simulate drop outside
+    const result: DropResult = {
+      destination: null,
+      source: { droppableId: "col1", index: 0 },
+      draggableId: "card1",
+      reason: "DROP",
+      mode: "FLUID",
+      type: "DEFAULT",
+      combine: null, // Add missing property
+    };
+
     await act(async () => {
-      await boardService.updateCardPosition(
-        "card1",
-        "col2",
-        1,
-        "col1",
-        "test-board-id"
+      handleDragEnd(result);
+    });
+
+    // Assert that updateCardPosition was NOT called
+    expect(boardService.updateCardPosition).not.toHaveBeenCalled();
+    // Optionally assert that card state hasn't changed if needed
+  });
+
+  it("handleDragEnd: does nothing if dropped in the same position", async () => {
+    await act(async () => {
+      render(
+        <MemoryRouter initialEntries={["/boards/test-board-id"]}>
+          <Routes>
+            <Route path="/boards/:boardId" element={<Board />} />
+          </Routes>
+        </MemoryRouter>
       );
     });
 
-    // Verify updateCardPosition was called with correct arguments
+    const handleDragEnd = getOnDragEndHandler();
+
+    // Simulate drop in the same place
+    const result: DropResult = {
+      destination: { droppableId: "col1", index: 0 },
+      source: { droppableId: "col1", index: 0 },
+      draggableId: "card1",
+      reason: "DROP",
+      mode: "FLUID",
+      type: "DEFAULT",
+      combine: null, // Add missing property
+    };
+
+    await act(async () => {
+      handleDragEnd(result);
+    });
+
+    expect(boardService.updateCardPosition).not.toHaveBeenCalled();
+  });
+
+  it("handleDragEnd: calls updateCardPosition on valid drop", async () => {
+    await act(async () => {
+      render(
+        <MemoryRouter initialEntries={["/boards/test-board-id"]}>
+          <Routes>
+            <Route path="/boards/:boardId" element={<Board />} />
+          </Routes>
+        </MemoryRouter>
+      );
+    });
+
+    const handleDragEnd = getOnDragEndHandler();
+
+    // Simulate a valid drop (card1 from col1 index 0 to col2 index 0)
+    const result: DropResult = {
+      destination: { droppableId: "col2", index: 0 },
+      source: { droppableId: "col1", index: 0 },
+      draggableId: "card1",
+      reason: "DROP",
+      mode: "FLUID",
+      type: "DEFAULT",
+      combine: null, // Add missing property
+    };
+
+    await act(async () => {
+      handleDragEnd(result);
+    });
+
+    // Assert updateCardPosition was called correctly
     expect(boardService.updateCardPosition).toHaveBeenCalledWith(
-      "card1",
-      "col2",
-      1,
-      "col1",
-      "test-board-id"
+      "card1", // draggableId
+      "col2", // destinationColumnId
+      0, // destinationIndex
+      "col1", // sourceColumnId
+      "test-board-id" // boardId
     );
   });
+
+  it("handleDragEnd: handles error during updateCardPosition", async () => {
+    // Mock updateCardPosition to throw an error
+    const mockError = new Error("Firestore update failed");
+    vi.mocked(boardService.updateCardPosition).mockRejectedValue(mockError);
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {}); // Suppress console error
+
+    await act(async () => {
+      render(
+        <MemoryRouter initialEntries={["/boards/test-board-id"]}>
+          <Routes>
+            <Route path="/boards/:boardId" element={<Board />} />
+          </Routes>
+        </MemoryRouter>
+      );
+    });
+
+    const handleDragEnd = getOnDragEndHandler();
+
+    const result: DropResult = {
+      destination: { droppableId: "col2", index: 0 },
+      source: { droppableId: "col1", index: 0 },
+      draggableId: "card1",
+      reason: "DROP",
+      mode: "FLUID",
+      type: "DEFAULT",
+      combine: null, // Add missing property
+    };
+
+    // Wrap the drag handler call in act
+    // Explicitly catch the expected rejection to prevent test failure
+    await act(async () => {
+      try {
+        handleDragEnd(result);
+        // Allow microtasks like promise rejection handlers to run
+        await Promise.resolve();
+        await Promise.resolve(); // Add extra tick just in case
+      } catch {
+        // Expected rejection from updateCardPosition, ignore
+      }
+    });
+
+    // Assert updateCardPosition was called
+    expect(boardService.updateCardPosition).toHaveBeenCalled();
+    // Assert console.error was called with the error
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "Error updating card position:",
+      mockError
+    );
+
+    consoleErrorSpy.mockRestore(); // Restore console.error
+  });
+
+  // --- End Drag and Drop Tests ---
 
   it("marks cards as owned if the user is the author", async () => {
     await act(async () => {
@@ -655,5 +882,333 @@ describe("Board", () => {
     })) as any;
 
     expect(container).toMatchSnapshot();
+  });
+
+  // --- Error Handling Tests ---
+
+  it("displays error if initial board subscription fails", async () => {
+    // Simulate getDoc failing by setting mockDocExists to false before rendering
+    // This relies on the global vi.mock("firebase/firestore") using mockDocExists
+    const originalMockDocExists = mockDocExists; // Store original value
+    mockDocExists = false; // Simulate board not existing initially
+
+    // Mock createBoard to also fail, simulating a permission issue during creation attempt
+    const mockCreateError = new Error("Permission denied to create");
+    vi.mocked(boardService.createBoard).mockRejectedValue(mockCreateError);
+
+    // Suppress console error for this specific test
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+
+    await act(async () => {
+      render(
+        <MemoryRouter initialEntries={["/boards/test-board-id"]}>
+          <Routes>
+            <Route path="/boards/:boardId" element={<Board />} />
+          </Routes>
+        </MemoryRouter>
+      );
+    });
+
+    // Check for the specific error message related to creation failure
+    expect(
+      screen.getByText(
+        /Failed to create board "test-board-id". Check permissions or console./
+      )
+    ).toBeInTheDocument();
+
+    consoleErrorSpy.mockRestore(); // Restore console.error
+    // Restore global mock variable
+    mockDocExists = originalMockDocExists;
+    // Restore createBoard mock if necessary (or rely on beforeEach)
+    vi.mocked(boardService.createBoard).mockResolvedValue("test-board-id");
+  });
+
+  it("displays error if startTimer fails", async () => {
+    const user = userEvent.setup();
+    const mockTimerError = new Error("Timer start failed");
+    vi.mocked(boardService.startTimer).mockRejectedValue(mockTimerError);
+
+    await act(async () => {
+      render(
+        <MemoryRouter initialEntries={["/boards/test-board-id"]}>
+          <Routes>
+            <Route path="/boards/:boardId" element={<Board />} />
+          </Routes>
+        </MemoryRouter>
+      );
+    });
+
+    const playButtonSVG = screen.getByText((_, element) => {
+      return (
+        element?.tagName.toLowerCase() === "svg" &&
+        element?.classList.contains("lucide-play")
+      );
+    });
+    const playButton = playButtonSVG.closest("button");
+
+    await act(async () => {
+      if (playButton) await user.click(playButton);
+    });
+
+    expect(
+      screen.getByText("Error: Failed to start/resume timer.")
+    ).toBeInTheDocument();
+  });
+
+  it("displays error if pauseTimer fails", async () => {
+    const user = userEvent.setup();
+    const mockTimerError = new Error("Timer pause failed");
+    vi.mocked(boardService.pauseTimer).mockRejectedValue(mockTimerError);
+
+    // Setup board state as running
+    const runningBoard = {
+      ...mockBoard,
+      timerIsRunning: true,
+      timerStartTime: Timestamp.now(),
+    };
+    vi.mocked(boardService.subscribeToBoard).mockImplementation(
+      (_, callback) => {
+        act(() => callback(runningBoard));
+        return vi.fn();
+      }
+    );
+
+    await act(async () => {
+      render(
+        <MemoryRouter initialEntries={["/boards/test-board-id"]}>
+          <Routes>
+            <Route path="/boards/:boardId" element={<Board />} />
+          </Routes>
+        </MemoryRouter>
+      );
+    });
+
+    const pauseButtonSVG = screen.getByText((_, element) => {
+      return (
+        element?.tagName.toLowerCase() === "svg" &&
+        element?.classList.contains("lucide-pause")
+      );
+    });
+    const pauseButton = pauseButtonSVG.closest("button");
+
+    await act(async () => {
+      if (pauseButton) await user.click(pauseButton);
+    });
+
+    expect(
+      screen.getByText("Error: Failed to pause timer.")
+    ).toBeInTheDocument();
+  });
+
+  it("displays error if resetTimer fails", async () => {
+    const user = userEvent.setup();
+    const mockTimerError = new Error("Timer reset failed");
+    vi.mocked(boardService.resetTimer).mockRejectedValue(mockTimerError);
+
+    await act(async () => {
+      render(
+        <MemoryRouter initialEntries={["/boards/test-board-id"]}>
+          <Routes>
+            <Route path="/boards/:boardId" element={<Board />} />
+          </Routes>
+        </MemoryRouter>
+      );
+    });
+
+    const resetButtonSVG = screen.getByText((_, element) => {
+      return (
+        element?.tagName.toLowerCase() === "svg" &&
+        element?.classList.contains("lucide-rotate-ccw")
+      );
+    });
+    const resetButton = resetButtonSVG.closest("button");
+
+    await act(async () => {
+      if (resetButton) await user.click(resetButton);
+    });
+
+    expect(
+      screen.getByText("Error: Failed to reset timer.")
+    ).toBeInTheDocument();
+  });
+
+  it("displays error if updating timer duration fails", async () => {
+    const user = userEvent.setup();
+    const mockUpdateError = new Error("Firestore update failed");
+    vi.mocked(updateDoc).mockRejectedValue(mockUpdateError);
+
+    // Setup paused state
+    const pausedBoard = {
+      ...mockBoard,
+      timerIsRunning: false,
+      timerPausedDurationSeconds: 120,
+    };
+    vi.mocked(boardService.subscribeToBoard).mockImplementation(
+      (_, callback) => {
+        act(() => callback(pausedBoard));
+        return vi.fn();
+      }
+    );
+
+    await act(async () => {
+      render(
+        <MemoryRouter initialEntries={["/boards/test-board-id"]}>
+          <Routes>
+            <Route path="/boards/:boardId" element={<Board />} />
+          </Routes>
+        </MemoryRouter>
+      );
+    });
+
+    const timerInput = screen.getByDisplayValue("2:00");
+    await user.clear(timerInput);
+    await user.type(timerInput, "3:30");
+    await act(async () => {
+      fireEvent.keyDown(timerInput, { key: "Enter" });
+    });
+
+    expect(
+      screen.getByText("Error: Failed to update timer duration.")
+    ).toBeInTheDocument();
+    // Check that input DID NOT revert, as per current component logic
+    expect(timerInput).toHaveValue("3:30");
+  });
+
+  // --- Async UI State Tests ---
+
+  it("updates timer display correctly after start/pause/reset", async () => {
+    const user = userEvent.setup();
+    // Use the full mockBoard type for the callback
+    let boardCallback: (board: typeof mockBoard | null) => void;
+
+    vi.mocked(boardService.subscribeToBoard).mockImplementation(
+      (_, callback) => {
+        boardCallback = callback; // Capture the callback
+        act(() => callback(mockBoard)); // Initial state
+        return vi.fn();
+      }
+    );
+
+    await act(async () => {
+      render(
+        <MemoryRouter initialEntries={["/boards/test-board-id"]}>
+          <Routes>
+            <Route path="/boards/:boardId" element={<Board />} />
+          </Routes>
+        </MemoryRouter>
+      );
+    });
+
+    // Initial state (paused/stopped)
+    expect(screen.getByDisplayValue("5:00")).toBeInTheDocument(); // Default 300s
+
+    // --- Start Timer ---
+    const playButtonSVG = screen.getByText(
+      (_, el) =>
+        el?.tagName.toLowerCase() === "svg" &&
+        el.classList.contains("lucide-play")
+    );
+    const playButton = playButtonSVG.closest("button");
+    await act(async () => {
+      if (playButton) await user.click(playButton);
+      // Simulate Firestore update after startTimer resolves
+      const runningBoard: typeof mockBoard = {
+        ...mockBoard,
+        timerIsRunning: true,
+        timerStartTime: Timestamp.fromMillis(Date.now() - 10000),
+        timerPausedDurationSeconds: null,
+      };
+      boardCallback(runningBoard);
+    });
+
+    // Check for running state display (e.g., 4:50)
+    // Use findByText or waitFor because the update is async based on interval
+    expect(await screen.findByText("4:50")).toBeInTheDocument();
+
+    // --- Pause Timer ---
+    const pauseButtonSVG = screen.getByText(
+      (_, el) =>
+        el?.tagName.toLowerCase() === "svg" &&
+        el.classList.contains("lucide-pause")
+    );
+    const pauseButton = pauseButtonSVG.closest("button");
+    await act(async () => {
+      if (pauseButton) await user.click(pauseButton);
+      // Simulate Firestore update after pauseTimer resolves
+      const pausedBoard: typeof mockBoard = {
+        ...mockBoard,
+        timerIsRunning: false,
+        timerPausedDurationSeconds: 290,
+        timerStartTime: null,
+      };
+      boardCallback(pausedBoard);
+    });
+
+    // Check for paused state display (editable input)
+    expect(screen.getByDisplayValue("4:50")).toBeInTheDocument();
+
+    // --- Reset Timer ---
+    const resetButtonSVG = screen.getByText(
+      (_, el) =>
+        el?.tagName.toLowerCase() === "svg" &&
+        el.classList.contains("lucide-rotate-ccw")
+    );
+    const resetButton = resetButtonSVG.closest("button");
+    await act(async () => {
+      if (resetButton) await user.click(resetButton);
+      // Simulate Firestore update after resetTimer resolves
+      // Reset board state should match the initial mockBoard exactly
+      boardCallback(mockBoard);
+    });
+
+    // Check for reset state display
+    expect(screen.getByDisplayValue("5:00")).toBeInTheDocument();
+  });
+
+  it("updates column sort state visually after toggle", async () => {
+    const user = userEvent.setup();
+    let boardCallback: (board: typeof mockBoard | null) => void; // Use full type
+
+    vi.mocked(boardService.subscribeToBoard).mockImplementation(
+      (_, callback) => {
+        boardCallback = callback;
+        act(() => callback(mockBoard));
+        return vi.fn();
+      }
+    );
+
+    await act(async () => {
+      render(
+        <MemoryRouter initialEntries={["/boards/test-board-id"]}>
+          <Routes>
+            <Route path="/boards/:boardId" element={<Board />} />
+          </Routes>
+        </MemoryRouter>
+      );
+    });
+
+    const column1 = screen.getByTestId("column-col1");
+    const sortButton = screen.getByTestId("sort-toggle-col1");
+
+    // Initial state: not sorted by votes
+    expect(column1.getAttribute("data-sort")).toBe("false");
+
+    await act(async () => {
+      await user.click(sortButton);
+      // Simulate Firestore update after updateColumnSortState resolves
+      const sortedBoard: typeof mockBoard = {
+        ...mockBoard,
+        columns: {
+          ...mockBoard.columns,
+          col1: { ...mockBoard.columns.col1, sortByVotes: true }, // Update the specific column
+        },
+      };
+      boardCallback(sortedBoard);
+    });
+
+    // Check if the data-sort attribute updated
+    expect(column1.getAttribute("data-sort")).toBe("true");
   });
 });

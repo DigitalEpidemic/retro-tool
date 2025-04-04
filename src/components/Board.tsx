@@ -404,7 +404,8 @@ export default function Board() {
     }
   };
 
-  const handleDragEnd = (result: DropResult) => {
+  const handleDragEnd = async (result: DropResult) => {
+    // Make async
     const { destination, source, draggableId } = result;
 
     // Dropped outside a valid area
@@ -478,7 +479,8 @@ export default function Board() {
 
     // Update Firestore
     try {
-      updateCardPosition(
+      await updateCardPosition(
+        // Await the promise
         draggableId,
         destinationColumnId,
         destinationIndex,
