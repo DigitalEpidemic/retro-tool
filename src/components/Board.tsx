@@ -58,6 +58,7 @@ export default function Board() {
   const resetTimeoutRef = useRef<NodeJS.Timeout | null>(null); // Ref for delayed reset timeout
   const initialDurationSeconds = 300; // 5 minutes (default)
   const inputRef = useRef<HTMLInputElement>(null); // Ref for the input element
+  const escapePressedRef = useRef(false); // Ref to track if blur was triggered by Escape
 
   useEffect(() => {
     // Don't proceed if auth is still loading or if there's no boardId
@@ -176,7 +177,7 @@ export default function Board() {
       const updateTimer = () => {
         const nowMs = Date.now();
         const remainingMs = Math.max(0, endTimeMs - nowMs);
-        const remainingSeconds = Math.ceil(remainingMs / 1000);
+        const remainingSeconds = Math.floor(remainingMs / 1000); // Use floor for more intuitive countdown start
 
         // Check if the timer has expired
         if (nowMs >= endTimeMs) {
@@ -351,7 +352,7 @@ export default function Board() {
         board?.timerPausedDurationSeconds ??
         board?.timerDurationSeconds ??
         initialDurationSeconds;
-      setEditableTimeStr(formatTime(lastValidTime));
+      setEditableTimeStr(formatTime(lastValidTime)); // Revert input on error
     }
   };
 
@@ -364,13 +365,14 @@ export default function Board() {
   const handleTimeInputKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       handleSaveEditedTime();
-      inputRef.current?.blur(); // Remove focus after saving
+      // inputRef.current?.blur(); // Remove this line - caused double save attempt
     } else if (e.key === "Escape") {
       // Revert to last known valid time on Escape
       const lastValidTime =
         board?.timerPausedDurationSeconds ??
         board?.timerDurationSeconds ??
         initialDurationSeconds;
+      escapePressedRef.current = true; // Signal that Escape was pressed
       setEditableTimeStr(formatTime(lastValidTime));
       inputRef.current?.blur(); // Remove focus
     }
@@ -378,6 +380,12 @@ export default function Board() {
 
   // Handle saving on blur (losing focus)
   const handleTimeInputBlur = (e: FocusEvent<HTMLInputElement>) => {
+    // If blur was triggered by Escape key, reset the flag and do nothing else
+    if (escapePressedRef.current) {
+      escapePressedRef.current = false;
+      return;
+    }
+
     // Prevent saving if the blur was caused by clicking a timer control button
     if (
       e.relatedTarget instanceof HTMLButtonElement &&
@@ -385,7 +393,14 @@ export default function Board() {
     ) {
       return;
     }
-    handleSaveEditedTime();
+    // Only save on blur if the value has actually changed from the last valid state
+    const lastValidTime =
+      board?.timerPausedDurationSeconds ??
+      board?.timerDurationSeconds ??
+      initialDurationSeconds;
+    if (editableTimeStr !== formatTime(lastValidTime)) {
+      handleSaveEditedTime();
+    }
   };
 
   const handleResetTimer = () => {
