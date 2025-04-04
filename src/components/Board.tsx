@@ -332,9 +332,11 @@ export default function Board() {
         ...(newDurationSeconds > 0
           ? {
               timerPausedDurationSeconds: newDurationSeconds,
+              timerOriginalDurationSeconds: newDurationSeconds, // Also update the original duration
             }
           : {
               timerPausedDurationSeconds: 0,
+              timerOriginalDurationSeconds: 0, // Also update the original duration
             }),
         timerIsRunning: false,
         timerStartTime: null,
@@ -417,6 +419,7 @@ export default function Board() {
       // Reset to the last saved duration from the board state
       // Fallback to initialDurationSeconds only if board.timerDurationSeconds is undefined/null
       const durationToResetTo =
+        board?.timerOriginalDurationSeconds ?? // Use the original duration if available
         board?.timerDurationSeconds ?? initialDurationSeconds;
 
       // Update local state immediately for responsiveness

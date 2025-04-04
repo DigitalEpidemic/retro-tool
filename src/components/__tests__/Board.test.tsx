@@ -244,6 +244,7 @@ const mockBoard: BoardType = {
   timerIsRunning: false,
   timerPausedDurationSeconds: null,
   timerStartTime: null,
+  timerOriginalDurationSeconds: 300, // Add original duration
 };
 
 const mockCards = [
@@ -908,6 +909,7 @@ describe("Board", () => {
         timerIsRunning: false,
         timerPausedDurationSeconds: 120, // 2 minutes
         timerDurationSeconds: 120,
+        timerOriginalDurationSeconds: 120,
       };
 
       vi.mocked(boardService.subscribeToBoard).mockImplementation(
@@ -952,6 +954,7 @@ describe("Board", () => {
           // The data payload
           timerDurationSeconds: 210,
           timerPausedDurationSeconds: 210, // Should also update paused duration
+          timerOriginalDurationSeconds: 210, // Should also update original duration
           timerIsRunning: false,
           timerStartTime: null,
         }
@@ -963,6 +966,7 @@ describe("Board", () => {
         ...pausedBoard,
         timerDurationSeconds: 210,
         timerPausedDurationSeconds: 210,
+        timerOriginalDurationSeconds: 210,
       };
       act(() => boardCallback(updatedBoard));
 
@@ -1170,6 +1174,7 @@ describe("Board", () => {
         timerIsRunning: false,
         timerPausedDurationSeconds: 300,
         timerDurationSeconds: 300,
+        timerOriginalDurationSeconds: 300,
       };
 
       vi.mocked(boardService.subscribeToBoard).mockImplementation(
@@ -1207,6 +1212,7 @@ describe("Board", () => {
         expect.objectContaining({
           timerDurationSeconds: 120,
           timerPausedDurationSeconds: 120,
+          timerOriginalDurationSeconds: 120,
         })
       );
 
@@ -1215,6 +1221,7 @@ describe("Board", () => {
         ...initialPausedBoard,
         timerDurationSeconds: 120,
         timerPausedDurationSeconds: 120,
+        timerOriginalDurationSeconds: 120,
       };
       act(() => boardCallback(savedBoardState));
 
@@ -1235,6 +1242,7 @@ describe("Board", () => {
         timerIsRunning: true,
         timerStartTime: Timestamp.now(),
         timerPausedDurationSeconds: null,
+        timerOriginalDurationSeconds: 120,
       };
       act(() => boardCallback(runningBoardState));
 
@@ -1257,6 +1265,7 @@ describe("Board", () => {
         timerStartTime: null,
         timerPausedDurationSeconds: 100, // Some time has passed
         timerDurationSeconds: 120, // Original duration unchanged
+        timerOriginalDurationSeconds: 120,
       };
       act(() => boardCallback(pausedBoardState));
 
@@ -1283,10 +1292,194 @@ describe("Board", () => {
         timerStartTime: null,
         timerPausedDurationSeconds: 120, // Reset to original saved duration
         timerDurationSeconds: 120, // Same original duration
+        timerOriginalDurationSeconds: 120,
       };
       act(() => boardCallback(resetBoardState));
 
       // Input should show the reset time (2:00) - the original saved time
+      expect(screen.getByDisplayValue("2:00")).toBeInTheDocument();
+    });
+
+    it("resets timer correctly when paused after running twice", async () => {
+      const user = userEvent.setup();
+      let boardCallback: (board: BoardType | null) => void = () => {};
+
+      // Mock resetTimer directly with a mock function that tracks calls
+      const resetTimerMock = vi.fn().mockResolvedValue(undefined);
+      vi.mocked(boardService.resetTimer).mockImplementation(resetTimerMock);
+      
+      vi.mocked(boardService.startTimer).mockResolvedValue();
+      vi.mocked(boardService.pauseTimer).mockResolvedValue();
+
+      // Initial state: Paused, default duration 300s (5:00)
+      const initialPausedBoard = {
+        ...mockBoard,
+        timerIsRunning: false,
+        timerPausedDurationSeconds: 300,
+        timerDurationSeconds: 300,
+        timerOriginalDurationSeconds: 300,
+      };
+
+      vi.mocked(boardService.subscribeToBoard).mockImplementation(
+        (_, callback) => {
+          boardCallback = callback;
+          act(() => callback(initialPausedBoard));
+          return vi.fn();
+        }
+      );
+
+      await act(async () => {
+        render(
+          <MemoryRouter initialEntries={["/boards/test-board-id"]}>
+            <Routes>
+              <Route path="/boards/:boardId" element={<Board />} />
+            </Routes>
+          </MemoryRouter>
+        );
+      });
+
+      // 1. Edit time to 2:00 (120 seconds)
+      const timerInput = screen.getByDisplayValue("5:00");
+      await user.clear(timerInput);
+      await user.type(timerInput, "2:00");
+
+      // 2. Save the new time (Press Enter)
+      vi.mocked(updateDoc).mockResolvedValue();
+      await act(async () => {
+        fireEvent.keyDown(timerInput, { key: "Enter" });
+      });
+
+      // Verify updateDoc was called with all necessary fields including original duration
+      expect(vi.mocked(updateDoc)).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          timerDurationSeconds: 120,
+          timerPausedDurationSeconds: 120,
+          timerOriginalDurationSeconds: 120,
+        })
+      );
+
+      // Simulate board update after save
+      const savedBoardState = {
+        ...initialPausedBoard,
+        timerDurationSeconds: 120,
+        timerPausedDurationSeconds: 120,
+        timerOriginalDurationSeconds: 120,
+      };
+      act(() => boardCallback(savedBoardState));
+
+      // Input should now show 2:00
+      expect(timerInput).toHaveValue("2:00");
+
+      // 3. Start the timer
+      const playButton = screen.getByRole("button", { name: /start timer/i });
+      await user.click(playButton);
+      expect(boardService.startTimer).toHaveBeenCalledWith(
+        "test-board-id",
+        savedBoardState
+      );
+
+      // Simulate board update after starting timer
+      const runningBoardState = {
+        ...savedBoardState,
+        timerIsRunning: true,
+        timerStartTime: Timestamp.now(),
+        timerPausedDurationSeconds: null,
+        timerDurationSeconds: 120,
+        timerOriginalDurationSeconds: 120,
+      };
+      act(() => boardCallback(runningBoardState));
+
+      // 4. Pause the timer after 2 seconds (118 seconds left)
+      const pauseButton = screen.getByRole("button", { name: /pause timer/i });
+      await user.click(pauseButton);
+      expect(boardService.pauseTimer).toHaveBeenCalledWith(
+        "test-board-id",
+        runningBoardState
+      );
+
+      // Simulate board update after first pause - 118 seconds left
+      const firstPausedState = {
+        ...runningBoardState,
+        timerIsRunning: false,
+        timerStartTime: null,
+        timerPausedDurationSeconds: 118, // 2 seconds elapsed
+        timerDurationSeconds: 120,
+        timerOriginalDurationSeconds: 120, // Keep original duration
+      };
+      act(() => boardCallback(firstPausedState));
+      
+      // 5. Verify timer is paused at the partially elapsed time
+      expect(screen.getByDisplayValue("1:58")).toBeInTheDocument(); // 118 seconds = 1:58
+      
+      // 6. Start the timer again
+      await user.click(playButton);
+      expect(boardService.startTimer).toHaveBeenCalledWith(
+        "test-board-id",
+        firstPausedState
+      );
+      
+      // Simulate board update after second start
+      const secondRunningState = {
+        ...firstPausedState,
+        timerIsRunning: true,
+        timerStartTime: Timestamp.now(),
+        timerPausedDurationSeconds: null,
+        timerDurationSeconds: 118, // Now it's running from the paused time
+        timerOriginalDurationSeconds: 120, // Original time should still be 120
+      };
+      act(() => boardCallback(secondRunningState));
+      
+      // 7. Pause the timer again after 5 more seconds (113 seconds left)
+      await user.click(pauseButton);
+      expect(boardService.pauseTimer).toHaveBeenCalledWith(
+        "test-board-id",
+        secondRunningState
+      );
+      
+      // Simulate board update after second pause - 113 seconds left
+      const secondPausedState = {
+        ...secondRunningState,
+        timerIsRunning: false,
+        timerStartTime: null,
+        timerPausedDurationSeconds: 113, // 5 more seconds elapsed
+        timerDurationSeconds: 118,
+        timerOriginalDurationSeconds: 120, // Still tracking the original
+      };
+      act(() => boardCallback(secondPausedState));
+      
+      // Clear mock history before testing reset
+      resetTimerMock.mockClear();
+      
+      // 8. Verify the timer shows 1:53
+      expect(screen.getByDisplayValue("1:53")).toBeInTheDocument();
+      
+      // 9. Click Reset
+      const resetButton = screen.getByRole("button", { name: /reset timer/i });
+      await act(async () => {
+        await user.click(resetButton);
+      });
+      
+      // THIS IS THE KEY TEST FOR THE BUG: 
+      // Verify resetTimer was called with the ORIGINAL duration (120s)
+      // not the current duration (113s or 118s)
+      expect(resetTimerMock).toHaveBeenCalledWith(
+        "test-board-id",
+        120 // Original user-set duration of 2:00
+      );
+      
+      // Simulate board update after reset
+      const resetBoardState = {
+        ...secondPausedState,
+        timerIsRunning: false,
+        timerStartTime: null,
+        timerPausedDurationSeconds: 120, // Reset to original saved duration
+        timerDurationSeconds: 120, // Original duration
+        timerOriginalDurationSeconds: 120,
+      };
+      act(() => boardCallback(resetBoardState));
+      
+      // Verify the timer shows the original 2:00
       expect(screen.getByDisplayValue("2:00")).toBeInTheDocument();
     });
   }); // End Timer Describe Block

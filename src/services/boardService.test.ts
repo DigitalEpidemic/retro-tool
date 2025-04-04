@@ -485,7 +485,8 @@ describe('boardService', () => {
           timerIsRunning: true,
           timerStartTime: expect.anything(),
           timerDurationSeconds: 300,
-          timerPausedDurationSeconds: null
+          timerPausedDurationSeconds: null,
+          timerOriginalDurationSeconds: 300
         }
       );
     });
@@ -497,6 +498,7 @@ describe('boardService', () => {
         name: 'Test Board',
         timerPausedDurationSeconds: 120, // 2 minutes remaining
         timerDurationSeconds: 300,
+        timerOriginalDurationSeconds: 300,
         timerIsRunning: false
       } as Board;
       
@@ -508,7 +510,8 @@ describe('boardService', () => {
           timerIsRunning: true,
           timerStartTime: expect.anything(),
           timerDurationSeconds: 120, // Should use paused duration
-          timerPausedDurationSeconds: null
+          timerPausedDurationSeconds: null,
+          timerOriginalDurationSeconds: 300
         }
       );
     });
@@ -525,7 +528,8 @@ describe('boardService', () => {
         timerStartTime: {
           toMillis: () => startTime.getTime()
         },
-        timerDurationSeconds: 300 // 5 minutes
+        timerDurationSeconds: 300, // 5 minutes
+        timerOriginalDurationSeconds: 300
       } as unknown as Board;
       
       await boardService.pauseTimer(boardId, currentBoardData);
@@ -535,7 +539,8 @@ describe('boardService', () => {
         expect.objectContaining({
           timerIsRunning: false,
           timerPausedDurationSeconds: expect.any(Number), // Should be around 270 seconds
-          timerStartTime: null
+          timerStartTime: null,
+          timerOriginalDurationSeconds: 300
         })
       );
       
@@ -584,8 +589,9 @@ describe('boardService', () => {
         {
           timerIsRunning: false,
           timerStartTime: null,
-          timerPausedDurationSeconds: null,
-          timerDurationSeconds: initialDuration
+          timerPausedDurationSeconds: initialDuration,
+          timerDurationSeconds: initialDuration,
+          timerOriginalDurationSeconds: initialDuration
         }
       );
     });
@@ -598,7 +604,9 @@ describe('boardService', () => {
       expect(mockUpdateDoc).toHaveBeenCalledWith(
         {},
         expect.objectContaining({
-          timerDurationSeconds: 300
+          timerDurationSeconds: 300,
+          timerPausedDurationSeconds: 300,
+          timerOriginalDurationSeconds: 300
         })
       );
     });

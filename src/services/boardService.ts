@@ -12,7 +12,7 @@ import {
   serverTimestamp,
   writeBatch,
   getDocs,
-  // getDoc, // Removed as it's unused after refactoring board creation/subscription
+  getDoc, // Add getDoc back for resetTimer
   increment,
 } from "firebase/firestore";
 // nanoid and Timestamp are no longer used directly here
@@ -228,12 +228,21 @@ export const startTimer = async (
     currentBoardData?.timerPausedDurationSeconds ?? // Use paused time if available
     currentBoardData?.timerDurationSeconds ?? // Otherwise use original duration
     300; // Default to 300 if nothing is set
+  
+  // Track the original duration that the user set
+  const originalDuration = 
+    currentBoardData?.timerOriginalDurationSeconds ?? // Use existing original if available
+    (currentBoardData?.timerPausedDurationSeconds === null 
+      ? currentBoardData?.timerDurationSeconds 
+      : currentBoardData?.timerOriginalDurationSeconds ?? currentBoardData?.timerDurationSeconds) ?? 
+    durationToUse; // Otherwise use current duration
 
   await updateDoc(boardRef, {
     timerIsRunning: true,
     timerStartTime: serverTimestamp(),
     timerDurationSeconds: durationToUse, // Set the duration for this run
     timerPausedDurationSeconds: null, // Clear paused duration on start/resume
+    timerOriginalDurationSeconds: originalDuration, // Store the original duration
   });
 };
 
@@ -261,11 +270,15 @@ export const pauseTimer = async (
   const remainingMs = Math.max(0, durationMs - elapsedMs);
   const remainingSeconds = Math.ceil(remainingMs / 1000);
 
+  // Ensure we maintain the original duration
+  const originalDuration = currentBoardData.timerOriginalDurationSeconds ?? currentBoardData.timerDurationSeconds;
+
   await updateDoc(boardRef, {
     timerIsRunning: false,
     timerPausedDurationSeconds: remainingSeconds, // Store remaining time
     timerStartTime: null, // Clear start time as it's paused
     timerDurationSeconds: currentBoardData.timerDurationSeconds, // Preserve original duration
+    timerOriginalDurationSeconds: originalDuration, // Maintain original duration
   });
 };
 
@@ -275,11 +288,15 @@ export const resetTimer = async (
   initialDuration: number = 300
 ) => {
   const boardRef = doc(db, "boards", boardId);
+  
+  // Just use the provided initialDuration directly
+  // The calling code (handleResetTimer) will ensure we get the original duration if available
   await updateDoc(boardRef, {
     timerIsRunning: false,
     timerStartTime: null,
-    timerPausedDurationSeconds: null, // Clear paused duration
-    timerDurationSeconds: initialDuration, // Reset to initial duration (e.g., 300s)
+    timerPausedDurationSeconds: initialDuration,
+    timerDurationSeconds: initialDuration,
+    timerOriginalDurationSeconds: initialDuration,
   });
 };
 

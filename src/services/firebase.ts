@@ -47,6 +47,7 @@ export interface Board {
   timerDurationSeconds?: number; // Original duration set when started/reset
   timerIsRunning?: boolean; // True if the timer is currently counting down
   timerPausedDurationSeconds?: number | null; // Remaining seconds when paused, null otherwise
+  timerOriginalDurationSeconds?: number; // The originally set duration that should be used for resets
 }
 
 // cards collection
