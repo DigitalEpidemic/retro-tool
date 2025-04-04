@@ -519,25 +519,16 @@ describe("Board", () => {
     // Check for the drag-drop-context
     expect(screen.getAllByTestId("drag-drop-context")[0]).toBeInTheDocument();
 
-    // Find the Play button by finding all SVG icons and selecting the play one
-    const playButtonSVG = screen.getByText((_, element) => {
-      return (
-        element?.tagName.toLowerCase() === "svg" &&
-        element?.classList.contains("lucide-play")
-      );
-    });
-
-    const playButton = playButtonSVG.closest("button");
+    // Find the Play button using its accessible name
+    const playButton = screen.getByRole("button", { name: /start timer/i });
     expect(playButton).toBeInTheDocument();
 
     // Click the play button
-    if (playButton) {
-      await user.click(playButton);
-      expect(boardService.startTimer).toHaveBeenCalledWith(
-        "test-board-id",
-        mockBoard
-      );
-    }
+    await user.click(playButton);
+    expect(boardService.startTimer).toHaveBeenCalledWith(
+      "test-board-id",
+      mockBoard
+    );
 
     // Update mock to simulate running timer
     const runningBoard = {
@@ -570,24 +561,12 @@ describe("Board", () => {
       );
     });
 
-    // Find the reset button by icon class
-    const resetButtonSVG = screen.getByText((_, element) => {
-      return (
-        element?.tagName.toLowerCase() === "svg" &&
-        element?.classList.contains("lucide-rotate-ccw")
-      );
-    });
-
-    const resetButton = resetButtonSVG.closest("button");
+    // Find the reset button using its accessible name
+    const resetButton = screen.getByRole("button", { name: /reset timer/i });
     expect(resetButton).toBeInTheDocument();
 
-    if (resetButton) {
-      await user.click(resetButton);
-      expect(boardService.resetTimer).toHaveBeenCalledWith(
-        "test-board-id",
-        300
-      );
-    }
+    await user.click(resetButton);
+    expect(boardService.resetTimer).toHaveBeenCalledWith("test-board-id", 300);
   });
 
   it("handles editing timer duration when paused", async () => {
@@ -940,16 +919,10 @@ describe("Board", () => {
       );
     });
 
-    const playButtonSVG = screen.getByText((_, element) => {
-      return (
-        element?.tagName.toLowerCase() === "svg" &&
-        element?.classList.contains("lucide-play")
-      );
-    });
-    const playButton = playButtonSVG.closest("button");
+    const playButton = screen.getByRole("button", { name: /start timer/i });
 
     await act(async () => {
-      if (playButton) await user.click(playButton);
+      await user.click(playButton);
     });
 
     expect(
@@ -985,16 +958,10 @@ describe("Board", () => {
       );
     });
 
-    const pauseButtonSVG = screen.getByText((_, element) => {
-      return (
-        element?.tagName.toLowerCase() === "svg" &&
-        element?.classList.contains("lucide-pause")
-      );
-    });
-    const pauseButton = pauseButtonSVG.closest("button");
+    const pauseButton = screen.getByRole("button", { name: /pause timer/i });
 
     await act(async () => {
-      if (pauseButton) await user.click(pauseButton);
+      await user.click(pauseButton);
     });
 
     expect(
@@ -1017,16 +984,10 @@ describe("Board", () => {
       );
     });
 
-    const resetButtonSVG = screen.getByText((_, element) => {
-      return (
-        element?.tagName.toLowerCase() === "svg" &&
-        element?.classList.contains("lucide-rotate-ccw")
-      );
-    });
-    const resetButton = resetButtonSVG.closest("button");
+    const resetButton = screen.getByRole("button", { name: /reset timer/i });
 
     await act(async () => {
-      if (resetButton) await user.click(resetButton);
+      await user.click(resetButton);
     });
 
     expect(
@@ -1105,14 +1066,9 @@ describe("Board", () => {
     expect(screen.getByDisplayValue("5:00")).toBeInTheDocument(); // Default 300s
 
     // --- Start Timer ---
-    const playButtonSVG = screen.getByText(
-      (_, el) =>
-        el?.tagName.toLowerCase() === "svg" &&
-        el.classList.contains("lucide-play")
-    );
-    const playButton = playButtonSVG.closest("button");
+    const playButton = screen.getByRole("button", { name: /start timer/i });
     await act(async () => {
-      if (playButton) await user.click(playButton);
+      await user.click(playButton);
       // Simulate Firestore update after startTimer resolves
       const runningBoard: typeof mockBoard = {
         ...mockBoard,
@@ -1128,14 +1084,9 @@ describe("Board", () => {
     expect(await screen.findByText("4:50")).toBeInTheDocument();
 
     // --- Pause Timer ---
-    const pauseButtonSVG = screen.getByText(
-      (_, el) =>
-        el?.tagName.toLowerCase() === "svg" &&
-        el.classList.contains("lucide-pause")
-    );
-    const pauseButton = pauseButtonSVG.closest("button");
+    const pauseButton = screen.getByRole("button", { name: /pause timer/i });
     await act(async () => {
-      if (pauseButton) await user.click(pauseButton);
+      await user.click(pauseButton);
       // Simulate Firestore update after pauseTimer resolves
       const pausedBoard: typeof mockBoard = {
         ...mockBoard,
@@ -1150,14 +1101,9 @@ describe("Board", () => {
     expect(screen.getByDisplayValue("4:50")).toBeInTheDocument();
 
     // --- Reset Timer ---
-    const resetButtonSVG = screen.getByText(
-      (_, el) =>
-        el?.tagName.toLowerCase() === "svg" &&
-        el.classList.contains("lucide-rotate-ccw")
-    );
-    const resetButton = resetButtonSVG.closest("button");
+    const resetButton = screen.getByRole("button", { name: /reset timer/i });
     await act(async () => {
-      if (resetButton) await user.click(resetButton);
+      await user.click(resetButton);
       // Simulate Firestore update after resetTimer resolves
       // Reset board state should match the initial mockBoard exactly
       boardCallback(mockBoard);

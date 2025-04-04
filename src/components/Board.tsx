@@ -583,6 +583,7 @@ export default function Board() {
                   ? "text-orange-500 hover:text-orange-600" // Style for Pause
                   : "text-blue-500 hover:text-blue-600" // Style for Play/Resume
               }`}
+              aria-label={board?.timerIsRunning ? "Pause timer" : "Start timer"} // Add aria-label
             >
               {board?.timerIsRunning ? (
                 <Pause className="h-4 w-4" /> // Show Pause icon when running
@@ -593,6 +594,7 @@ export default function Board() {
             {/* Reset Button */}
             <button
               onClick={handleResetTimer}
+              aria-label="Reset timer" // Add aria-label
               // Disable reset if timer is running? Optional UX choice.
               // disabled={!!board?.timerIsRunning}
               className="text-gray-400 hover:text-gray-600 cursor-pointer"

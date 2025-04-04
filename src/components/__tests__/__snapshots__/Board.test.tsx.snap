@@ -30,6 +30,7 @@ exports[`Board > creates a snapshot of the component 1`] = `
             value="5:00"
           />
           <button
+            aria-label="Start timer"
             class="cursor-pointer text-blue-500 hover:text-blue-600"
           >
             <svg
@@ -50,6 +51,7 @@ exports[`Board > creates a snapshot of the component 1`] = `
             </svg>
           </button>
           <button
+            aria-label="Reset timer"
             class="text-gray-400 hover:text-gray-600 cursor-pointer"
           >
             <svg
