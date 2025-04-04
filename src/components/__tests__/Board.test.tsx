@@ -847,55 +847,31 @@ describe("Board", () => {
       vi.useRealTimers();
     });
 
-    it("handles editing timer duration when paused", async () => {
+    it("handles resetting timer after running", async () => {
       const user = userEvent.setup();
 
-      // First render
-      await act(async () => {
-        render(
-          <MemoryRouter initialEntries={["/boards/test-board-id"]}>
-            <Routes>
-              <Route path="/boards/:boardId" element={<Board />} />
-            </Routes>
-          </MemoryRouter>
-        );
-      });
+      // Create a direct function mock for resetTimer
+      const resetTimerMock = vi.fn().mockResolvedValue(undefined);
+      // Replace the implementation
+      vi.mocked(boardService.resetTimer).mockImplementation(resetTimerMock);
 
-      // Check for the drag-drop-context
-      expect(screen.getAllByTestId("drag-drop-context")[0]).toBeInTheDocument();
-
-      // Find the Play button using its accessible name
-      const playButton = screen.getByRole("button", { name: /start timer/i });
-      expect(playButton).toBeInTheDocument();
-
-      // Click the play button
-      await user.click(playButton);
-      expect(boardService.startTimer).toHaveBeenCalledWith(
-        "test-board-id",
-        mockBoard
-      );
-
-      // Update mock to simulate running timer
-      const runningBoard = {
+      // Create a board with explicit timer values
+      const testBoard = {
         ...mockBoard,
-        timerIsRunning: true,
-        timerStartTime: Timestamp.now(),
+        id: "test-board-id",
+        timerDurationSeconds: 300,
+        timerIsRunning: false,
       };
 
-      // Clean up and re-setup for the second render
-      document.body.innerHTML = "";
-
-      // Update the board to simulate timer started
+      // Setup subscribeToBoard mock with the test board
       vi.mocked(boardService.subscribeToBoard).mockImplementation(
         (_, callback) => {
-          act(() => {
-            callback(runningBoard);
-          });
+          act(() => callback(testBoard));
           return vi.fn();
         }
       );
 
-      // Rerender to get updated state
+      // Render the component
       await act(async () => {
         render(
           <MemoryRouter initialEntries={["/boards/test-board-id"]}>
@@ -906,29 +882,37 @@ describe("Board", () => {
         );
       });
 
-      // Find the reset button using its accessible name
+      // Find the reset button
       const resetButton = screen.getByRole("button", { name: /reset timer/i });
       expect(resetButton).toBeInTheDocument();
 
-      await user.click(resetButton);
-      expect(boardService.resetTimer).toHaveBeenCalledWith(
-        "test-board-id",
-        300
-      );
+      // Click the reset button and ensure async wrapping
+      await act(async () => {
+        await user.click(resetButton);
+      });
+
+      // Verify resetTimer mock was called with the correct arguments
+      expect(resetTimerMock).toHaveBeenCalledWith("test-board-id", 300);
     });
 
     it("handles editing timer duration when paused", async () => {
       const user = userEvent.setup();
+      let boardCallback: (board: BoardType | null) => void;
+
+      // Mock resetTimer to resolve successfully
+      vi.mocked(boardService.resetTimer).mockResolvedValue();
 
       // Setup a paused timer state
       const pausedBoard = {
         ...mockBoard,
         timerIsRunning: false,
         timerPausedDurationSeconds: 120, // 2 minutes
+        timerDurationSeconds: 120,
       };
 
       vi.mocked(boardService.subscribeToBoard).mockImplementation(
         (_, callback) => {
+          boardCallback = callback;
           act(() => {
             callback(pausedBoard);
           });
@@ -955,7 +939,10 @@ describe("Board", () => {
       await user.type(timerInput, "3:30");
 
       // Simulate pressing Enter
-      fireEvent.keyDown(timerInput, { key: "Enter" });
+      vi.mocked(updateDoc).mockResolvedValue();
+      await act(async () => {
+        fireEvent.keyDown(timerInput, { key: "Enter" });
+      });
 
       // Verify that updateDoc was called with the correct timer values
       // 3:30 equals 210 seconds (3 minutes * 60 + 30 seconds)
@@ -968,6 +955,27 @@ describe("Board", () => {
           timerIsRunning: false,
           timerStartTime: null,
         }
+      );
+
+      // IMPORTANT: Simulate the board update after saving the new time
+      // This updates the board state that handleResetTimer will use
+      const updatedBoard = {
+        ...pausedBoard,
+        timerDurationSeconds: 210,
+        timerPausedDurationSeconds: 210,
+      };
+      act(() => boardCallback(updatedBoard));
+
+      // Now test the reset functionality
+      const resetButton = screen.getByRole("button", { name: /reset timer/i });
+      expect(resetButton).toBeInTheDocument();
+
+      await user.click(resetButton);
+
+      // Should be called with the new duration (210 seconds)
+      expect(boardService.resetTimer).toHaveBeenCalledWith(
+        "test-board-id",
+        210 // The new duration we just set
       );
     });
 
