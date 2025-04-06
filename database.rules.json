@@ -1,0 +1,27 @@
+{
+  "rules": {
+    "status": {
+      "$uid": {
+        // Allow read/write access to a user's own status
+        ".read": "auth !== null",
+        ".write": "auth !== null && auth.uid === $uid"
+      }
+    },
+    "boards": {
+      "$boardId": {
+        // Allow read for all authenticated users
+        ".read": "auth !== null",
+        
+        "participants": {
+          // Allow any authenticated user to see the participants
+          ".read": "auth !== null",
+          
+          "$uid": {
+            // Allow users to write only their own presence
+            ".write": "auth !== null && auth.uid === $uid"
+          }
+        }
+      }
+    }
+  }
+} 

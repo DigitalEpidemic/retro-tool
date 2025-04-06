@@ -1,0 +1,46 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Boards: Allow authenticated users to read and create boards.
+    // You might want to restrict update/delete to specific roles (e.g., facilitator) later.
+    match /boards/{boardId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      // For now, allow any authenticated user to update/delete. Refine as needed.
+      allow update, delete: if request.auth != null;
+    }
+
+    // Cards:
+    // - Allow any authenticated user to read cards (necessary for board display).
+    // - Allow authenticated users to create cards, ensuring they set themselves as the author.
+    // - Allow any authenticated user to update cards (covers voting, reordering).
+    //   You could restrict content updates to the author specifically if required.
+    // - Allow users to delete only their own cards.
+    match /cards/{cardId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+                    && request.resource.data.authorId == request.auth.uid; // Ensure author is self
+      allow update: if request.auth != null; // Allows voting, reordering by anyone authenticated
+      allow delete: if request.auth != null && resource.data.authorId == request.auth.uid; // Only author can delete
+    }
+
+    // Users collection - this is critical for participant functionality
+    match /users/{userId} {
+      allow read: if request.auth != null; // Anyone authenticated can see participants
+      allow create, update: if request.auth != null && request.auth.uid == userId; // Users can only manage their own data
+    }
+    
+    // Test collection - used for testing write permissions
+    match /test/{docId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Add rules for other collections like 'actions' if you use them.
+    // Example:
+    // match /actions/{actionId} {
+    //   allow read, write: if request.auth != null; // Adjust permissions as needed
+    // }
+  }
+}
