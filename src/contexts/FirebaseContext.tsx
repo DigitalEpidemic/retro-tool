@@ -57,8 +57,6 @@ export const FirebaseProvider = ({
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
         if (firebaseUser) {
-          console.log("User authenticated:", firebaseUser.uid);
-          
           // Fetch the user's stored data from Firestore
           const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
           
@@ -71,10 +69,8 @@ export const FirebaseProvider = ({
               : firebaseUser.displayName || 'Anonymous User'
           } as ExtendedUser;
           
-          console.log("Setting user with displayName:", extendedUser.displayName);
           setUser(extendedUser);
         } else {
-          console.log("No user, attempting anonymous sign-in");
           // No user - attempt anonymous sign-in
           try {
             await signInAnonymously(auth);

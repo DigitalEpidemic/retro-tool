@@ -210,8 +210,6 @@ export default function Board() {
       // Optionally redirect: navigate('/login');
       return;
     }
-
-    console.log("Auth completed successfully. User ID:", user.uid);
     
     // Auth is complete, user exists, proceed with subscriptions
     setLoading(true); // Set loading true while fetching board data
@@ -277,16 +275,11 @@ export default function Board() {
         });
 
         // Always join the board when subscribing
-        console.log("Joining board as user:", user.uid, user.displayName || "Anonymous User");
-        
         try {
-          console.log("Attempting to join board in Board component...");
           const success = await joinBoard(boardId, user.uid, user.displayName || "Anonymous User");
           
           if (!success) {
             console.error("Failed to join board as participant");
-          } else {
-            console.log("Successfully joined board, now subscribing to participants");
           }
         } catch (joinError) {
           console.error("Error in Board component when joining board:", joinError);
@@ -294,10 +287,7 @@ export default function Board() {
         
         // Subscribe to participants regardless of join outcome
         try {
-          console.log("Setting up participants subscription in Board component");
           unsubscribeParticipants = subscribeToBoardParticipants(boardId, (participantsData) => {
-            console.log("Received participants update:", participantsData.length, "participants", 
-              participantsData.map(p => `${p.name} (${p.id})`).join(', '));
             setParticipants(participantsData);
           });
         } catch (subError) {
@@ -650,7 +640,6 @@ export default function Board() {
     // If we're about to open the panel, ensure we're joined
     if (!isPanelOpen && user) {
       try {
-        console.log("Rejoining board before opening participants panel");
         await joinBoard(boardId!, user.uid, user.displayName || "Anonymous User");
       } catch (err) {
         console.error("Error rejoining board:", err);

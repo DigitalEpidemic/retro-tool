@@ -319,42 +319,19 @@ export const subscribeToBoardParticipants = (
   callback: (participants: User[]) => void
 ) => {
   try {
-    console.log(`Setting up participants subscription for board ${boardId}`);
-    
-    // First do a direct check for the current users
-    getDocs(collection(db, "users"))
-      .then(snapshot => {
-        console.log(`CHECKING ALL USERS: Found ${snapshot.size} total user documents in Firestore`);
-        snapshot.forEach(doc => {
-          console.log(`User document: ${doc.id}, boardId=${doc.data().boardId || 'none'}`);
-        });
-      })
-      .catch(err => console.error("Error checking all users:", err));
-    
-    // Now set up the specific query for this board
+    // Set up the specific query for this board
     const participantsQuery = query(
       collection(db, "users"),
       where("boardId", "==", boardId)
     );
-    
-    console.log(`Query created for board ${boardId}, where boardId == ${boardId}`);
     
     return onSnapshot(
       participantsQuery, 
       (querySnapshot) => {
         const participants: User[] = [];
         
-        console.log(`Got ${querySnapshot.size} participants from Firestore for board ${boardId}`);
-        
-        if (querySnapshot.empty) {
-          console.log(`No participants found in the query results for board ${boardId}`);
-        }
-        
         querySnapshot.forEach((doc) => {
           const data = doc.data();
-          
-          // Log individual participant document
-          console.log(`Participant document: id=${doc.id}, name=${data.name || 'unnamed'}, boardId=${data.boardId || 'unknown'}`);
           
           // Ensure the document has the minimum required fields
           participants.push({
@@ -365,10 +342,6 @@ export const subscribeToBoardParticipants = (
             lastActive: data.lastActive || serverTimestamp()
           } as User);
         });
-        
-        // Log all participants we're returning
-        console.log(`Returning ${participants.length} participants:`, 
-          participants.map(p => `${p.name} (${p.id})`).join(', '));
         
         callback(participants);
       },
@@ -432,20 +405,6 @@ export const joinBoard = async (
   userName: string = "Anonymous User"
 ) => {
   try {
-    console.log(`Attempting to join board ${boardId} as user ${userId} (${userName})`);
-    
-    // Enable this for debugging in the browser console
-    const debugMode = true;
-    if (debugMode) {
-      console.log('Firestore Auth State:', {
-        currentUser: auth.currentUser ? {
-          uid: auth.currentUser.uid,
-          isAnonymous: auth.currentUser.isAnonymous,
-          providerId: auth.currentUser.providerId
-        } : null
-      });
-    }
-    
     // Random pastel color for the user
     const getRandomPastelColor = () => {
       // Use userId to generate a consistent color for the same user
@@ -458,12 +417,9 @@ export const joinBoard = async (
     const userRef = doc(db, "users", userId);
     
     try {
-      console.log(`Checking if user ${userId} exists...`);
       const userSnap = await getDoc(userRef);
-      console.log(`User document exists: ${userSnap.exists()}`);
       
       if (userSnap.exists()) {
-        console.log(`User ${userId} exists, updating record`);
         // Update existing user
         try {
           await updateDoc(userRef, {
@@ -472,16 +428,11 @@ export const joinBoard = async (
             // Ensure name is also updated if provided
             ...(userName ? { name: userName } : {})
           });
-          console.log(`Successfully updated user ${userId}`);
-        } catch (updateError: any) {
+        } catch (updateError) {
           console.error(`Failed to update user ${userId}:`, updateError);
-          if (debugMode && updateError.code) {
-            console.error(`Error code: ${updateError.code}, message: ${updateError.message}`);
-          }
           throw updateError;
         }
       } else {
-        console.log(`User ${userId} does not exist, creating new record`);
         // Create new user
         try {
           const userData = {
@@ -491,28 +442,19 @@ export const joinBoard = async (
             boardId,
             lastActive: serverTimestamp()
           };
-          console.log(`Creating user with data:`, userData);
           await setDoc(userRef, userData);
-          console.log(`Successfully created user ${userId}`);
-        } catch (createError: any) {
+        } catch (createError) {
           console.error(`Failed to create user ${userId}:`, createError);
-          if (debugMode && createError.code) {
-            console.error(`Error code: ${createError.code}, message: ${createError.message}`);
-          }
           throw createError;
         }
       }
       
-      console.log(`User ${userId} successfully joined board ${boardId}`);
       return true;
-    } catch (docError: any) {
+    } catch (docError) {
       console.error(`Error checking user document ${userId}:`, docError);
-      if (debugMode && docError.code) {
-        console.error(`Error code: ${docError.code}, message: ${docError.message}`);
-      }
       throw docError;
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error joining board:", error);
     // Return false to indicate failure
     return false;
@@ -522,8 +464,6 @@ export const joinBoard = async (
 // Simple test function to verify Firestore write access
 export const testFirestoreWrite = async (userId: string) => {
   try {
-    console.log("Testing Firestore write access...");
-    
     // Create a test document in a 'test' collection
     const testRef = doc(db, "test", userId);
     
@@ -533,7 +473,6 @@ export const testFirestoreWrite = async (userId: string) => {
       message: "Test write operation"
     });
     
-    console.log("Firestore write test succeeded!");
     return true;
   } catch (error) {
     console.error("Firestore write test failed:", error);
