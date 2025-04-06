@@ -24,10 +24,10 @@ import {
   pauseTimer,
   resetTimer,
   updateColumnSortState,
-  subscribeToBoardParticipants,
-  updateParticipantName,
+  updateParticipantName as updateParticipantNameFirestore,
   joinBoard,
   testFirestoreWrite,
+  cleanupInactiveUsers,
 } from "../services/boardService";
 import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../services/firebase";
@@ -49,6 +49,14 @@ import {
   Check, // Import Check icon for confirming edits
 } from "lucide-react";
 
+// Import the new presence service
+import { 
+  setupPresence, 
+  subscribeToParticipants, 
+  updateParticipantName as updateParticipantNameRTDB 
+} from "../services/presenceService";
+import { OnlineUser } from "../services/firebase";
+
 // Create a memoized version of the ParticipantsPanel
 const MemoizedParticipantsPanel = memo(({ 
   isOpen, 
@@ -59,7 +67,7 @@ const MemoizedParticipantsPanel = memo(({
 }: { 
   isOpen: boolean; 
   onClose: () => void; 
-  participants: User[];
+  participants: OnlineUser[];
   currentUserId: string;
   onUpdateName: (userId: string, newName: string) => void;
 }) => {
@@ -191,7 +199,7 @@ export default function Board() {
     Record<string, boolean>
   >({}); // Track sort by votes per column
   const [isPanelOpen, setIsPanelOpen] = useState(false); // State for participants panel
-  const [participants, setParticipants] = useState<User[]>([]); // State for participants list
+  const [participants, setParticipants] = useState<OnlineUser[]>([]); // State for participants list
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null); // Ref to store interval ID
   const resetTimeoutRef = useRef<NodeJS.Timeout | null>(null); // Ref for delayed reset timeout
   const initialDurationSeconds = 300; // 5 minutes (default)
@@ -218,6 +226,7 @@ export default function Board() {
     let unsubscribeBoard = () => {};
     let unsubscribeCards = () => {};
     let unsubscribeParticipants = () => {};
+    let cleanupPresence = () => {};
 
     const checkAndSubscribe = async () => {
       try {
@@ -231,7 +240,6 @@ export default function Board() {
             // Use boardId as name for simplicity, or prompt user?
             await createBoard(`Board: ${boardId}`, user.uid, boardId);
             console.log(`Board ${boardId} created successfully.`);
-            // No need to manually set board state here, subscription will pick it up
           } catch (createError) {
             console.error("Error creating board:", createError);
             setError(
@@ -271,41 +279,26 @@ export default function Board() {
         // Subscribe to cards changes (can run concurrently)
         unsubscribeCards = subscribeToCards(boardId, (cardsData) => {
           setCards(cardsData);
-          // Note: Card loading doesn't affect the main 'loading' state here
         });
 
-        // Always join the board when loading the component
+        // Still join the board in Firestore for backwards compatibility with cards
         try {
-          const success = await joinBoard(boardId, user.uid, user.displayName || "Anonymous User");
-          
-          if (!success) {
-            console.error("Failed to join board as participant");
-          }
+          await joinBoard(boardId, user.uid, user.displayName || "Anonymous User");
         } catch (joinError) {
-          console.error("Error in Board component when joining board:", joinError);
+          console.error("Error joining board in Firestore:", joinError);
         }
         
-        // Subscribe to participants regardless of join outcome
-        try {
-          unsubscribeParticipants = subscribeToBoardParticipants(boardId, (participantsData) => {
-            setParticipants(participantsData);
-          });
-        } catch (subError) {
-          console.error("Error setting up participants subscription in Board component:", subError);
-        }
+        // Setup real-time presence tracking
+        cleanupPresence = setupPresence(boardId, user.displayName || "Anonymous User");
         
-        // Set up a presence heartbeat to keep the user active
-        const heartbeatInterval = setInterval(() => {
-          if (user) {
-            const userRef = doc(db, "users", user.uid);
-            updateDoc(userRef, { lastActive: serverTimestamp() })
-              .catch(err => console.error("Error updating user presence:", err));
-          }
-        }, 30000); // Update every 30 seconds
+        // Subscribe to participants using the new real-time service
+        unsubscribeParticipants = subscribeToParticipants(boardId, (participantsData) => {
+          setParticipants(participantsData);
+        });
         
-        // Clean up the heartbeat interval on unmount
         return () => {
-          clearInterval(heartbeatInterval);
+          // This will be called when the component unmounts
+          cleanupPresence();
         };
       } catch (err) {
         console.error("Error checking/subscribing to board:", err);
@@ -315,14 +308,20 @@ export default function Board() {
     };
 
     // Call the async function
-    checkAndSubscribe();
+    const setupPromise = checkAndSubscribe();
 
     // Cleanup function
     return () => {
-      console.log("Cleaning up subscriptions for board:", boardId);
       unsubscribeBoard();
       unsubscribeCards();
       unsubscribeParticipants();
+      
+      // Clean up any resources from the setup
+      setupPromise.then(cleanup => {
+        if (typeof cleanup === 'function') {
+          cleanup(); // This will clear intervals and remove event listeners
+        }
+      }).catch(err => console.error("Error during cleanup:", err));
     };
   }, [boardId, navigate, user, authLoading]);
 
@@ -610,20 +609,22 @@ export default function Board() {
 
   // Handle updating participant name
   const handleUpdateParticipantName = async (userId: string, newName: string) => {
-    if (!userId || !newName.trim()) return;
+    if (!userId || !newName.trim() || !boardId) return;
     
     try {
-      await updateParticipantName(userId, newName);
+      // Update in Firestore for backwards compatibility with cards
+      await updateParticipantNameFirestore(userId, newName);
       
-      // If this is the current user, update the user context
+      // Update in Realtime Database for real-time presence
+      await updateParticipantNameRTDB(userId, boardId, newName);
+      
+      // If this is the current user, update the context
       if (user && userId === user.uid && updateUserDisplayName) {
-        // Use the context method to update the display name
         updateUserDisplayName(newName);
       }
     } catch (error) {
       console.error("Error updating participant name:", error);
       setError("Failed to update name. Please try again.");
-      // Clear error after 3 seconds
       setTimeout(() => setError(null), 3000);
     }
   };

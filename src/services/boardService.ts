@@ -1,4 +1,5 @@
-import { db, Board, Card, User, auth } from "./firebase"; // Import auth along with other exports
+import { db, auth, Board, Card } from "./firebase"; // Import auth along with other exports
+import { User } from "./firebase"; // Import User type
 import {
   collection,
   doc,
@@ -14,6 +15,7 @@ import {
   getDocs,
   getDoc, // Add getDoc back for resetTimer
   increment,
+  Timestamp,
 } from "firebase/firestore";
 // nanoid and Timestamp are no longer used directly here
 
@@ -333,17 +335,31 @@ export const subscribeToBoardParticipants = (
       { includeMetadataChanges: false }, // Only notify on committed changes
       (querySnapshot) => {
         const participants: User[] = [];
+        const now = Date.now();
+        const inactiveThreshold = 20 * 1000; // 20 seconds in milliseconds
         
         querySnapshot.forEach((doc) => {
           const data = doc.data();
-          
-          participants.push({
+          const user = {
             id: doc.id,
             name: data.name || 'Anonymous',
             color: data.color || '#6B7280',
             boardId: data.boardId || boardId,
-            lastActive: data.lastActive || serverTimestamp()
-          } as User);
+            lastActive: data.lastActive || null,
+            isViewingPage: data.isViewingPage !== false // Default to true if not set
+          } as User;
+          
+          // A user is considered active if EITHER:
+          // 1. They explicitly marked as viewing the page 
+          // 2. They had activity in the last 20 seconds (for backwards compatibility)
+          const lastActive = user.lastActive ? user.lastActive.toMillis() : 0;
+          const recentlyActive = now - lastActive < inactiveThreshold;
+          const isActive = user.isViewingPage || recentlyActive;
+          
+          // Only include active users
+          if (isActive) {
+            participants.push(user);
+          }
         });
         
         // Sort participants by name for consistent ordering
@@ -490,3 +506,52 @@ export const testFirestoreWrite = async (userId: string) => {
 };
 
 // Additional board operations...
+
+// Add a function to clean up users who have been inactive for too long
+export const cleanupInactiveUsers = async (boardId: string) => {
+  try {
+    const now = Date.now();
+    const inactiveThreshold = 30 * 1000; // 30 seconds (slightly longer than the display threshold)
+    
+    // Query for users in this board
+    const usersQuery = query(
+      collection(db, "users"),
+      where("boardId", "==", boardId)
+    );
+    
+    const snapshot = await getDocs(usersQuery);
+    const batch = writeBatch(db);
+    let hasInactiveUsers = false;
+    
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const lastActive = data.lastActive ? data.lastActive.toMillis() : 0;
+      const recentlyActive = now - lastActive <= inactiveThreshold;
+      
+      // A user should be cleaned up if they:
+      // 1. Explicitly marked as not viewing the page (tab closed/switched)
+      // 2. OR haven't been active recently (no heartbeats recently)
+      const inactive = (data.isViewingPage === false) || !recentlyActive;
+      
+      if (inactive) {
+        hasInactiveUsers = true;
+        // Remove the boardId from the user document instead of deleting
+        // This preserves their identity but removes them from the board
+        batch.update(doc.ref, { 
+          boardId: null,
+          lastLeaveTime: serverTimestamp(),
+          isViewingPage: false
+        });
+      }
+    });
+    
+    if (hasInactiveUsers) {
+      await batch.commit();
+    }
+    
+    return hasInactiveUsers;
+  } catch (error) {
+    console.error("Error cleaning up inactive users:", error);
+    return false;
+  }
+};

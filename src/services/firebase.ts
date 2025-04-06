@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore, Timestamp } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
+import { getDatabase } from "firebase/database";
 
 // Your web app's Firebase configuration
 // In a real app, set this up as environment variables (.env file)
@@ -11,12 +12,14 @@ const firebaseConfig = {
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL || `https://${import.meta.env.VITE_FIREBASE_PROJECT_ID}-default-rtdb.firebaseio.com`,
 };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 export const auth = getAuth(app);
+export const rtdb = getDatabase(app);
 
 // Type for a board column
 export interface Column {
@@ -62,4 +65,14 @@ export interface User {
   color: string;
   boardId: string;
   lastActive: Timestamp;
+  isViewingPage?: boolean;
+}
+
+// Type for online user in realtime database
+export interface OnlineUser {
+  id: string;
+  name: string;
+  color: string;
+  boardId: string;
+  lastOnline: number;
 }
