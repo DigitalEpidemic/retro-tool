@@ -1,10 +1,10 @@
-import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { User } from "firebase/auth"; // Import User type
-import Column from "../Column"; // This is the real component
+import React from "react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useFirebase } from "../../contexts/FirebaseContext"; // Adjust the import path
 import { addCard } from "../../services/boardService"; // Adjust the import path
+import Column from "../Column"; // This is the real component
 
 // Mock dependencies
 vi.mock("../../contexts/FirebaseContext", () => ({
@@ -290,11 +290,11 @@ describe("Column", () => {
   // Test to verify the user's displayName is correctly passed to addCard
   it("passes user's displayName to addCard", async () => {
     // Mock a user with a displayName
-    const userWithName = { 
-      uid: "test-user-123", 
-      displayName: "Test User" 
+    const userWithName = {
+      uid: "test-user-123",
+      displayName: "Test User",
     };
-    
+
     // Mock the firebase hook to return a user with displayName
     vi.mocked(useFirebase).mockReturnValue({
       user: userWithName as User,
@@ -304,7 +304,7 @@ describe("Column", () => {
 
     renderColumn();
     fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
-    
+
     const textarea = screen.getByPlaceholderText(
       "Type here... Press Enter to save."
     );
@@ -312,7 +312,7 @@ describe("Column", () => {
 
     // Enter content
     fireEvent.change(textarea, { target: { value: "New card content" } });
-    
+
     // Submit form
     fireEvent.submit(form);
 
@@ -332,11 +332,11 @@ describe("Column", () => {
   // Test to verify anonymous fallback when displayName is null
   it("uses 'Anonymous User' as fallback when displayName is null", async () => {
     // Mock a user with null displayName
-    const userWithoutName = { 
-      uid: "test-user-123", 
-      displayName: null 
+    const userWithoutName = {
+      uid: "test-user-123",
+      displayName: null,
     };
-    
+
     // Mock the firebase hook to return a user without displayName
     vi.mocked(useFirebase).mockReturnValue({
       user: userWithoutName as User,
@@ -346,7 +346,7 @@ describe("Column", () => {
 
     renderColumn();
     fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
-    
+
     const textarea = screen.getByPlaceholderText(
       "Type here... Press Enter to save."
     );
@@ -354,7 +354,7 @@ describe("Column", () => {
 
     // Enter content
     fireEvent.change(textarea, { target: { value: "Anonymous card" } });
-    
+
     // Submit form
     fireEvent.submit(form);
 

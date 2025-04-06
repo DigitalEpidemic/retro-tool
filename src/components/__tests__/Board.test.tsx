@@ -1,21 +1,13 @@
-import React from "react"; // Import React
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"; // Added waitFor
+import type { DropResult } from "@hello-pangea/dnd"; // Import DropResult
+import { act, fireEvent, render, screen } from "@testing-library/react"; // Added waitFor
 import userEvent from "@testing-library/user-event";
 import type { User as FirebaseUser } from "firebase/auth";
 import { Timestamp, updateDoc } from "firebase/firestore";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type {
-  DraggableProvided, // Import specific DnD types
-  DroppableProvided, // Import specific DnD types
-  DropResult,
-} from "@hello-pangea/dnd"; // Import DropResult
 import * as FirebaseContext from "../../contexts/FirebaseContext";
 import * as boardService from "../../services/boardService";
-import type {
-  Board as BoardType,
-  Card as CardType,
-} from "../../services/firebase"; // Import types from firebase
+import type { Board as BoardType } from "../../services/firebase"; // Import types from firebase
 import Board from "../Board";
 
 // Create a mock document snapshot that implements the exists() method
@@ -31,7 +23,7 @@ const createMockDocSnap = (
 // Create a mock Timestamp factory to avoid null values
 const createMockTimestamp = (milliseconds?: number) => ({
   toDate: () => new Date(milliseconds || Date.now()),
-  toMillis: () => milliseconds || Date.now()
+  toMillis: () => milliseconds || Date.now(),
 });
 
 // Mock firebase module entirely
@@ -98,7 +90,7 @@ vi.mock("../../services/boardService", () => {
           timerStartTime: createMockTimestamp(), // Use valid Timestamp
         });
       }, 0);
-      
+
       // Return unsubscribe function
       return vi.fn();
     }),
@@ -150,7 +142,7 @@ vi.mock("../../services/boardService", () => {
           },
         ]);
       }, 0);
-      
+
       // Return unsubscribe function
       return vi.fn();
     }),
@@ -222,8 +214,8 @@ vi.mock("firebase/firestore", () => {
 // Mock Card component to simplify tests
 vi.mock("../Card", () => ({
   default: ({ card, provided }: any) => (
-    <div 
-      data-testid={`card-${card.id}`} 
+    <div
+      data-testid={`card-${card.id}`}
       data-card-data={JSON.stringify(card)}
       {...provided?.draggableProps}
     >
@@ -1358,7 +1350,7 @@ describe("Board", () => {
       // Mock resetTimer directly with a mock function that tracks calls
       const resetTimerMock = vi.fn().mockResolvedValue(undefined);
       vi.mocked(boardService.resetTimer).mockImplementation(resetTimerMock);
-      
+
       vi.mocked(boardService.startTimer).mockResolvedValue();
       vi.mocked(boardService.pauseTimer).mockResolvedValue();
 
@@ -1448,7 +1440,7 @@ describe("Board", () => {
         "test-board-id",
         runningBoardState
       );
-      
+
       // Simulate board update after first pause - 118 seconds left
       const firstPausedState = {
         ...runningBoardState,
@@ -1459,17 +1451,17 @@ describe("Board", () => {
         timerOriginalDurationSeconds: 120, // Keep original duration
       };
       act(() => boardCallback(firstPausedState));
-      
+
       // 5. Verify timer is paused at the partially elapsed time
       expect(screen.getByDisplayValue("1:58")).toBeInTheDocument(); // 118 seconds = 1:58
-      
+
       // 6. Start the timer again
       await user.click(playButton);
       expect(boardService.startTimer).toHaveBeenCalledWith(
         "test-board-id",
         firstPausedState
       );
-      
+
       // Simulate board update after second start
       const secondRunningState = {
         ...firstPausedState,
@@ -1480,14 +1472,14 @@ describe("Board", () => {
         timerOriginalDurationSeconds: 120, // Original time should still be 120
       };
       act(() => boardCallback(secondRunningState));
-      
+
       // 7. Pause the timer again after 5 more seconds (113 seconds left)
       await user.click(pauseButton);
       expect(boardService.pauseTimer).toHaveBeenCalledWith(
         "test-board-id",
         secondRunningState
       );
-      
+
       // Simulate board update after second pause - 113 seconds left
       const secondPausedState = {
         ...secondRunningState,
@@ -1498,27 +1490,27 @@ describe("Board", () => {
         timerOriginalDurationSeconds: 120, // Still tracking the original
       };
       act(() => boardCallback(secondPausedState));
-      
+
       // Clear mock history before testing reset
       resetTimerMock.mockClear();
-      
+
       // 8. Verify the timer shows 1:53
       expect(screen.getByDisplayValue("1:53")).toBeInTheDocument();
-      
+
       // 9. Click Reset
       const resetButton = screen.getByRole("button", { name: /reset timer/i });
       await act(async () => {
         await user.click(resetButton);
       });
-      
-      // THIS IS THE KEY TEST FOR THE BUG: 
+
+      // THIS IS THE KEY TEST FOR THE BUG:
       // Verify resetTimer was called with the ORIGINAL duration (120s)
       // not the current duration (113s or 118s)
       expect(resetTimerMock).toHaveBeenCalledWith(
         "test-board-id",
         120 // Original user-set duration of 2:00
       );
-      
+
       // Simulate board update after reset
       const resetBoardState = {
         ...secondPausedState,
@@ -1529,7 +1521,7 @@ describe("Board", () => {
         timerOriginalDurationSeconds: 120,
       };
       act(() => boardCallback(resetBoardState));
-      
+
       // Verify the timer shows the original 2:00
       expect(screen.getByDisplayValue("2:00")).toBeInTheDocument();
     });
@@ -1567,13 +1559,13 @@ describe("Board", () => {
     it("sorts cards by position by default", async () => {
       // No need to check the actual order in the DOM - just verify the default sorting is by position
       expect(mockBoard.columns.col1.sortByVotes).toBe(false);
-      
+
       // If we feel the need to verify the sort function:
       const cards = [
         { id: "1", position: 1, votes: 5 },
         { id: "2", position: 0, votes: 2 },
       ];
-      
+
       // In position sort, card with position 0 should come first
       const sorted = [...cards].sort((a, b) => a.position - b.position);
       expect(sorted[0].id).toBe("2");
@@ -1582,7 +1574,7 @@ describe("Board", () => {
 
     it("sorts cards by votes when toggled", async () => {
       const user = userEvent.setup();
-      
+
       // Setup the test by rendering
       await act(async () => {
         render(
@@ -1596,7 +1588,7 @@ describe("Board", () => {
 
       // Find the sort toggle button for column 1
       const sortButton = screen.getByTestId("sort-toggle-col1");
-      
+
       // Click the sort button
       await user.click(sortButton);
 
@@ -1606,13 +1598,13 @@ describe("Board", () => {
         "col1",
         true // Toggling from false (default) to true
       );
-      
+
       // If we feel the need to verify the sort function:
       const cards = [
         { id: "1", position: 1, votes: 5 },
         { id: "2", position: 0, votes: 2 },
       ];
-      
+
       // In votes sort, card with votes 5 should come first
       const sorted = [...cards].sort((a, b) => b.votes - a.votes);
       expect(sorted[0].id).toBe("1");
@@ -1879,50 +1871,54 @@ describe("Board", () => {
   it("displays error if updateColumnSortState fails", async () => {
     // Clear previous mocks
     vi.clearAllMocks();
-    
+
     // Create a spy on console.error
     const consoleErrorSpy = vi.spyOn(console, "error");
-    
+
     // Create an error to be thrown
     const mockError = new Error("Failed to update sort state");
-    
+
     // Mock updateColumnSortState to reject with our error
     vi.mocked(boardService.updateColumnSortState).mockRejectedValue(mockError);
-    
+
     // Create a component specifically for this test that mimics the Board component's error handling
     function TestComponent() {
       const handleSortToggle = async () => {
         try {
-          await boardService.updateColumnSortState("test-board-id", "col1", true);
+          await boardService.updateColumnSortState(
+            "test-board-id",
+            "col1",
+            true
+          );
         } catch (error) {
           console.error("Error updating sort state:", error);
         }
       };
-      
+
       return (
         <button data-testid="sort-toggle" onClick={handleSortToggle}>
           Toggle Sort
         </button>
       );
     }
-    
+
     // Render our test component
     render(<TestComponent />);
-    
+
     // Find the button and click it to trigger the error
     const button = screen.getByTestId("sort-toggle");
     await act(async () => {
       fireEvent.click(button);
       // Allow the Promise in handleSortToggle to resolve
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
     });
-    
+
     // Verify the error was logged
     expect(consoleErrorSpy).toHaveBeenCalledWith(
       "Error updating sort state:",
       mockError
     );
-    
+
     // Clean up
     consoleErrorSpy.mockRestore();
   });
@@ -1935,7 +1931,7 @@ describe("Board", () => {
   it("handles drag and drop operations correctly", async () => {
     // Mock the service to resolve
     vi.mocked(boardService.updateCardPosition).mockResolvedValue();
-    
+
     // Render the component within act to handle state updates
     await act(async () => {
       render(
@@ -1946,13 +1942,13 @@ describe("Board", () => {
         </MemoryRouter>
       );
     });
-    
+
     // Check that the drag-drop context is rendered
     expect(screen.getByTestId("drag-drop-context")).toBeInTheDocument();
-    
+
     // Verify cards are in the DOM by checking their text
     expect(screen.getByText("Test Card 1")).toBeInTheDocument();
-    
+
     // Simulate a drag and drop by manually calling the captured onDragEnd handler
     if (capturedOnDragEnd) {
       // Create a sample drop result for moving card1 from col1 to col2
@@ -1961,24 +1957,24 @@ describe("Board", () => {
         type: "DEFAULT",
         source: {
           droppableId: "col1",
-          index: 0
+          index: 0,
         },
         destination: {
           droppableId: "col2",
-          index: 0
+          index: 0,
         },
         reason: "DROP",
         mode: "FLUID",
-        combine: null
+        combine: null,
       };
-      
+
       // Call the onDragEnd handler directly
       act(() => {
         if (capturedOnDragEnd) {
           capturedOnDragEnd(dropResult);
         }
       });
-      
+
       // Verify that updateCardPosition was called with the correct parameters
       expect(boardService.updateCardPosition).toHaveBeenCalledWith(
         "card1",

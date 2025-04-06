@@ -1,8 +1,7 @@
-import React from "react";
-import { render, screen, waitFor, act } from "@testing-library/react"; // Import act
-import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
-import { FirebaseProvider, useFirebase } from "./FirebaseContext"; // Adjust the import path as needed
+import { act, render, screen, waitFor } from "@testing-library/react"; // Import act
 import { User } from "firebase/auth";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { FirebaseProvider, useFirebase } from "./FirebaseContext"; // Adjust the import path as needed
 
 // Mock Firebase fully including both auth and firestore
 vi.mock("firebase/app", () => ({
@@ -34,16 +33,17 @@ vi.mock("firebase/auth", () => {
 vi.mock("firebase/firestore", () => ({
   getFirestore: vi.fn(() => ({})),
   doc: vi.fn(() => "mocked-doc-ref"),
-  getDoc: vi.fn(() => Promise.resolve({
-    exists: () => false,
-    data: () => ({}),
-  })),
+  getDoc: vi.fn(() =>
+    Promise.resolve({
+      exists: () => false,
+      data: () => ({}),
+    })
+  ),
 }));
 
 // Import the mocked services
-import { auth } from "../services/firebase"; 
 import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
-import { getDoc } from "firebase/firestore";
+import { auth } from "../services/firebase";
 
 // Mock Firebase services
 vi.mock("../services/firebase", () => ({
@@ -81,13 +81,13 @@ describe("FirebaseProvider", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     unsubscribeSpy = vi.fn(); // Reset the unsubscribe spy
-    
+
     // Set up the mocks for each test
     vi.mocked(onAuthStateChanged).mockImplementation((auth, callback) => {
       authStateCallback = callback;
       return unsubscribeSpy;
     });
-    
+
     vi.mocked(auth.onAuthStateChanged).mockImplementation((callback) => {
       authStateCallback = callback;
       return unsubscribeSpy;
@@ -109,7 +109,9 @@ describe("FirebaseProvider", () => {
 
   it("should sign in anonymously and set user state on successful auth change", async () => {
     const mockUser = { uid: "test-user-123", displayName: null } as User;
-    vi.mocked(signInAnonymously).mockResolvedValueOnce({ user: mockUser } as any);
+    vi.mocked(signInAnonymously).mockResolvedValueOnce({
+      user: mockUser,
+    } as any);
 
     render(
       <FirebaseProvider>
@@ -125,7 +127,7 @@ describe("FirebaseProvider", () => {
       // First trigger with null to start anonymous sign-in
       if (authStateCallback) authStateCallback(null);
       // Wait a moment for the anonymous sign-in promise to resolve
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
       // Then trigger with the mock user to simulate successful sign-in
       if (authStateCallback) authStateCallback(mockUser);
     });
@@ -158,13 +160,15 @@ describe("FirebaseProvider", () => {
     // Wait for the error state to be set
     await waitFor(() => {
       expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
-      expect(screen.getByText(`Error: ${mockError.message}`)).toBeInTheDocument();
+      expect(
+        screen.getByText(`Error: ${mockError.message}`)
+      ).toBeInTheDocument();
     });
   });
 
   it("should set user to null when auth state changes to null", async () => {
     const mockUser = { uid: "test-user-123", displayName: null } as User;
-    
+
     render(
       <FirebaseProvider>
         <TestConsumer />
@@ -177,14 +181,16 @@ describe("FirebaseProvider", () => {
     });
 
     // Wait for user to be set
-    await waitFor(() => 
+    await waitFor(() =>
       expect(screen.getByText(`User ID: ${mockUser.uid}`)).toBeInTheDocument()
     );
 
     // In the actual implementation, when auth state changes to null,
     // it initiates anonymous sign-in again - we need to make that fail
     // so the user stays null
-    vi.mocked(signInAnonymously).mockRejectedValueOnce(new Error("Sign-in failed"));
+    vi.mocked(signInAnonymously).mockRejectedValueOnce(
+      new Error("Sign-in failed")
+    );
 
     // Simulate sign-out by changing auth state to null
     await act(async () => {

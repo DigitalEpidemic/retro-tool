@@ -1,10 +1,9 @@
-// src/components/__tests__/Card.test.tsx
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { vi, describe, it, expect, beforeEach } from "vitest";
-import { Timestamp } from "firebase/firestore"; // Import Timestamp
-import Card from "../Card";
-import { Card as CardType } from "../../services/firebase";
 import { DraggableProvided } from "@hello-pangea/dnd";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { Timestamp } from "firebase/firestore"; // Import Timestamp
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { Card as CardType } from "../../services/firebase";
+import Card from "../Card";
 
 // Mock the boardService functions
 vi.mock("../../services/boardService", () => ({

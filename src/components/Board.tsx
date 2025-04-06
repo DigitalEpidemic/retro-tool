@@ -1,62 +1,64 @@
 import {
-  useState,
+  ChangeEvent,
+  FocusEvent,
+  KeyboardEvent,
   useEffect,
   useRef,
-  ChangeEvent,
-  KeyboardEvent,
-  FocusEvent,
+  useState,
 } from "react"; // Remove memo import
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 // Use @hello-pangea/dnd instead of react-beautiful-dnd
 import {
   DragDropContext,
-  Droppable,
   Draggable,
+  Droppable,
   DropResult,
 } from "@hello-pangea/dnd";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import {
+  Download,
+  Pause,
+  Play, // Import Pause icon
+  RotateCcw,
+  Settings,
+  Share2,
+  TrendingUp,
+  Users,
+} from "lucide-react";
+import { useFirebase } from "../contexts/FirebaseContext";
+import {
+  createBoard,
+  joinBoard,
+  pauseTimer,
+  resetTimer,
+  startTimer,
   subscribeToBoard,
   subscribeToCards,
   updateCardPosition,
-  createBoard,
-  startTimer,
-  pauseTimer,
-  resetTimer,
   updateColumnSortState,
   updateParticipantName as updateParticipantNameFirestore,
-  joinBoard,
-  testFirestoreWrite,
-  cleanupInactiveUsers,
 } from "../services/boardService";
-import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "../services/firebase";
-import Column from "./Column";
+import { Board as BoardType, Card as CardType, db } from "../services/firebase";
 import CardComponent from "./Card";
+import Column from "./Column";
 import ParticipantsPanel from "./ParticipantsPanel"; // Add ParticipantsPanel import
-import { useFirebase } from "../contexts/FirebaseContext";
-import { Board as BoardType, Card as CardType, User } from "../services/firebase"; // Import User type
-import {
-  Users,
-  TrendingUp,
-  Share2,
-  Settings,
-  Play,
-  Pause, // Import Pause icon
-  RotateCcw,
-  Download,
-} from "lucide-react";
 
 // Import the new presence service
-import { 
-  setupPresence, 
-  subscribeToParticipants, 
-  updateParticipantName as updateParticipantNameRTDB 
-} from "../services/presenceService";
 import { OnlineUser } from "../services/firebase";
+import {
+  setupPresence,
+  subscribeToParticipants,
+  updateParticipantName as updateParticipantNameRTDB,
+} from "../services/presenceService";
 
 export default function Board() {
   const { boardId } = useParams<{ boardId: string }>();
-  const { user, loading: authLoading, error: authError, updateUserDisplayName } = useFirebase(); // Get auth loading state and updateUserDisplayName
+  const {
+    user,
+    loading: authLoading,
+    error: authError,
+    updateUserDisplayName,
+  } = useFirebase(); // Get auth loading state and updateUserDisplayName
   const navigate = useNavigate();
   const [board, setBoard] = useState<BoardType | null>(null); // Use BoardType
   const [cards, setCards] = useState<CardType[]>([]);
@@ -87,7 +89,7 @@ export default function Board() {
       setLoading(false);
       return;
     }
-    
+
     // Auth is complete, user exists, proceed with subscriptions
     setLoading(true); // Set loading true while fetching board data
     setError(null); // Clear previous errors
@@ -152,27 +154,42 @@ export default function Board() {
 
         // Still join the board in Firestore for backwards compatibility with cards
         try {
-          const joinResult = await joinBoard(boardId, user.uid, user.displayName || "Anonymous User");
-          
+          const joinResult = await joinBoard(
+            boardId,
+            user.uid,
+            user.displayName || "Anonymous User"
+          );
+
           // If join was successful and we have a name that's different from the current user's displayName,
           // update the user's displayName in the context
-          if (joinResult.success && joinResult.name && joinResult.name !== user.displayName && updateUserDisplayName) {
+          if (
+            joinResult.success &&
+            joinResult.name &&
+            joinResult.name !== user.displayName &&
+            updateUserDisplayName
+          ) {
             updateUserDisplayName(joinResult.name);
             // Setup real-time presence tracking with the updated display name
             cleanupPresence = setupPresence(boardId, joinResult.name);
           } else {
             // Setup real-time presence tracking with the current display name
-            cleanupPresence = setupPresence(boardId, user.displayName || "Anonymous User");
+            cleanupPresence = setupPresence(
+              boardId,
+              user.displayName || "Anonymous User"
+            );
           }
         } catch (joinError) {
           console.error("Error joining board in Firestore:", joinError);
         }
-        
+
         // Subscribe to participants using the new real-time service
-        unsubscribeParticipants = subscribeToParticipants(boardId, (participantsData) => {
-          setParticipants(participantsData);
-        });
-        
+        unsubscribeParticipants = subscribeToParticipants(
+          boardId,
+          (participantsData) => {
+            setParticipants(participantsData);
+          }
+        );
+
         return () => {
           // This will be called when the component unmounts
           cleanupPresence();
@@ -192,13 +209,15 @@ export default function Board() {
       unsubscribeBoard();
       unsubscribeCards();
       unsubscribeParticipants();
-      
+
       // Clean up any resources from the setup
-      setupPromise.then(cleanup => {
-        if (typeof cleanup === 'function') {
-          cleanup(); // This will clear intervals and remove event listeners
-        }
-      }).catch(err => console.error("Error during cleanup:", err));
+      setupPromise
+        .then((cleanup) => {
+          if (typeof cleanup === "function") {
+            cleanup(); // This will clear intervals and remove event listeners
+          }
+        })
+        .catch((err) => console.error("Error during cleanup:", err));
     };
   }, [boardId, navigate, user, authLoading, updateUserDisplayName]);
 
@@ -470,7 +489,8 @@ export default function Board() {
       // Fallback to initialDurationSeconds only if board.timerDurationSeconds is undefined/null
       const durationToResetTo =
         board?.timerOriginalDurationSeconds ?? // Use the original duration if available
-        board?.timerDurationSeconds ?? initialDurationSeconds;
+        board?.timerDurationSeconds ??
+        initialDurationSeconds;
 
       // Update local state immediately for responsiveness
       setEditableTimeStr(formatTime(durationToResetTo));
@@ -485,16 +505,19 @@ export default function Board() {
   };
 
   // Handle updating participant name
-  const handleUpdateParticipantName = async (userId: string, newName: string) => {
+  const handleUpdateParticipantName = async (
+    userId: string,
+    newName: string
+  ) => {
     if (!userId || !newName.trim() || !boardId) return;
-    
+
     try {
       // Update in Firestore for backwards compatibility with cards
       await updateParticipantNameFirestore(userId, newName);
-      
+
       // Update in Realtime Database for real-time presence
       await updateParticipantNameRTDB(userId, boardId, newName);
-      
+
       // If this is the current user, update the context
       if (user && userId === user.uid && updateUserDisplayName) {
         updateUserDisplayName(newName);
@@ -713,8 +736,10 @@ export default function Board() {
 
           {/* Other Board Controls */}
           <div className="flex space-x-5">
-            <button 
-              className={`text-gray-700 hover:text-gray-900 flex items-center cursor-pointer ${isPanelOpen ? 'text-blue-500' : ''}`}
+            <button
+              className={`text-gray-700 hover:text-gray-900 flex items-center cursor-pointer ${
+                isPanelOpen ? "text-blue-500" : ""
+              }`}
               onClick={toggleParticipantsPanel}
             >
               <Users className="h-5 w-5" />
@@ -750,11 +775,11 @@ export default function Board() {
       </div>
 
       {/* Use the participants panel */}
-      <ParticipantsPanel 
-        isOpen={isPanelOpen} 
+      <ParticipantsPanel
+        isOpen={isPanelOpen}
         onClose={() => setIsPanelOpen(false)}
         participants={participants}
-        currentUserId={user?.uid || ''}
+        currentUserId={user?.uid || ""}
         onUpdateName={handleUpdateParticipantName}
       />
 

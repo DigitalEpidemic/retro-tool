@@ -1,6 +1,6 @@
-import { Routes, Route, Link } from "react-router-dom"; // Import routing components
-import Board from "./components/Board";
+import { Link, Route, Routes } from "react-router-dom"; // Import routing components
 import "./App.css";
+import Board from "./components/Board";
 import "./index.css";
 
 // A simple component for the root path

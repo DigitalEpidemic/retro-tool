@@ -1,8 +1,8 @@
-import { useState, useRef } from "react";
-import { ThumbsUp, ThumbsDown, Edit2, Trash2 } from "lucide-react";
+import { Edit2, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react";
+import { useRef, useState } from "react";
 // Import from boardService instead of cardService
-import { updateCard, deleteCard, voteForCard } from "../services/boardService";
 import { DraggableProvided } from "@hello-pangea/dnd"; // Import DraggableProvided
+import { deleteCard, updateCard, voteForCard } from "../services/boardService";
 import { Card as CardType } from "../services/firebase"; // Import Card type
 
 interface CardProps {

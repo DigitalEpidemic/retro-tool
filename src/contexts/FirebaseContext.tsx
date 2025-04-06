@@ -1,12 +1,18 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { 
-  getAuth, 
-  signInAnonymously, 
-  onAuthStateChanged, 
-  User as FirebaseUser 
+import {
+  User as FirebaseUser,
+  getAuth,
+  onAuthStateChanged,
+  signInAnonymously,
 } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "../services/firebase";
+import {
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
+import { db } from "../services/firebase";
 
 // Extended User type that includes displayName convenience property
 interface ExtendedUser extends FirebaseUser {
@@ -24,16 +30,12 @@ interface FirebaseContextType {
 const defaultContextValue: FirebaseContextType = {
   user: null,
   loading: true,
-  error: null
+  error: null,
 };
 
 const FirebaseContext = createContext<FirebaseContextType>(defaultContextValue);
 
-export const FirebaseProvider = ({
-  children,
-}: {
-  children: ReactNode;
-}) => {
+export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<ExtendedUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -43,7 +45,7 @@ export const FirebaseProvider = ({
     if (user) {
       const updatedUser = {
         ...user,
-        displayName: name
+        displayName: name,
       } as ExtendedUser;
       setUser(updatedUser);
     }
@@ -52,23 +54,24 @@ export const FirebaseProvider = ({
   useEffect(() => {
     const auth = getAuth();
     setLoading(true);
-    
+
     // First, set up the auth state listener
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
         if (firebaseUser) {
           // Fetch the user's stored data from Firestore
-          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-          
+          const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
+
           // Create an extended user object with the stored name if available
           const extendedUser = {
             ...firebaseUser,
             // Override displayName with the name from Firestore if available
-            displayName: userDoc.exists() && userDoc.data()?.name 
-              ? userDoc.data().name 
-              : firebaseUser.displayName || 'Anonymous User'
+            displayName:
+              userDoc.exists() && userDoc.data()?.name
+                ? userDoc.data().name
+                : firebaseUser.displayName || "Anonymous User",
           } as ExtendedUser;
-          
+
           setUser(extendedUser);
         } else {
           // No user - attempt anonymous sign-in
@@ -92,14 +95,16 @@ export const FirebaseProvider = ({
     // Clean up the listener
     return () => {
       // Make sure unsubscribe is a function before calling it
-      if (typeof unsubscribe === 'function') {
+      if (typeof unsubscribe === "function") {
         unsubscribe();
       }
     };
   }, []);
 
   return (
-    <FirebaseContext.Provider value={{ user, loading, error, updateUserDisplayName }}>
+    <FirebaseContext.Provider
+      value={{ user, loading, error, updateUserDisplayName }}
+    >
       {children}
     </FirebaseContext.Provider>
   );
@@ -108,7 +113,7 @@ export const FirebaseProvider = ({
 export const useFirebase = () => {
   const context = useContext(FirebaseContext);
   if (context === defaultContextValue) {
-    throw new Error('useFirebase must be used within a FirebaseProvider');
+    throw new Error("useFirebase must be used within a FirebaseProvider");
   }
   return context;
 };

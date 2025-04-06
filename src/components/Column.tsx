@@ -1,8 +1,7 @@
+import { ArrowUpDown, MoreVertical } from "lucide-react"; // Import icons
 import React from "react";
-// Removed unused imports: Droppable, DraggableProvided, CardComponent, CardType
 import { useFirebase } from "../contexts/FirebaseContext"; // To get user ID
 import { addCard } from "../services/boardService"; // To add new cards
-import { ArrowUpDown, MoreVertical } from "lucide-react"; // Import icons
 
 interface ColumnProps {
   id: string;
@@ -40,7 +39,13 @@ export default function Column({
     if (!newCardContent.trim() || !user) return;
 
     try {
-      await addCard(boardId, id, newCardContent.trim(), user.uid, user.displayName || "Anonymous User");
+      await addCard(
+        boardId,
+        id,
+        newCardContent.trim(),
+        user.uid,
+        user.displayName || "Anonymous User"
+      );
       setNewCardContent(""); // Clear input after adding
       setIsAddingCard(false); // Hide the form after adding
     } catch (error) {

@@ -1,7 +1,7 @@
-import '@testing-library/jest-dom';
-import { expect, afterEach, vi } from 'vitest';
-import { cleanup } from '@testing-library/react';
-import * as matchers from '@testing-library/jest-dom/matchers';
+import "@testing-library/jest-dom";
+import * as matchers from "@testing-library/jest-dom/matchers";
+import { cleanup } from "@testing-library/react";
+import { afterEach, expect, vi } from "vitest";
 
 // Extend Vitest's expect method with methods from react-testing-library
 expect.extend(matchers);
@@ -18,7 +18,7 @@ class IntersectionObserverMock {
   disconnect = vi.fn();
 }
 
-Object.defineProperty(window, 'IntersectionObserver', {
+Object.defineProperty(window, "IntersectionObserver", {
   writable: true,
   configurable: true,
   value: IntersectionObserverMock,
@@ -31,14 +31,14 @@ class ResizeObserverMock {
   disconnect = vi.fn();
 }
 
-Object.defineProperty(window, 'ResizeObserver', {
+Object.defineProperty(window, "ResizeObserver", {
   writable: true,
   configurable: true,
   value: ResizeObserverMock,
 });
 
 // Mock window.matchMedia
-Object.defineProperty(window, 'matchMedia', {
+Object.defineProperty(window, "matchMedia", {
   writable: true,
   value: vi.fn().mockImplementation((query: string) => ({
     matches: false,
@@ -57,11 +57,15 @@ const originalConsoleError = console.error;
 console.error = (...args: any[]) => {
   // Ignore certain errors that are expected in test environment
   const ignoredErrors = [
-    'Error: Not implemented: navigation',
-    'Warning: ReactDOM.render is no longer supported'
+    "Error: Not implemented: navigation",
+    "Warning: ReactDOM.render is no longer supported",
   ];
-  
-  if (!args.some(arg => ignoredErrors.some(ignored => String(arg).includes(ignored)))) {
+
+  if (
+    !args.some((arg) =>
+      ignoredErrors.some((ignored) => String(arg).includes(ignored))
+    )
+  ) {
     originalConsoleError(...args);
   }
-}; 
+};

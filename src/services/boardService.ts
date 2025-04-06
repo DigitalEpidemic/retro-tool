@@ -1,22 +1,20 @@
-import { db, auth, Board, Card } from "./firebase"; // Import auth along with other exports
-import { User } from "./firebase"; // Import User type
 import {
+  addDoc,
   collection,
+  deleteDoc,
   doc,
-  addDoc, // Keep for potential future use if needed
+  getDoc,
+  getDocs, // Add getDoc back for resetTimer
+  increment,
+  onSnapshot,
+  query,
+  serverTimestamp, // Keep for potential future use if needed
   setDoc, // Import setDoc for creating with specific ID
   updateDoc,
-  deleteDoc,
-  query,
   where,
-  onSnapshot,
-  serverTimestamp,
   writeBatch,
-  getDocs,
-  getDoc, // Add getDoc back for resetTimer
-  increment,
-  Timestamp,
 } from "firebase/firestore";
+import { Board, Card, db, User } from "./firebase"; // Import auth along with other exports
 // nanoid and Timestamp are no longer used directly here
 
 // Create a new board, optionally with a specific ID
@@ -230,13 +228,14 @@ export const startTimer = async (
     currentBoardData?.timerPausedDurationSeconds ?? // Use paused time if available
     currentBoardData?.timerDurationSeconds ?? // Otherwise use original duration
     300; // Default to 300 if nothing is set
-  
+
   // Track the original duration that the user set
-  const originalDuration = 
+  const originalDuration =
     currentBoardData?.timerOriginalDurationSeconds ?? // Use existing original if available
-    (currentBoardData?.timerPausedDurationSeconds === null 
-      ? currentBoardData?.timerDurationSeconds 
-      : currentBoardData?.timerOriginalDurationSeconds ?? currentBoardData?.timerDurationSeconds) ?? 
+    (currentBoardData?.timerPausedDurationSeconds === null
+      ? currentBoardData?.timerDurationSeconds
+      : currentBoardData?.timerOriginalDurationSeconds ??
+        currentBoardData?.timerDurationSeconds) ??
     durationToUse; // Otherwise use current duration
 
   await updateDoc(boardRef, {
@@ -274,7 +273,9 @@ export const pauseTimer = async (
   const remainingSeconds = parseInt((remainingMs / 1000).toString(), 10);
 
   // Ensure we maintain the original duration
-  const originalDuration = currentBoardData.timerOriginalDurationSeconds ?? currentBoardData.timerDurationSeconds;
+  const originalDuration =
+    currentBoardData.timerOriginalDurationSeconds ??
+    currentBoardData.timerDurationSeconds;
 
   await updateDoc(boardRef, {
     timerIsRunning: false,
@@ -291,7 +292,7 @@ export const resetTimer = async (
   initialDuration: number = 300
 ) => {
   const boardRef = doc(db, "boards", boardId);
-  
+
   // Just use the provided initialDuration directly
   // The calling code (handleResetTimer) will ensure we get the original duration if available
   await updateDoc(boardRef, {
@@ -326,96 +327,104 @@ export const subscribeToBoardParticipants = (
       collection(db, "users"),
       where("boardId", "==", boardId)
     );
-    
+
     // Use a simple cache to avoid duplicate updates
-    let lastParticipantsJSON = '';
-    
+    let lastParticipantsJSON = "";
+
     return onSnapshot(
-      participantsQuery, 
+      participantsQuery,
       { includeMetadataChanges: false }, // Only notify on committed changes
       (querySnapshot) => {
         const participants: User[] = [];
         const now = Date.now();
         const inactiveThreshold = 20 * 1000; // 20 seconds in milliseconds
-        
+
         querySnapshot.forEach((doc) => {
           const data = doc.data();
           const user = {
             id: doc.id,
-            name: data.name || 'Anonymous',
-            color: data.color || '#6B7280',
+            name: data.name || "Anonymous",
+            color: data.color || "#6B7280",
             boardId: data.boardId || boardId,
             lastActive: data.lastActive || null,
-            isViewingPage: data.isViewingPage !== false // Default to true if not set
+            isViewingPage: data.isViewingPage !== false, // Default to true if not set
           } as User;
-          
+
           // A user is considered active if EITHER:
-          // 1. They explicitly marked as viewing the page 
+          // 1. They explicitly marked as viewing the page
           // 2. They had activity in the last 20 seconds (for backwards compatibility)
           const lastActive = user.lastActive ? user.lastActive.toMillis() : 0;
           const recentlyActive = now - lastActive < inactiveThreshold;
           const isActive = user.isViewingPage || recentlyActive;
-          
+
           // Only include active users
           if (isActive) {
             participants.push(user);
           }
         });
-        
+
         // Sort participants by name for consistent ordering
         participants.sort((a, b) => a.name.localeCompare(b.name));
-        
+
         // Only update if the participants data has actually changed
-        const participantsJSON = JSON.stringify(participants.map(p => ({ id: p.id, name: p.name })));
+        const participantsJSON = JSON.stringify(
+          participants.map((p) => ({ id: p.id, name: p.name }))
+        );
         if (participantsJSON !== lastParticipantsJSON) {
           lastParticipantsJSON = participantsJSON;
           callback(participants);
         }
       },
       (error) => {
-        console.error(`Error getting participants for board ${boardId}:`, error);
+        console.error(
+          `Error getting participants for board ${boardId}:`,
+          error
+        );
         callback([]);
       }
     );
   } catch (error) {
-    console.error(`Error setting up participants subscription for board ${boardId}:`, error);
+    console.error(
+      `Error setting up participants subscription for board ${boardId}:`,
+      error
+    );
     return () => {};
   }
 };
 
 // Update participant name
 export const updateParticipantName = async (
-  userId: string, 
+  userId: string,
   newName: string
 ) => {
   try {
     // Update the user document
     const userRef = doc(db, "users", userId);
-    await updateDoc(userRef, { 
+    await updateDoc(userRef, {
       name: newName,
-      lastActive: serverTimestamp() 
+      lastActive: serverTimestamp(),
     });
-    
+
     // Update all cards authored by this user
     const cardsQuery = query(
-      collection(db, "cards"), 
+      collection(db, "cards"),
       where("authorId", "==", userId)
     );
-    
+
     const querySnapshot = await getDocs(cardsQuery);
-    
+
     // Only create a batch if there are cards to update
     if (!querySnapshot.empty) {
       const batch = writeBatch(db);
-      
+
       querySnapshot.forEach((cardDoc) => {
         const cardRef = doc(db, "cards", cardDoc.id);
         batch.update(cardRef, { authorName: newName });
       });
-      
+
       await batch.commit();
     }
-    
+
     return true;
   } catch (error) {
     console.error("Error updating participant name:", error);
@@ -433,34 +442,38 @@ export const joinBoard = async (
     // Random pastel color for the user
     const getRandomPastelColor = () => {
       // Use userId to generate a consistent color for the same user
-      const hash = Array.from(userId).reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      const hash = Array.from(userId).reduce(
+        (acc, char) => acc + char.charCodeAt(0),
+        0
+      );
       const hue = hash % 360;
       return `hsl(${hue}, 70%, 80%)`; // Pastel color
     };
-    
+
     // Check if user document exists
     const userRef = doc(db, "users", userId);
-    
+
     try {
       const userSnap = await getDoc(userRef);
-      
+
       if (userSnap.exists()) {
         // Get the existing name if available
         const existingName = userSnap.data().name;
-        
+
         // Update existing user - preserve existing name if present (higher priority than anonymous)
-        const nameToUse = existingName && existingName !== "Anonymous User" 
-          ? existingName 
-          : userName; 
-          
+        const nameToUse =
+          existingName && existingName !== "Anonymous User"
+            ? existingName
+            : userName;
+
         try {
           await updateDoc(userRef, {
             boardId,
             lastActive: serverTimestamp(),
             // Only update name if the incoming name is not anonymous or if no name exists
-            name: nameToUse
+            name: nameToUse,
           });
-          
+
           // Return the name that's being used
           return { success: true, name: nameToUse };
         } catch (updateError) {
@@ -475,10 +488,10 @@ export const joinBoard = async (
             name: userName,
             color: getRandomPastelColor(),
             boardId,
-            lastActive: serverTimestamp()
+            lastActive: serverTimestamp(),
           };
           await setDoc(userRef, userData);
-          
+
           // Return the name that's being used
           return { success: true, name: userName };
         } catch (createError) {
@@ -502,13 +515,13 @@ export const testFirestoreWrite = async (userId: string) => {
   try {
     // Create a test document in a 'test' collection
     const testRef = doc(db, "test", userId);
-    
+
     await setDoc(testRef, {
       timestamp: serverTimestamp(),
       test: true,
-      message: "Test write operation"
+      message: "Test write operation",
     });
-    
+
     return true;
   } catch (error) {
     console.error("Firestore write test failed:", error);
@@ -523,43 +536,43 @@ export const cleanupInactiveUsers = async (boardId: string) => {
   try {
     const now = Date.now();
     const inactiveThreshold = 30 * 1000; // 30 seconds (slightly longer than the display threshold)
-    
+
     // Query for users in this board
     const usersQuery = query(
       collection(db, "users"),
       where("boardId", "==", boardId)
     );
-    
+
     const snapshot = await getDocs(usersQuery);
     const batch = writeBatch(db);
     let hasInactiveUsers = false;
-    
-    snapshot.forEach(doc => {
+
+    snapshot.forEach((doc) => {
       const data = doc.data();
       const lastActive = data.lastActive ? data.lastActive.toMillis() : 0;
       const recentlyActive = now - lastActive <= inactiveThreshold;
-      
+
       // A user should be cleaned up if they:
       // 1. Explicitly marked as not viewing the page (tab closed/switched)
       // 2. OR haven't been active recently (no heartbeats recently)
-      const inactive = (data.isViewingPage === false) || !recentlyActive;
-      
+      const inactive = data.isViewingPage === false || !recentlyActive;
+
       if (inactive) {
         hasInactiveUsers = true;
         // Remove the boardId from the user document instead of deleting
         // This preserves their identity but removes them from the board
-        batch.update(doc.ref, { 
+        batch.update(doc.ref, {
           boardId: null,
           lastLeaveTime: serverTimestamp(),
-          isViewingPage: false
+          isViewingPage: false,
         });
       }
     });
-    
+
     if (hasInactiveUsers) {
       await batch.commit();
     }
-    
+
     return hasInactiveUsers;
   } catch (error) {
     console.error("Error cleaning up inactive users:", error);
