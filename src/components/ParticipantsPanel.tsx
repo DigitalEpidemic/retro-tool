@@ -59,13 +59,14 @@ const ParticipantsPanel = memo(({
   const validParticipants = participants.filter(p => p && p.id && p.name);
 
   return (
-    <div className="fixed right-0 top-0 h-screen w-80 bg-white shadow-lg border-l border-gray-200 z-20 overflow-y-auto">
+    <div className="fixed right-0 top-0 h-screen w-80 bg-white shadow-lg border-l border-gray-200 z-20 overflow-y-auto" data-testid="participants-panel">
       <div className="p-4 border-b border-gray-200 flex justify-between items-center">
         <h2 className="text-lg font-semibold text-gray-800">Participants</h2>
         <button 
           onClick={onClose}
           className="text-gray-500 hover:text-gray-700"
           aria-label="Close panel"
+          data-testid="close-panel"
         >
           <X className="h-5 w-5" />
         </button>
@@ -80,6 +81,7 @@ const ParticipantsPanel = memo(({
               <li 
                 key={participant.id} 
                 className="flex items-center justify-between py-2 px-3 rounded-md hover:bg-gray-50"
+                data-testid={`participant-${participant.id}`}
               >
                 <div className="flex items-center">
                   <div 
@@ -99,9 +101,13 @@ const ParticipantsPanel = memo(({
                       className="border border-blue-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                       onBlur={handleSaveName}
                       autoComplete="off"
+                      data-testid={`edit-input-${participant.id}`}
                     />
                   ) : (
-                    <span className="font-medium text-gray-700">
+                    <span 
+                      className="font-medium text-gray-700"
+                      data-testid={`participant-name-${participant.id}`}
+                    >
                       {participant.name}
                       {participant.id === currentUserId && " (You)"}
                     </span>
@@ -113,6 +119,7 @@ const ParticipantsPanel = memo(({
                     onClick={() => handleStartEdit(participant.id, participant.name)}
                     className="text-gray-400 hover:text-blue-500"
                     aria-label="Edit your name"
+                    data-testid={`edit-name-${participant.id}`}
                   >
                     <Edit2 className="h-4 w-4" />
                   </button>
@@ -123,6 +130,7 @@ const ParticipantsPanel = memo(({
                     onClick={handleSaveName}
                     className="text-green-500 hover:text-green-600"
                     aria-label="Save name"
+                    data-testid={`save-name-${participant.id}`}
                   >
                     <Check className="h-4 w-4" />
                   </button>
