@@ -13,13 +13,20 @@ vi.mock("../../services/boardService", () => ({
   voteForCard: vi.fn().mockResolvedValue(undefined), // Mock vote to resolve successfully
 }));
 
+// Mock icons to avoid SVG rendering issues in tests
+vi.mock("lucide-react", () => ({
+  Edit2: () => <div data-testid="edit-icon">Edit</div>,
+  Trash2: () => <div data-testid="trash-icon">Delete</div>,
+  Check: () => <div data-testid="check-icon">Save</div>,
+  X: () => <div data-testid="x-icon">Cancel</div>,
+  ThumbsUp: () => <div data-testid="thumbs-up-icon">Upvote</div>,
+  ThumbsDown: () => <div data-testid="thumbs-down-icon">Downvote</div>,
+}));
+
 // Mock window.confirm
 global.confirm = vi.fn(() => true); // Assume user confirms deletion
 
 // Helper function to create mock DraggableProvided
-// Helper function to create mock DraggableProvided
-// We only need to mock the parts our component interacts with or that TS requires.
-// The library adds data-* attributes dynamically.
 const mockDraggableProvided = (): DraggableProvided => ({
   innerRef: vi.fn(),
   draggableProps: {
@@ -38,8 +45,7 @@ const mockDraggableProvided = (): DraggableProvided => ({
     draggable: false,
     onDragStart: vi.fn(),
     "aria-describedby": "id",
-    // Add other properties if DraggableProvidedDragHandleProps requires them explicitly
-  }, // Removed 'as any'
+  },
 });
 
 describe("Card", () => {

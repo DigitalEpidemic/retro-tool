@@ -40,7 +40,7 @@ export default function Column({
     if (!newCardContent.trim() || !user) return;
 
     try {
-      await addCard(boardId, id, newCardContent.trim(), user.uid);
+      await addCard(boardId, id, newCardContent.trim(), user.uid, user.displayName || "Anonymous User");
       setNewCardContent(""); // Clear input after adding
       setIsAddingCard(false); // Hide the form after adding
     } catch (error) {
@@ -60,6 +60,7 @@ export default function Column({
           <button
             className="flex items-center text-blue-600 hover:text-blue-700 cursor-pointer"
             onClick={onSortToggle}
+            data-testid={`sort-toggle-${id}`}
           >
             {sortByVotes && <span className="text-xs mr-1">Votes</span>}
             <ArrowUpDown className="h-4 w-4" />

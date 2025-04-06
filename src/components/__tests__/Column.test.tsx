@@ -2,7 +2,7 @@ import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { User } from "firebase/auth"; // Import User type
-import Column from "../Column"; // Adjust the import path as necessary
+import Column from "../Column"; // This is the real component
 import { useFirebase } from "../../contexts/FirebaseContext"; // Adjust the import path
 import { addCard } from "../../services/boardService"; // Adjust the import path
 
@@ -16,21 +16,23 @@ vi.mock("../../services/boardService", () => ({
 }));
 
 // Mock lucide-react icons
-vi.mock("lucide-react", async (importOriginal) => {
-  const original = await importOriginal<typeof import("lucide-react")>();
+vi.mock("lucide-react", () => {
   return {
-    ...original,
     ArrowUpDown: (props: React.SVGProps<SVGSVGElement>) => (
       <svg data-testid="arrow-up-down-icon" {...props} />
     ),
     MoreVertical: (props: React.SVGProps<SVGSVGElement>) => (
       <svg data-testid="more-vertical-icon" {...props} />
     ),
+    // Add any other icons used by the real Column component
+    Plus: (props: React.SVGProps<SVGSVGElement>) => (
+      <svg data-testid="plus-icon" {...props} />
+    ),
   };
 });
 
 // Mock user data
-const mockUser = { uid: "test-user-123" };
+const mockUser = { uid: "test-user-123", displayName: null };
 const mockBoardId = "board-abc";
 const mockColumnId = "column-1"; // Corresponds to "Mad" title
 
@@ -165,11 +167,11 @@ describe("Column", () => {
     await waitFor(() => {
       expect(addCard).toHaveBeenCalledTimes(1);
       expect(vi.mocked(addCard)).toHaveBeenCalledWith(
-        // Use vi.mocked here too for consistency if needed, though not strictly necessary for the call check
         mockBoardId,
         mockColumnId,
         "A valid card content", // Content should be trimmed
-        mockUser.uid
+        mockUser.uid,
+        mockUser.displayName || "Anonymous User" // Include displayName parameter
       );
     });
 
@@ -247,13 +249,13 @@ describe("Column", () => {
     const saveButton = screen.getByRole("button", { name: "Save" });
     const form = screen.getByTestId("add-card-form"); // Use data-testid
 
-    // Test with empty string
+    // Try with empty content
     fireEvent.change(textarea, { target: { value: "" } });
     expect(saveButton).toBeDisabled();
     fireEvent.submit(form);
     expect(addCard).not.toHaveBeenCalled();
 
-    // Test with whitespace
+    // Try with whitespace only
     fireEvent.change(textarea, { target: { value: "   " } });
     expect(saveButton).toBeDisabled();
     fireEvent.submit(form);
@@ -283,6 +285,90 @@ describe("Column", () => {
     renderColumn({ id: "unknown-column", title: "Fallback Title" });
     expect(screen.getByText("Fallback Title")).toBeInTheDocument();
     expect(screen.queryByText("Mad")).not.toBeInTheDocument();
+  });
+
+  // Test to verify the user's displayName is correctly passed to addCard
+  it("passes user's displayName to addCard", async () => {
+    // Mock a user with a displayName
+    const userWithName = { 
+      uid: "test-user-123", 
+      displayName: "Test User" 
+    };
+    
+    // Mock the firebase hook to return a user with displayName
+    vi.mocked(useFirebase).mockReturnValue({
+      user: userWithName as User,
+      loading: false,
+      error: null,
+    });
+
+    renderColumn();
+    fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+    
+    const textarea = screen.getByPlaceholderText(
+      "Type here... Press Enter to save."
+    );
+    const form = screen.getByTestId("add-card-form");
+
+    // Enter content
+    fireEvent.change(textarea, { target: { value: "New card content" } });
+    
+    // Submit form
+    fireEvent.submit(form);
+
+    // Verify addCard was called with the correct displayName
+    await waitFor(() => {
+      expect(addCard).toHaveBeenCalledTimes(1);
+      expect(vi.mocked(addCard)).toHaveBeenCalledWith(
+        mockBoardId,
+        mockColumnId,
+        "New card content",
+        userWithName.uid,
+        userWithName.displayName
+      );
+    });
+  });
+
+  // Test to verify anonymous fallback when displayName is null
+  it("uses 'Anonymous User' as fallback when displayName is null", async () => {
+    // Mock a user with null displayName
+    const userWithoutName = { 
+      uid: "test-user-123", 
+      displayName: null 
+    };
+    
+    // Mock the firebase hook to return a user without displayName
+    vi.mocked(useFirebase).mockReturnValue({
+      user: userWithoutName as User,
+      loading: false,
+      error: null,
+    });
+
+    renderColumn();
+    fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+    
+    const textarea = screen.getByPlaceholderText(
+      "Type here... Press Enter to save."
+    );
+    const form = screen.getByTestId("add-card-form");
+
+    // Enter content
+    fireEvent.change(textarea, { target: { value: "Anonymous card" } });
+    
+    // Submit form
+    fireEvent.submit(form);
+
+    // Verify addCard was called with the "Anonymous User" fallback
+    await waitFor(() => {
+      expect(addCard).toHaveBeenCalledTimes(1);
+      expect(vi.mocked(addCard)).toHaveBeenCalledWith(
+        mockBoardId,
+        mockColumnId,
+        "Anonymous card",
+        userWithoutName.uid,
+        "Anonymous User"
+      );
+    });
   });
 
   // --- Snapshot Testing ---

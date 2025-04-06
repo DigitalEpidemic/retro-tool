@@ -283,13 +283,21 @@ export default function Board() {
 
         // Still join the board in Firestore for backwards compatibility with cards
         try {
-          await joinBoard(boardId, user.uid, user.displayName || "Anonymous User");
+          const joinResult = await joinBoard(boardId, user.uid, user.displayName || "Anonymous User");
+          
+          // If join was successful and we have a name that's different from the current user's displayName,
+          // update the user's displayName in the context
+          if (joinResult.success && joinResult.name && joinResult.name !== user.displayName && updateUserDisplayName) {
+            updateUserDisplayName(joinResult.name);
+            // Setup real-time presence tracking with the updated display name
+            cleanupPresence = setupPresence(boardId, joinResult.name);
+          } else {
+            // Setup real-time presence tracking with the current display name
+            cleanupPresence = setupPresence(boardId, user.displayName || "Anonymous User");
+          }
         } catch (joinError) {
           console.error("Error joining board in Firestore:", joinError);
         }
-        
-        // Setup real-time presence tracking
-        cleanupPresence = setupPresence(boardId, user.displayName || "Anonymous User");
         
         // Subscribe to participants using the new real-time service
         unsubscribeParticipants = subscribeToParticipants(boardId, (participantsData) => {
@@ -323,7 +331,7 @@ export default function Board() {
         }
       }).catch(err => console.error("Error during cleanup:", err));
     };
-  }, [boardId, navigate, user, authLoading]);
+  }, [boardId, navigate, user, authLoading, updateUserDisplayName]);
 
   // Effect for Timer Logic
   useEffect(() => {
@@ -889,6 +897,8 @@ export default function Board() {
               <div
                 key={column.id}
                 className="border-r border-l border-gray-200 bg-white rounded shadow-sm h-full flex flex-col overflow-hidden"
+                data-testid={`column-${column.id}`}
+                data-title={column.title}
               >
                 <Column
                   id={column.id}

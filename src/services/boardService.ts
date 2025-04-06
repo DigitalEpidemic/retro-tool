@@ -445,14 +445,24 @@ export const joinBoard = async (
       const userSnap = await getDoc(userRef);
       
       if (userSnap.exists()) {
-        // Update existing user
+        // Get the existing name if available
+        const existingName = userSnap.data().name;
+        
+        // Update existing user - preserve existing name if present (higher priority than anonymous)
+        const nameToUse = existingName && existingName !== "Anonymous User" 
+          ? existingName 
+          : userName; 
+          
         try {
           await updateDoc(userRef, {
             boardId,
             lastActive: serverTimestamp(),
-            // Ensure name is also updated if provided
-            ...(userName ? { name: userName } : {})
+            // Only update name if the incoming name is not anonymous or if no name exists
+            name: nameToUse
           });
+          
+          // Return the name that's being used
+          return { success: true, name: nameToUse };
         } catch (updateError) {
           console.error(`Failed to update user ${userId}:`, updateError);
           throw updateError;
@@ -468,13 +478,14 @@ export const joinBoard = async (
             lastActive: serverTimestamp()
           };
           await setDoc(userRef, userData);
+          
+          // Return the name that's being used
+          return { success: true, name: userName };
         } catch (createError) {
           console.error(`Failed to create user ${userId}:`, createError);
           throw createError;
         }
       }
-      
-      return true;
     } catch (docError) {
       console.error(`Error checking user document ${userId}:`, docError);
       throw docError;
@@ -482,7 +493,7 @@ export const joinBoard = async (
   } catch (error) {
     console.error("Error joining board:", error);
     // Return false to indicate failure
-    return false;
+    return { success: false, name: userName };
   }
 };
 

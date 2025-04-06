@@ -79,7 +79,7 @@ exports[`Board > creates a snapshot of the component 1`] = `
           class="flex space-x-5"
         >
           <button
-            class="text-gray-700 hover:text-gray-900 flex items-center cursor-pointer"
+            class="text-gray-700 hover:text-gray-900 flex items-center cursor-pointer "
           >
             <svg
               class="lucide lucide-users h-5 w-5"
@@ -266,85 +266,358 @@ exports[`Board > creates a snapshot of the component 1`] = `
       >
         <div
           class="border-r border-l border-gray-200 bg-white rounded shadow-sm h-full flex flex-col overflow-hidden"
+          data-testid="column-col1"
+          data-title="What went well"
         >
           <div
-            data-sort="false"
-            data-testid="column-col1"
-            data-title="What went well"
+            class="w-full bg-white flex flex-col h-full overflow-hidden"
           >
-            <button
-              data-testid="sort-toggle-col1"
-            >
-              Toggle Sort
-            </button>
             <div
-              class="h-full overflow-y-scroll scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400"
-              data-testid="droppable"
+              class="flex justify-between items-center px-4 py-3 border-b border-gray-200"
+            >
+              <h2
+                class="text-lg font-medium text-gray-800"
+              >
+                What went well
+              </h2>
+              <div
+                class="flex items-center space-x-2"
+              >
+                <button
+                  class="flex items-center text-blue-600 hover:text-blue-700 cursor-pointer"
+                  data-testid="sort-toggle-col1"
+                >
+                  <svg
+                    class="lucide lucide-arrow-up-down h-4 w-4"
+                    fill="none"
+                    height="24"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="m21 16-4 4-4-4"
+                    />
+                    <path
+                      d="M17 20V4"
+                    />
+                    <path
+                      d="m3 8 4-4 4 4"
+                    />
+                    <path
+                      d="M7 4v16"
+                    />
+                  </svg>
+                  <span
+                    class="sr-only"
+                  >
+                    Sort
+                  </span>
+                </button>
+                <button
+                  class="text-blue-600 hover:text-blue-700 cursor-pointer"
+                >
+                  <svg
+                    class="lucide lucide-ellipsis-vertical h-4 w-4"
+                    fill="none"
+                    height="24"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="1"
+                    />
+                    <circle
+                      cx="12"
+                      cy="5"
+                      r="1"
+                    />
+                    <circle
+                      cx="12"
+                      cy="19"
+                      r="1"
+                    />
+                  </svg>
+                  <span
+                    class="sr-only"
+                  >
+                    More options
+                  </span>
+                </button>
+              </div>
+            </div>
+            <div
+              class="flex-grow overflow-y-auto p-3 space-y-3"
             >
               <div
-                data-author="test-user-id"
-                data-content="Test Card 1"
-                data-is-owner="true"
-                data-testid="draggable-card1"
+                class="h-full overflow-y-scroll scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400"
+                data-testid="droppable-col1"
               >
-                Test Card 1
+                <div
+                  data-card-data="{"id":"card1","boardId":"test-board-id","columnId":"col1","content":"Test Card 1","authorId":"test-user-id","authorName":"Test User","createdAt":{},"votes":3,"position":0}"
+                  data-testid="draggable-card1"
+                >
+                  Test Card 1
+                </div>
               </div>
+            </div>
+            <div
+              class="p-3 border-t border-gray-200"
+            >
+              <button
+                class="w-full p-2 text-sm text-blue-600 bg-gray-50 hover:bg-gray-100 rounded flex items-center justify-center cursor-pointer"
+              >
+                + Add a card
+              </button>
             </div>
           </div>
         </div>
         <div
           class="border-r border-l border-gray-200 bg-white rounded shadow-sm h-full flex flex-col overflow-hidden"
+          data-testid="column-col2"
+          data-title="What can be improved"
         >
           <div
-            data-sort="false"
-            data-testid="column-col2"
-            data-title="What can be improved"
+            class="w-full bg-white flex flex-col h-full overflow-hidden"
           >
-            <button
-              data-testid="sort-toggle-col2"
-            >
-              Toggle Sort
-            </button>
             <div
-              class="h-full overflow-y-scroll scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400"
-              data-testid="droppable"
+              class="flex justify-between items-center px-4 py-3 border-b border-gray-200"
+            >
+              <h2
+                class="text-lg font-medium text-gray-800"
+              >
+                What can be improved
+              </h2>
+              <div
+                class="flex items-center space-x-2"
+              >
+                <button
+                  class="flex items-center text-blue-600 hover:text-blue-700 cursor-pointer"
+                  data-testid="sort-toggle-col2"
+                >
+                  <svg
+                    class="lucide lucide-arrow-up-down h-4 w-4"
+                    fill="none"
+                    height="24"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="m21 16-4 4-4-4"
+                    />
+                    <path
+                      d="M17 20V4"
+                    />
+                    <path
+                      d="m3 8 4-4 4 4"
+                    />
+                    <path
+                      d="M7 4v16"
+                    />
+                  </svg>
+                  <span
+                    class="sr-only"
+                  >
+                    Sort
+                  </span>
+                </button>
+                <button
+                  class="text-blue-600 hover:text-blue-700 cursor-pointer"
+                >
+                  <svg
+                    class="lucide lucide-ellipsis-vertical h-4 w-4"
+                    fill="none"
+                    height="24"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="1"
+                    />
+                    <circle
+                      cx="12"
+                      cy="5"
+                      r="1"
+                    />
+                    <circle
+                      cx="12"
+                      cy="19"
+                      r="1"
+                    />
+                  </svg>
+                  <span
+                    class="sr-only"
+                  >
+                    More options
+                  </span>
+                </button>
+              </div>
+            </div>
+            <div
+              class="flex-grow overflow-y-auto p-3 space-y-3"
             >
               <div
-                data-author="other-user-id"
-                data-content="Test Card 2"
-                data-is-owner="false"
-                data-testid="draggable-card2"
+                class="h-full overflow-y-scroll scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400"
+                data-testid="droppable-col2"
               >
-                Test Card 2
+                <div
+                  data-card-data="{"id":"card2","boardId":"test-board-id","columnId":"col2","content":"Test Card 2","authorId":"other-user-id","authorName":"Other User","createdAt":{},"votes":1,"position":0}"
+                  data-testid="draggable-card2"
+                >
+                  Test Card 2
+                </div>
               </div>
+            </div>
+            <div
+              class="p-3 border-t border-gray-200"
+            >
+              <button
+                class="w-full p-2 text-sm text-blue-600 bg-gray-50 hover:bg-gray-100 rounded flex items-center justify-center cursor-pointer"
+              >
+                + Add a card
+              </button>
             </div>
           </div>
         </div>
         <div
           class="border-r border-l border-gray-200 bg-white rounded shadow-sm h-full flex flex-col overflow-hidden"
+          data-testid="column-col3"
+          data-title="Action items"
         >
           <div
-            data-sort="false"
-            data-testid="column-col3"
-            data-title="Action items"
+            class="w-full bg-white flex flex-col h-full overflow-hidden"
           >
-            <button
-              data-testid="sort-toggle-col3"
-            >
-              Toggle Sort
-            </button>
             <div
-              class="h-full overflow-y-scroll scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400"
-              data-testid="droppable"
+              class="flex justify-between items-center px-4 py-3 border-b border-gray-200"
+            >
+              <h2
+                class="text-lg font-medium text-gray-800"
+              >
+                Action items
+              </h2>
+              <div
+                class="flex items-center space-x-2"
+              >
+                <button
+                  class="flex items-center text-blue-600 hover:text-blue-700 cursor-pointer"
+                  data-testid="sort-toggle-col3"
+                >
+                  <svg
+                    class="lucide lucide-arrow-up-down h-4 w-4"
+                    fill="none"
+                    height="24"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="m21 16-4 4-4-4"
+                    />
+                    <path
+                      d="M17 20V4"
+                    />
+                    <path
+                      d="m3 8 4-4 4 4"
+                    />
+                    <path
+                      d="M7 4v16"
+                    />
+                  </svg>
+                  <span
+                    class="sr-only"
+                  >
+                    Sort
+                  </span>
+                </button>
+                <button
+                  class="text-blue-600 hover:text-blue-700 cursor-pointer"
+                >
+                  <svg
+                    class="lucide lucide-ellipsis-vertical h-4 w-4"
+                    fill="none"
+                    height="24"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="1"
+                    />
+                    <circle
+                      cx="12"
+                      cy="5"
+                      r="1"
+                    />
+                    <circle
+                      cx="12"
+                      cy="19"
+                      r="1"
+                    />
+                  </svg>
+                  <span
+                    class="sr-only"
+                  >
+                    More options
+                  </span>
+                </button>
+              </div>
+            </div>
+            <div
+              class="flex-grow overflow-y-auto p-3 space-y-3"
             >
               <div
-                data-author="test-user-id"
-                data-content="Test Card 3"
-                data-is-owner="true"
-                data-testid="draggable-card3"
+                class="h-full overflow-y-scroll scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400"
+                data-testid="droppable-col3"
               >
-                Test Card 3
+                <div
+                  data-card-data="{"id":"card3","boardId":"test-board-id","columnId":"col3","content":"Test Card 3","authorId":"test-user-id","authorName":"Test User","createdAt":{},"votes":0,"position":0}"
+                  data-testid="draggable-card3"
+                >
+                  Test Card 3
+                </div>
               </div>
+            </div>
+            <div
+              class="p-3 border-t border-gray-200"
+            >
+              <button
+                class="w-full p-2 text-sm text-blue-600 bg-gray-50 hover:bg-gray-100 rounded flex items-center justify-center cursor-pointer"
+              >
+                + Add a card
+              </button>
             </div>
           </div>
         </div>

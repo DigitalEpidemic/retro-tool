@@ -90,7 +90,12 @@ export const FirebaseProvider = ({
     });
 
     // Clean up the listener
-    return () => unsubscribe();
+    return () => {
+      // Make sure unsubscribe is a function before calling it
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
+    };
   }, []);
 
   return (
@@ -102,7 +107,7 @@ export const FirebaseProvider = ({
 
 export const useFirebase = () => {
   const context = useContext(FirebaseContext);
-  if (!context) {
+  if (context === defaultContextValue) {
     throw new Error('useFirebase must be used within a FirebaseProvider');
   }
   return context;
