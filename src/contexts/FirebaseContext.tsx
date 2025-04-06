@@ -1,58 +1,104 @@
-import { createContext, useContext, useEffect, useState } from "react";
-import { auth, signInAnonymousUser } from "../services/firebase";
-import { User } from "firebase/auth";
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { 
+  getAuth, 
+  signInAnonymously, 
+  onAuthStateChanged, 
+  User as FirebaseUser 
+} from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "../services/firebase";
 
-export interface FirebaseContextType {
-  user: User | null;
-  loading: boolean;
-  error: Error | null;
+// Extended User type that includes displayName convenience property
+interface ExtendedUser extends FirebaseUser {
+  displayName: string | null; // Make sure displayName is part of the interface
 }
 
-// Define the default value separately for reference comparison
-const defaultFirebaseContextValue: FirebaseContextType = {
+interface FirebaseContextType {
+  user: ExtendedUser | null;
+  loading: boolean;
+  error: Error | null;
+  updateUserDisplayName?: (name: string) => void;
+}
+
+// Create a default context value
+const defaultContextValue: FirebaseContextType = {
   user: null,
   loading: true,
-  error: null,
+  error: null
 };
 
-const FirebaseContext = createContext<FirebaseContextType>(
-  defaultFirebaseContextValue
-);
+const FirebaseContext = createContext<FirebaseContextType>(defaultContextValue);
 
 export const FirebaseProvider = ({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<ExtendedUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
+  // Function to update user display name programmatically
+  const updateUserDisplayName = (name: string) => {
+    if (user) {
+      const updatedUser = {
+        ...user,
+        displayName: name
+      } as ExtendedUser;
+      setUser(updatedUser);
+    }
+  };
+
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(
-      (user) => {
-        setUser(user);
-        setLoading(false);
-      },
-      (error) => {
-        setError(error);
+    const auth = getAuth();
+    setLoading(true);
+    
+    // First, set up the auth state listener
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      try {
+        if (firebaseUser) {
+          console.log("User authenticated:", firebaseUser.uid);
+          
+          // Fetch the user's stored data from Firestore
+          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+          
+          // Create an extended user object with the stored name if available
+          const extendedUser = {
+            ...firebaseUser,
+            // Override displayName with the name from Firestore if available
+            displayName: userDoc.exists() && userDoc.data()?.name 
+              ? userDoc.data().name 
+              : firebaseUser.displayName || 'Anonymous User'
+          } as ExtendedUser;
+          
+          console.log("Setting user with displayName:", extendedUser.displayName);
+          setUser(extendedUser);
+        } else {
+          console.log("No user, attempting anonymous sign-in");
+          // No user - attempt anonymous sign-in
+          try {
+            await signInAnonymously(auth);
+            // The onAuthStateChanged listener will catch the result
+          } catch (signInError) {
+            console.error("Anonymous sign-in failed:", signInError);
+            setError(signInError as Error);
+            setUser(null);
+          }
+        }
+      } catch (err) {
+        console.error("Error in auth state change handler:", err);
+        setError(err as Error);
+      } finally {
         setLoading(false);
       }
-    );
+    });
 
-    // Auto sign-in anonymously
-    if (!auth.currentUser) {
-      signInAnonymousUser().catch((err) => {
-        setError(err);
-        setLoading(false); // Set loading false on sign-in error too
-      });
-    }
-
+    // Clean up the listener
     return () => unsubscribe();
   }, []);
 
   return (
-    <FirebaseContext.Provider value={{ user, loading, error }}>
+    <FirebaseContext.Provider value={{ user, loading, error, updateUserDisplayName }}>
       {children}
     </FirebaseContext.Provider>
   );
@@ -60,9 +106,8 @@ export const FirebaseProvider = ({
 
 export const useFirebase = () => {
   const context = useContext(FirebaseContext);
-  // Check if the context is the default value object, meaning no Provider was found.
-  if (context === defaultFirebaseContextValue) {
-    throw new Error("useFirebase must be used within a FirebaseProvider");
+  if (!context) {
+    throw new Error('useFirebase must be used within a FirebaseProvider');
   }
   return context;
 };

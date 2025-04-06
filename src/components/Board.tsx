@@ -23,13 +23,17 @@ import {
   pauseTimer,
   resetTimer,
   updateColumnSortState,
+  subscribeToBoardParticipants,
+  updateParticipantName,
+  joinBoard,
+  testFirestoreWrite,
 } from "../services/boardService";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../services/firebase";
 import Column from "./Column";
 import CardComponent from "./Card";
 import { useFirebase } from "../contexts/FirebaseContext";
-import { Board as BoardType, Card as CardType } from "../services/firebase"; // Import types
+import { Board as BoardType, Card as CardType, User } from "../services/firebase"; // Import User type
 import {
   Users,
   TrendingUp,
@@ -39,11 +43,142 @@ import {
   Pause, // Import Pause icon
   RotateCcw,
   Download,
+  X, // Import X icon for closing panel
+  Edit2, // Import Edit2 icon for editing name
+  Check, // Import Check icon for confirming edits
 } from "lucide-react";
+
+// Participant Panel Component
+const ParticipantsPanel = ({ 
+  isOpen, 
+  onClose, 
+  participants,
+  currentUserId,
+  onUpdateName
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  participants: User[];
+  currentUserId: string;
+  onUpdateName: (userId: string, newName: string) => void;
+}) => {
+  const [editingUser, setEditingUser] = useState<string | null>(null);
+  const [newName, setNewName] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Focus input when editing starts
+  useEffect(() => {
+    if (editingUser && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [editingUser]);
+
+  const handleStartEdit = (userId: string, currentName: string) => {
+    setEditingUser(userId);
+    setNewName(currentName);
+  };
+
+  const handleSaveName = () => {
+    if (editingUser && newName.trim()) {
+      onUpdateName(editingUser, newName.trim());
+      setEditingUser(null);
+    }
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSaveName();
+    } else if (e.key === 'Escape') {
+      setEditingUser(null);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  // Filter out any invalid participants (shouldn't happen, but just in case)
+  const validParticipants = participants.filter(p => p && p.id && p.name);
+
+  return (
+    <div className="fixed right-0 top-0 h-screen w-80 bg-white shadow-lg border-l border-gray-200 z-20 overflow-y-auto">
+      <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+        <h2 className="text-lg font-semibold text-gray-800">Participants</h2>
+        <button 
+          onClick={onClose}
+          className="text-gray-500 hover:text-gray-700"
+          aria-label="Close panel"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      </div>
+      
+      <div className="p-4">
+        <ul className="space-y-3">
+          {validParticipants.length === 0 ? (
+            <li className="text-gray-500 italic">No participants yet</li>
+          ) : (
+            validParticipants.map(participant => (
+              <li 
+                key={participant.id} 
+                className="flex items-center justify-between py-2 px-3 rounded-md hover:bg-gray-50"
+              >
+                <div className="flex items-center">
+                  <div 
+                    className="h-8 w-8 rounded-full mr-3 flex items-center justify-center text-white"
+                    style={{ backgroundColor: participant.color || '#6B7280' }}
+                  >
+                    {participant.name.charAt(0).toUpperCase()}
+                  </div>
+                  
+                  {editingUser === participant.id ? (
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      value={newName}
+                      onChange={(e) => setNewName(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      className="border border-blue-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      onBlur={handleSaveName}
+                      autoComplete="off"
+                    />
+                  ) : (
+                    <span className="font-medium text-gray-700">
+                      {participant.name}
+                      {participant.id === currentUserId && " (You)"}
+                    </span>
+                  )}
+                </div>
+                
+                {participant.id === currentUserId && editingUser !== participant.id && (
+                  <button 
+                    onClick={() => handleStartEdit(participant.id, participant.name)}
+                    className="text-gray-400 hover:text-blue-500"
+                    aria-label="Edit your name"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </button>
+                )}
+                
+                {editingUser === participant.id && (
+                  <button 
+                    onClick={handleSaveName}
+                    className="text-green-500 hover:text-green-600"
+                    aria-label="Save name"
+                  >
+                    <Check className="h-4 w-4" />
+                  </button>
+                )}
+              </li>
+            ))
+          )}
+        </ul>
+      </div>
+    </div>
+  );
+};
 
 export default function Board() {
   const { boardId } = useParams<{ boardId: string }>();
-  const { user, loading: authLoading, error: authError } = useFirebase(); // Get auth loading state
+  const { user, loading: authLoading, error: authError, updateUserDisplayName } = useFirebase(); // Get auth loading state and updateUserDisplayName
   const navigate = useNavigate();
   const [board, setBoard] = useState<BoardType | null>(null); // Use BoardType
   const [cards, setCards] = useState<CardType[]>([]);
@@ -54,6 +189,8 @@ export default function Board() {
   const [columnSortStates, setColumnSortStates] = useState<
     Record<string, boolean>
   >({}); // Track sort by votes per column
+  const [isPanelOpen, setIsPanelOpen] = useState(false); // State for participants panel
+  const [participants, setParticipants] = useState<User[]>([]); // State for participants list
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null); // Ref to store interval ID
   const resetTimeoutRef = useRef<NodeJS.Timeout | null>(null); // Ref for delayed reset timeout
   const initialDurationSeconds = 300; // 5 minutes (default)
@@ -74,12 +211,15 @@ export default function Board() {
       return;
     }
 
+    console.log("Auth completed successfully. User ID:", user.uid);
+    
     // Auth is complete, user exists, proceed with subscriptions
     setLoading(true); // Set loading true while fetching board data
     setError(null); // Clear previous errors
 
     let unsubscribeBoard = () => {};
     let unsubscribeCards = () => {};
+    let unsubscribeParticipants = () => {};
 
     const checkAndSubscribe = async () => {
       try {
@@ -135,6 +275,48 @@ export default function Board() {
           setCards(cardsData);
           // Note: Card loading doesn't affect the main 'loading' state here
         });
+
+        // Always join the board when subscribing
+        console.log("Joining board as user:", user.uid, user.displayName || "Anonymous User");
+        
+        try {
+          console.log("Attempting to join board in Board component...");
+          const success = await joinBoard(boardId, user.uid, user.displayName || "Anonymous User");
+          
+          if (!success) {
+            console.error("Failed to join board as participant");
+          } else {
+            console.log("Successfully joined board, now subscribing to participants");
+          }
+        } catch (joinError) {
+          console.error("Error in Board component when joining board:", joinError);
+        }
+        
+        // Subscribe to participants regardless of join outcome
+        try {
+          console.log("Setting up participants subscription in Board component");
+          unsubscribeParticipants = subscribeToBoardParticipants(boardId, (participantsData) => {
+            console.log("Received participants update:", participantsData.length, "participants", 
+              participantsData.map(p => `${p.name} (${p.id})`).join(', '));
+            setParticipants(participantsData);
+          });
+        } catch (subError) {
+          console.error("Error setting up participants subscription in Board component:", subError);
+        }
+        
+        // Set up a presence heartbeat to keep the user active
+        const heartbeatInterval = setInterval(() => {
+          if (user) {
+            const userRef = doc(db, "users", user.uid);
+            updateDoc(userRef, { lastActive: serverTimestamp() })
+              .catch(err => console.error("Error updating user presence:", err));
+          }
+        }, 30000); // Update every 30 seconds
+        
+        // Clean up the heartbeat interval on unmount
+        return () => {
+          clearInterval(heartbeatInterval);
+        };
       } catch (err) {
         console.error("Error checking/subscribing to board:", err);
         setError("Failed to load board data. Check console for details.");
@@ -142,13 +324,21 @@ export default function Board() {
       }
     }; // End of checkAndSubscribe async function
 
-    checkAndSubscribe(); // Call the async function
+    const setupResult = checkAndSubscribe(); // Call the async function
 
     // Cleanup function: This runs when the component unmounts or dependencies change
     return () => {
       console.log("Cleaning up subscriptions for board:", boardId);
       unsubscribeBoard(); // Call the stored unsubscribe function for the board
       unsubscribeCards(); // Call the stored unsubscribe function for cards
+      unsubscribeParticipants(); // Call the stored unsubscribe function for participants
+      
+      // Clean up any interval from setupResult
+      setupResult.then(cleanup => {
+        if (typeof cleanup === 'function') {
+          cleanup();
+        }
+      }).catch(err => console.error("Error cleaning up:", err));
     };
     // Dependencies for the useEffect hook
   }, [boardId, navigate, user, authLoading]);
@@ -435,6 +625,41 @@ export default function Board() {
     }
   };
 
+  // Handle updating participant name
+  const handleUpdateParticipantName = async (userId: string, newName: string) => {
+    if (!userId || !newName.trim()) return;
+    
+    try {
+      await updateParticipantName(userId, newName);
+      
+      // If this is the current user, update the user context
+      if (user && userId === user.uid && updateUserDisplayName) {
+        // Use the context method to update the display name
+        updateUserDisplayName(newName);
+      }
+    } catch (error) {
+      console.error("Error updating participant name:", error);
+      setError("Failed to update name. Please try again.");
+      // Clear error after 3 seconds
+      setTimeout(() => setError(null), 3000);
+    }
+  };
+
+  // Toggle participants panel
+  const toggleParticipantsPanel = async () => {
+    // If we're about to open the panel, ensure we're joined
+    if (!isPanelOpen && user) {
+      try {
+        console.log("Rejoining board before opening participants panel");
+        await joinBoard(boardId!, user.uid, user.displayName || "Anonymous User");
+      } catch (err) {
+        console.error("Error rejoining board:", err);
+      }
+    }
+    
+    setIsPanelOpen(!isPanelOpen);
+  };
+
   const handleDragEnd = async (result: DropResult) => {
     // Make async
     const { destination, source, draggableId } = result;
@@ -636,9 +861,17 @@ export default function Board() {
 
           {/* Other Board Controls */}
           <div className="flex space-x-5">
-            <button className="text-gray-700 hover:text-gray-900 flex items-center cursor-pointer">
+            <button 
+              className={`text-gray-700 hover:text-gray-900 flex items-center cursor-pointer ${isPanelOpen ? 'text-blue-500' : ''}`}
+              onClick={toggleParticipantsPanel}
+            >
               <Users className="h-5 w-5" />
               <span className="ml-1 text-sm">Participants</span>
+              {participants.length > 0 && (
+                <span className="ml-1 bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full">
+                  {participants.length}
+                </span>
+              )}
             </button>
 
             <button className="text-gray-700 hover:text-gray-900 flex items-center cursor-pointer">
@@ -663,6 +896,15 @@ export default function Board() {
           </div>
         </div>
       </div>
+
+      {/* Participants Panel */}
+      <ParticipantsPanel 
+        isOpen={isPanelOpen} 
+        onClose={() => setIsPanelOpen(false)}
+        participants={participants}
+        currentUserId={user?.uid || ''}
+        onUpdateName={handleUpdateParticipantName}
+      />
 
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className="grid grid-cols-3 gap-6 px-6 py-4 flex-1 overflow-hidden">

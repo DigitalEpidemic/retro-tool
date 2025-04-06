@@ -1,7 +1,9 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore, Timestamp } from "firebase/firestore";
-import { getAuth, signInAnonymously } from "firebase/auth";
+import { getAuth } from "firebase/auth";
 
+// Your web app's Firebase configuration
+// In a real app, set this up as environment variables (.env file)
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -11,77 +13,53 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 export const auth = getAuth(app);
 
-export const signInAnonymousUser = async () => {
-  try {
-    const result = await signInAnonymously(auth);
-    return result.user;
-  } catch (error) {
-    console.error("Error signing in anonymously:", error);
-    throw error;
-  }
-};
+// Type for a board column
+export interface Column {
+  id: string;
+  title: string;
+  order: number;
+  sortByVotes?: boolean;
+}
 
-// Database Schema
-
-// boards collection
+// Type for a board
 export interface Board {
-  // Add export keyword
   id: string;
   name: string;
   createdAt: Timestamp;
   isActive: boolean;
-  columns: {
-    [columnId: string]: {
-      id: string;
-      title: string;
-      order: number;
-      sortByVotes?: boolean;
-    };
-  };
-  facilitatorId?: string; // optional creator ID
-  timerStartTime?: Timestamp | null; // When the timer was started or resumed
-  timerDurationSeconds?: number; // Original duration set when started/reset
-  timerIsRunning?: boolean; // True if the timer is currently counting down
-  timerPausedDurationSeconds?: number | null; // Remaining seconds when paused, null otherwise
-  timerOriginalDurationSeconds?: number; // The originally set duration that should be used for resets
+  columns: Record<string, Column>;
+  facilitatorId?: string;
+  timerIsRunning?: boolean;
+  timerStartTime?: Timestamp;
+  timerDurationSeconds?: number;
+  timerPausedDurationSeconds?: number;
+  timerOriginalDurationSeconds?: number;
 }
 
-// cards collection
+// Type for a card (note card)
 export interface Card {
-  // Add export keyword
   id: string;
   boardId: string;
   columnId: string;
   content: string;
-  authorId: string; // anonymous ID
+  authorId: string;
   authorName: string;
   createdAt: Timestamp;
   votes: number;
-  position: number; // for ordering
+  position: number;
+  actionable?: boolean;
 }
 
-// actions collection
-export interface Action {
-  // Add export keyword
-  id: string;
-  boardId: string;
-  content: string;
-  assignee?: string;
-  status: "pending" | "in-progress" | "completed";
-  createdAt: Timestamp;
-  relatedCardIds: string[]; // reference to source cards
-}
-
-// users collection (for temporary session data)
+// Type for a user
 export interface User {
-  // Add export keyword
   id: string;
   name: string;
-  color: string; // for user identification
+  color: string;
   boardId: string;
   lastActive: Timestamp;
 }
