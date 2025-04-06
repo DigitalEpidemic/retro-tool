@@ -185,7 +185,6 @@ export const updateCardPosition = async (
 
     // 6. Commit all updates
     await batch.commit();
-    console.log("Card positions updated successfully");
   } catch (error) {
     console.error("Error updating card positions:", error);
     // Log more detailed error for debugging

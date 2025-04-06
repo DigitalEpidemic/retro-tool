@@ -410,10 +410,6 @@ export default function Board() {
         timerIsRunning: false,
         timerStartTime: null,
       });
-      console.log(
-        "Timer duration updated successfully to:",
-        newDurationSeconds
-      );
       // Firestore listener will update the local state (remainingTime, editableTimeStr)
     } catch (err: unknown) {
       console.error("Error updating timer duration:", err);
@@ -550,13 +546,6 @@ export default function Board() {
       return;
     }
 
-    console.log("Drag end event:", {
-      source,
-      destination,
-      draggableId,
-      boardId,
-    });
-
     const sourceColumnId = source.droppableId;
     const destinationColumnId = destination.droppableId;
     // const sourceIndex = source.index; // Removed unused variable
@@ -606,7 +595,6 @@ export default function Board() {
 
     // Update state optimistically
     setCards(updatedCards);
-    console.log("Updated cards state:", updatedCards);
 
     // Update Firestore
     try {
