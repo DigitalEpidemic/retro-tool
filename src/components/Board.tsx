@@ -5,6 +5,7 @@ import {
   ChangeEvent,
   KeyboardEvent,
   FocusEvent,
+  memo,
 } from "react"; // Add more imports
 import { useParams, useNavigate } from "react-router-dom";
 // Use @hello-pangea/dnd instead of react-beautiful-dnd
@@ -48,8 +49,8 @@ import {
   Check, // Import Check icon for confirming edits
 } from "lucide-react";
 
-// Participant Panel Component
-const ParticipantsPanel = ({ 
+// Create a memoized version of the ParticipantsPanel
+const MemoizedParticipantsPanel = memo(({ 
   isOpen, 
   onClose, 
   participants,
@@ -174,7 +175,7 @@ const ParticipantsPanel = ({
       </div>
     </div>
   );
-};
+});
 
 export default function Board() {
   const { boardId } = useParams<{ boardId: string }>();
@@ -207,7 +208,6 @@ export default function Board() {
     if (!user) {
       setError("Authentication failed. Please try again.");
       setLoading(false);
-      // Optionally redirect: navigate('/login');
       return;
     }
     
@@ -274,7 +274,7 @@ export default function Board() {
           // Note: Card loading doesn't affect the main 'loading' state here
         });
 
-        // Always join the board when subscribing
+        // Always join the board when loading the component
         try {
           const success = await joinBoard(boardId, user.uid, user.displayName || "Anonymous User");
           
@@ -312,25 +312,18 @@ export default function Board() {
         setError("Failed to load board data. Check console for details.");
         setLoading(false);
       }
-    }; // End of checkAndSubscribe async function
+    };
 
-    const setupResult = checkAndSubscribe(); // Call the async function
+    // Call the async function
+    checkAndSubscribe();
 
-    // Cleanup function: This runs when the component unmounts or dependencies change
+    // Cleanup function
     return () => {
       console.log("Cleaning up subscriptions for board:", boardId);
-      unsubscribeBoard(); // Call the stored unsubscribe function for the board
-      unsubscribeCards(); // Call the stored unsubscribe function for cards
-      unsubscribeParticipants(); // Call the stored unsubscribe function for participants
-      
-      // Clean up any interval from setupResult
-      setupResult.then(cleanup => {
-        if (typeof cleanup === 'function') {
-          cleanup();
-        }
-      }).catch(err => console.error("Error cleaning up:", err));
+      unsubscribeBoard();
+      unsubscribeCards();
+      unsubscribeParticipants();
     };
-    // Dependencies for the useEffect hook
   }, [boardId, navigate, user, authLoading]);
 
   // Effect for Timer Logic
@@ -635,17 +628,9 @@ export default function Board() {
     }
   };
 
-  // Toggle participants panel
-  const toggleParticipantsPanel = async () => {
-    // If we're about to open the panel, ensure we're joined
-    if (!isPanelOpen && user) {
-      try {
-        await joinBoard(boardId!, user.uid, user.displayName || "Anonymous User");
-      } catch (err) {
-        console.error("Error rejoining board:", err);
-      }
-    }
-    
+  // Simplify the toggle participants panel function
+  const toggleParticipantsPanel = () => {
+    // Simply toggle the panel state
     setIsPanelOpen(!isPanelOpen);
   };
 
@@ -886,8 +871,8 @@ export default function Board() {
         </div>
       </div>
 
-      {/* Participants Panel */}
-      <ParticipantsPanel 
+      {/* Use the memoized participants panel */}
+      <MemoizedParticipantsPanel 
         isOpen={isPanelOpen} 
         onClose={() => setIsPanelOpen(false)}
         participants={participants}

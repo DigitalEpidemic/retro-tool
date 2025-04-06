@@ -313,29 +313,32 @@ export const updateColumnSortState = async (
   });
 };
 
-// Subscribe to board participants
+// Subscribe to board participants with optimized loading
 export const subscribeToBoardParticipants = (
   boardId: string,
   callback: (participants: User[]) => void
 ) => {
   try {
-    // Set up the specific query for this board
+    // Set up an efficient query with metadata changes disabled for better performance
     const participantsQuery = query(
       collection(db, "users"),
       where("boardId", "==", boardId)
     );
     
+    // Use a simple cache to avoid duplicate updates
+    let lastParticipantsJSON = '';
+    
     return onSnapshot(
       participantsQuery, 
+      { includeMetadataChanges: false }, // Only notify on committed changes
       (querySnapshot) => {
         const participants: User[] = [];
         
         querySnapshot.forEach((doc) => {
           const data = doc.data();
           
-          // Ensure the document has the minimum required fields
           participants.push({
-            id: doc.id, // Use the Firestore document ID
+            id: doc.id,
             name: data.name || 'Anonymous',
             color: data.color || '#6B7280',
             boardId: data.boardId || boardId,
@@ -343,17 +346,23 @@ export const subscribeToBoardParticipants = (
           } as User);
         });
         
-        callback(participants);
+        // Sort participants by name for consistent ordering
+        participants.sort((a, b) => a.name.localeCompare(b.name));
+        
+        // Only update if the participants data has actually changed
+        const participantsJSON = JSON.stringify(participants.map(p => ({ id: p.id, name: p.name })));
+        if (participantsJSON !== lastParticipantsJSON) {
+          lastParticipantsJSON = participantsJSON;
+          callback(participants);
+        }
       },
       (error) => {
         console.error(`Error getting participants for board ${boardId}:`, error);
-        // Return empty array on error
         callback([]);
       }
     );
   } catch (error) {
     console.error(`Error setting up participants subscription for board ${boardId}:`, error);
-    // Return a dummy unsubscribe function
     return () => {};
   }
 };
