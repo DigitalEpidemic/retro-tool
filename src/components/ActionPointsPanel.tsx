@@ -1,4 +1,4 @@
-import { Check, Plus, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { KeyboardEvent, memo, useEffect, useRef, useState } from "react";
 
 export interface ActionPoint {
@@ -83,7 +83,7 @@ const ActionPointsPanel = memo(
 
         <div className="p-4">
           <h3 className="text-sm font-semibold text-gray-600 mb-2">To do</h3>
-          
+
           <ul className="space-y-3 mb-4">
             {actionPoints.length === 0 && !isAddingActionPoint ? (
               <li className="text-gray-500 italic text-sm py-2 px-3 bg-gray-50 rounded-md border border-gray-200 border-dashed">
@@ -103,15 +103,17 @@ const ActionPointsPanel = memo(
                       onChange={() => onToggleActionPoint(actionPoint.id)}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mr-3"
                     />
-                    <span 
+                    <span
                       className={`text-sm ${
-                        actionPoint.completed ? "text-gray-400 line-through" : "text-gray-700"
+                        actionPoint.completed
+                          ? "text-gray-400 line-through"
+                          : "text-gray-700"
                       }`}
                     >
                       {actionPoint.text}
                     </span>
                   </div>
-                  
+
                   <button
                     onClick={() => onDeleteActionPoint(actionPoint.id)}
                     className="text-gray-400 hover:text-red-500 ml-2"
@@ -123,7 +125,7 @@ const ActionPointsPanel = memo(
               ))
             )}
           </ul>
-          
+
           {isAddingActionPoint ? (
             <div className="border border-gray-300 rounded-md p-2">
               <input
@@ -169,4 +171,4 @@ const ActionPointsPanel = memo(
   }
 );
 
-export default ActionPointsPanel; 
+export default ActionPointsPanel;

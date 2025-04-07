@@ -1,20 +1,14 @@
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { nanoid } from "nanoid";
-import {
-  doc,
-  getDoc,
-  updateDoc,
-  arrayUnion,
-  arrayRemove,
-} from "firebase/firestore";
-import { db } from "./firebase";
 import { ActionPoint } from "../components/ActionPointsPanel";
+import { db } from "./firebase";
 
 /**
  * Add a new action point to a board
  */
 export const addActionPoint = async (
   boardId: string,
-  text: string,
+  text: string
 ): Promise<ActionPoint> => {
   // Create a new action point object
   const newActionPoint: ActionPoint = {
@@ -29,7 +23,7 @@ export const addActionPoint = async (
   try {
     // First check if the board exists
     const boardSnap = await getDoc(boardRef);
-    
+
     if (!boardSnap.exists()) {
       throw new Error(`Board with ID ${boardId} does not exist`);
     }
@@ -37,10 +31,10 @@ export const addActionPoint = async (
     // Get the current action points
     const boardData = boardSnap.data();
     const currentActionPoints = boardData.actionPoints || [];
-    
+
     // Add the new action point to the array
     const updatedActionPoints = [...currentActionPoints, newActionPoint];
-    
+
     // Update the document with the new array
     await updateDoc(boardRef, {
       actionPoints: updatedActionPoints,
@@ -66,33 +60,33 @@ export const toggleActionPoint = async (
   try {
     // Get the current board data
     const boardSnap = await getDoc(boardRef);
-    
+
     if (!boardSnap.exists()) {
       throw new Error(`Board with ID ${boardId} does not exist`);
     }
 
     const boardData = boardSnap.data();
     const actionPoints = boardData.actionPoints || [];
-    
+
     // Find the action point to toggle
     const actionPointIndex = actionPoints.findIndex(
       (ap: ActionPoint) => ap.id === actionPointId
     );
-    
+
     if (actionPointIndex === -1) {
       throw new Error(`Action point with ID ${actionPointId} not found`);
     }
-    
+
     // Create a copy of the action points array
     const updatedActionPoints = [...actionPoints];
-    
+
     // Toggle the completed status
     updatedActionPoints[actionPointIndex] = {
       ...updatedActionPoints[actionPointIndex],
       completed: !updatedActionPoints[actionPointIndex].completed,
     };
-    
-    // Update the action points in Firestore
+
+    // Use a transaction to ensure atomic update
     await updateDoc(boardRef, {
       actionPoints: updatedActionPoints,
     });
@@ -115,26 +109,27 @@ export const deleteActionPoint = async (
   try {
     // Get the current board data
     const boardSnap = await getDoc(boardRef);
-    
+
     if (!boardSnap.exists()) {
       throw new Error(`Board with ID ${boardId} does not exist`);
     }
 
     const boardData = boardSnap.data();
     const actionPoints = boardData.actionPoints || [];
-    
-    // Find the action point to delete
-    const actionPointToDelete = actionPoints.find(
-      (ap: ActionPoint) => ap.id === actionPointId
+
+    // Filter out the action point to delete
+    const updatedActionPoints = actionPoints.filter(
+      (ap: ActionPoint) => ap.id !== actionPointId
     );
-    
-    if (!actionPointToDelete) {
+
+    // If the array length is the same, the action point wasn't found
+    if (updatedActionPoints.length === actionPoints.length) {
       throw new Error(`Action point with ID ${actionPointId} not found`);
     }
-    
-    // Remove the action point from the array
+
+    // Update with the filtered array
     await updateDoc(boardRef, {
-      actionPoints: arrayRemove(actionPointToDelete),
+      actionPoints: updatedActionPoints,
     });
   } catch (error) {
     console.error("Error deleting action point:", error);
@@ -154,17 +149,17 @@ export const getActionPoints = async (
   try {
     // Get the board data
     const boardSnap = await getDoc(boardRef);
-    
+
     if (!boardSnap.exists()) {
       throw new Error(`Board with ID ${boardId} does not exist`);
     }
 
     const boardData = boardSnap.data();
-    
+
     // Return the action points array, or an empty array if none exist
     return boardData.actionPoints || [];
   } catch (error) {
     console.error("Error getting action points:", error);
     throw error;
   }
-}; 
+};

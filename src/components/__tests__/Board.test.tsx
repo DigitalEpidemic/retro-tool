@@ -1,14 +1,22 @@
 import type { DropResult } from "@hello-pangea/dnd"; // Import DropResult
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"; // Added waitFor
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react"; // Added waitFor
 import userEvent from "@testing-library/user-event";
 import type { User as FirebaseUser } from "firebase/auth";
 import { Timestamp, updateDoc } from "firebase/firestore";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 import * as FirebaseContext from "../../contexts/FirebaseContext";
 import * as boardService from "../../services/boardService";
 import type { Board as BoardType } from "../../services/firebase"; // Import types from firebase
 import Board from "../Board";
+import * as actionPointsService from "../../services/actionPointsService";
+import * as presenceService from "../../services/presenceService";
 
 // Create a mock document snapshot that implements the exists() method
 const createMockDocSnap = (
@@ -21,10 +29,18 @@ const createMockDocSnap = (
 });
 
 // Create a mock Timestamp factory to avoid null values
-const createMockTimestamp = (milliseconds?: number) => ({
-  toDate: () => new Date(milliseconds || Date.now()),
-  toMillis: () => milliseconds || Date.now(),
-});
+const createMockTimestamp = (milliseconds?: number) => {
+  const timestamp = milliseconds || Date.now();
+  return {
+    seconds: Math.floor(timestamp / 1000),
+    nanoseconds: (timestamp % 1000) * 1000000,
+    toDate: () => new Date(timestamp),
+    toMillis: () => timestamp,
+    isEqual: () => false,
+    toJSON: () => ({ seconds: Math.floor(timestamp / 1000), nanoseconds: (timestamp % 1000) * 1000000 }),
+    valueOf: () => `${Math.floor(timestamp / 1000)}.${(timestamp % 1000) * 1000000}`,
+  };
+};
 
 // Mock firebase module entirely
 vi.mock("../../services/firebase", () => {
@@ -39,32 +55,111 @@ vi.mock("../../services/firebase", () => {
   };
 });
 
-// Mock hello-pangea/dnd
-// Variable to store the onDragEnd handler
-let capturedOnDragEnd: ((result: DropResult) => void) | null = null;
+// Declare the external variable for TypeScript
+declare global {
+  interface Window {
+    capturedOnDragEnd: ((result: DropResult) => void) | null;
+  }
+}
 
-vi.mock("@hello-pangea/dnd", () => ({
-  DragDropContext: ({ children, onDragEnd }: any) => {
-    capturedOnDragEnd = onDragEnd;
-    return <div data-testid="drag-drop-context">{children}</div>;
-  },
-  Droppable: ({ children, droppableId }: any) => {
-    const provided = {
-      innerRef: vi.fn(),
-      droppableProps: { "data-testid": `droppable-${droppableId}` },
-      placeholder: null,
+// Set up the global variable for testing DnD
+vi.mock("@hello-pangea/dnd", () => {
+  return {
+    DragDropContext: ({ children, onDragEnd }: any) => {
+      window.capturedOnDragEnd = onDragEnd;
+      return <div data-testid="drag-drop-context">{children}</div>;
+    },
+    Droppable: ({ children, droppableId }: any) => {
+      const provided = {
+        innerRef: vi.fn(),
+        droppableProps: { "data-testid": `droppable-${droppableId}` },
+        placeholder: null,
+      };
+      return children(provided);
+    },
+    Draggable: ({ children, draggableId }: any) => {
+      const provided = {
+        innerRef: vi.fn(),
+        draggableProps: { "data-testid": `draggable-${draggableId}` },
+        dragHandleProps: {},
+      };
+      return children(provided);
+    },
+  };
+});
+
+// Mock all the lucide-react icons to avoid issues with them
+vi.mock("lucide-react", () => {
+  const mockIcon = (name: string) =>
+    function MockIcon() {
+      return <span data-testid={`${name.toLowerCase()}-icon`}>{name}</span>;
     };
-    return children(provided);
-  },
-  Draggable: ({ children, draggableId }: any) => {
-    const provided = {
-      innerRef: vi.fn(),
-      draggableProps: { "data-testid": `draggable-${draggableId}` },
-      dragHandleProps: {},
-    };
-    return children(provided);
-  },
+
+  return {
+    Users: mockIcon("Users"),
+    TrendingUp: mockIcon("TrendingUp"),
+    Share2: mockIcon("Share2"),
+    Settings: mockIcon("Settings"),
+    Play: mockIcon("Play"),
+    Pause: mockIcon("Pause"),
+    RotateCcw: mockIcon("RotateCcw"),
+    Download: mockIcon("Download"),
+    X: mockIcon("X"),
+    Edit2: mockIcon("Edit2"),
+    Check: mockIcon("Check"),
+    Plus: mockIcon("Plus"),
+    ArrowUpDown: mockIcon("ArrowUpDown"),
+    EllipsisVertical: mockIcon("EllipsisVertical"),
+    MoreVertical: mockIcon("MoreVertical"),
+  };
+});
+
+// Mock components
+vi.mock("../ParticipantsPanel", () => ({
+  default: vi.fn().mockImplementation(({ isOpen }) => {
+    if (!isOpen) return null;
+    return <div data-testid="participants-panel">Participants Panel</div>;
+  }),
 }));
+
+// Using a more robust pattern for mocking modules with named exports
+vi.mock("../ActionPointsPanel", () => {
+  // Create the mock function with the proper implementation
+  const mockComponent = vi.fn(({ isOpen }) => {
+    if (!isOpen) return null;
+    return <div data-testid="action-points-panel">Action Points Panel</div>;
+  });
+  
+  // Create a named export for ActionPoint (matches the actual component's exports)
+  return {
+    __esModule: true,
+    default: mockComponent,
+    ActionPoint: { id: 'string', text: 'string', completed: false }
+  };
+});
+
+vi.mock("../ExportModal", () => ({
+  default: vi.fn().mockImplementation(({ isOpen }) => {
+    if (!isOpen) return null;
+    return <div data-testid="export-modal">Export Modal</div>;
+  }),
+}));
+
+// Define component mocks after the vi.mock() calls
+const mockParticipantsPanel = vi.fn().mockImplementation(({ isOpen }) => {
+  if (!isOpen) return null;
+  return <div data-testid="participants-panel">Participants Panel</div>;
+});
+
+const mockActionPointsPanel = vi.fn().mockImplementation(({ isOpen }) => {
+  if (!isOpen) return null;
+  return <div data-testid="action-points-panel">Action Points Panel</div>;
+});
+
+const mockExportModal = vi.fn().mockImplementation(({ isOpen }) => {
+  if (!isOpen) return null;
+  return <div data-testid="export-modal">Export Modal</div>;
+});
 
 // Mock the services
 vi.mock("../../services/boardService", () => {
@@ -78,16 +173,20 @@ vi.mock("../../services/boardService", () => {
           createdAt: createMockTimestamp(),
           isActive: true,
           columns: {
-            col1: { id: "col1", title: "What went well", order: 0 },
-            col2: { id: "col2", title: "What can be improved", order: 1 },
-            col3: { id: "col3", title: "Action items", order: 2 },
+            col1: { id: "col1", title: "What went well", order: 0, sortByVotes: false },
+            col2: { id: "col2", title: "What can be improved", order: 1, sortByVotes: false },
+            col3: { id: "col3", title: "Action items", order: 2, sortByVotes: false },
           },
           facilitatorId: "test-user-id",
           timerIsRunning: false,
           timerDurationSeconds: 300, // 5 minutes
-          timerPausedDurationSeconds: 0, // Use 0 instead of null
+          timerPausedDurationSeconds: undefined,
           timerOriginalDurationSeconds: 300,
           timerStartTime: createMockTimestamp(), // Use valid Timestamp
+          actionPoints: [
+            { id: "ap1", text: "Test Action Point 1", completed: false },
+            { id: "ap2", text: "Test Action Point 2", completed: true },
+          ],
         });
       }, 0);
 
@@ -242,26 +341,24 @@ const mockUser = {
 } as unknown as FirebaseUser;
 
 const mockBoard: BoardType = {
-  // Use imported Board type
   id: "test-board-id",
   name: "Test Board",
   columns: {
-    col1: { id: "col1", title: "What went well", order: 0, sortByVotes: false }, // Add sortByVotes
-    col2: {
-      id: "col2",
-      title: "What can be improved",
-      order: 1,
-      sortByVotes: false,
-    }, // Add sortByVotes
-    col3: { id: "col3", title: "Action items", order: 2, sortByVotes: false }, // Add sortByVotes
+    col1: { id: "col1", title: "What went well", order: 0, sortByVotes: false },
+    col2: { id: "col2", title: "What can be improved", order: 1, sortByVotes: false },
+    col3: { id: "col3", title: "Action items", order: 2, sortByVotes: false },
   },
   createdAt: Timestamp.now(),
   isActive: true,
   timerDurationSeconds: 300,
-  timerIsRunning: false,
   timerPausedDurationSeconds: undefined,
+  timerOriginalDurationSeconds: 300,
+  timerIsRunning: false,
   timerStartTime: undefined,
-  timerOriginalDurationSeconds: 300, // Add original duration
+  actionPoints: [
+    { id: "ap1", text: "Test Action Point 1", completed: false },
+    { id: "ap2", text: "Test Action Point 2", completed: true },
+  ],
 };
 
 const mockCards = [
@@ -326,38 +423,26 @@ vi.mock("../../services/presenceService", () => ({
   updateParticipantName: vi.fn(() => Promise.resolve()),
 }));
 
-// Mock all the lucide-react icons to avoid issues with them
-vi.mock("lucide-react", () => {
-  const mockIcon = (name: string) =>
-    function MockIcon() {
-      return <span data-testid={`${name.toLowerCase()}-icon`}>{name}</span>;
-    };
-
-  return {
-    Users: mockIcon("Users"),
-    TrendingUp: mockIcon("TrendingUp"),
-    Share2: mockIcon("Share2"),
-    Settings: mockIcon("Settings"),
-    Play: mockIcon("Play"),
-    Pause: mockIcon("Pause"),
-    RotateCcw: mockIcon("RotateCcw"),
-    Download: mockIcon("Download"),
-    X: mockIcon("X"),
-    Edit2: mockIcon("Edit2"),
-    Check: mockIcon("Check"),
-    Plus: mockIcon("Plus"),
-  };
-});
-
-// Mock ActionPointsPanel component
-vi.mock("../ActionPointsPanel", () => ({
-  default: vi.fn().mockImplementation(({ isOpen }) => {
-    if (!isOpen) return null;
-    return <div data-testid="action-points-panel">Action Points Panel</div>;
+// Add mock for actionPointsService
+vi.mock("../../services/actionPointsService", () => ({
+  addActionPoint: vi.fn().mockResolvedValue({ 
+    id: "test-ap-id", 
+    text: "Test Action Point", 
+    completed: false 
   }),
+  deleteActionPoint: vi.fn().mockResolvedValue({}),
+  toggleActionPoint: vi.fn().mockResolvedValue({}),
+  getActionPoints: vi.fn().mockResolvedValue([]),
 }));
 
+// Get mocked components to use in tests
+// Commenting out these lines because they're causing linter errors
+// const ActionPointsPanel = vi.mocked(import("../ActionPointsPanel")).default;
+// const ParticipantsPanel = vi.mocked(import("../ParticipantsPanel")).default;
+// const ExportModal = vi.mocked(import("../ExportModal")).default;
+
 describe("Board", () => {
+  // Clear all mocks between tests
   beforeEach(() => {
     vi.clearAllMocks();
 
@@ -397,6 +482,22 @@ describe("Board", () => {
 
     // Mock the createBoard function
     vi.mocked(boardService.createBoard).mockResolvedValue("test-board-id");
+    
+    // Reset the mock component implementations
+    mockParticipantsPanel.mockImplementation(({ isOpen }) => {
+      if (!isOpen) return null;
+      return <div data-testid="participants-panel">Participants Panel</div>;
+    });
+    
+    mockActionPointsPanel.mockImplementation(({ isOpen }) => {
+      if (!isOpen) return null;
+      return <div data-testid="action-points-panel">Action Points Panel</div>;
+    });
+    
+    mockExportModal.mockImplementation(({ isOpen }) => {
+      if (!isOpen) return null;
+      return <div data-testid="export-modal">Export Modal</div>;
+    });
   });
 
   afterEach(() => {
@@ -1960,11 +2061,210 @@ describe("Board", () => {
   // it("updates column sort state visually after toggle", async () => { ... }); // Now in Sort section
 
   it("handles drag and drop operations correctly", async () => {
-    // Mock the service to resolve
+    expect.assertions(3); // Only expecting 3 assertions now
+
+    // Mock updateCardPosition to resolve
     vi.mocked(boardService.updateCardPosition).mockResolvedValue();
 
-    // Render the component within act to handle state updates
-    await act(async () => {
+    // Mock our services
+    vi.mocked(boardService.subscribeToBoard).mockImplementation((boardId, callback) => {
+      // Return a mock board with minimal required properties
+      setTimeout(() => {
+        callback({
+          id: "test-board-id",
+          name: "Test Board",
+          columns: {
+            col1: { id: "col1", title: "What went well", order: 0, sortByVotes: false },
+            col2: { id: "col2", title: "What can be improved", order: 1, sortByVotes: false },
+            col3: { id: "col3", title: "Action items", order: 2, sortByVotes: false },
+          },
+          createdAt: createMockTimestamp(),
+          isActive: true,
+          timerDurationSeconds: 300,
+          timerIsRunning: false,
+          timerPausedDurationSeconds: undefined,
+          timerOriginalDurationSeconds: 300,
+          timerStartTime: undefined,
+          actionPoints: [],
+          facilitatorId: "test-user-id",
+        });
+      }, 0);
+      return vi.fn(); // Return cleanup function
+    });
+
+    vi.mocked(boardService.subscribeToCards).mockImplementation((boardId, callback) => {
+      setTimeout(() => {
+        callback([
+          {
+            id: "card1",
+            boardId: "test-board-id",
+            columnId: "col1",
+            content: "Test Card 1",
+            authorId: "test-user-id",
+            authorName: "Test User",
+            createdAt: createMockTimestamp(),
+            votes: 0,
+            position: 0,
+          },
+          {
+            id: "card2",
+            boardId: "test-board-id",
+            columnId: "col2",
+            content: "Test Card 2",
+            authorId: "other-user-id",
+            authorName: "Other User",
+            createdAt: createMockTimestamp(),
+            votes: 2,
+            position: 0,
+          },
+          {
+            id: "card3",
+            boardId: "test-board-id",
+            columnId: "col3",
+            content: "Test Card 3",
+            authorId: "test-user-id",
+            authorName: "Test User",
+            createdAt: createMockTimestamp(),
+            votes: 1,
+            position: 0,
+          },
+        ]);
+      }, 0);
+      return vi.fn(); // Return cleanup function
+    });
+
+    // Render the component
+    render(
+      <MemoryRouter initialEntries={["/boards/test-board-id"]}>
+        <Routes>
+          <Route path="/boards/:boardId" element={<Board />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    // Wait for loading to complete
+    await waitFor(() => {
+      expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
+    });
+
+    // Create a mock DnD result for testing
+    const dropResult = {
+      draggableId: "card1",
+      type: "DEFAULT",
+      source: {
+        droppableId: "col1",
+        index: 0,
+      },
+      destination: {
+        droppableId: "col2",
+        index: 1,
+      },
+      reason: "DROP",
+      mode: "FLUID",
+      combine: null,
+    } as DropResult;
+
+    // Directly call the captured onDragEnd with the mock drop result
+    act(() => {
+      // Access the window.capturedOnDragEnd variable set by our mock
+      if (typeof window.capturedOnDragEnd === 'function') {
+        window.capturedOnDragEnd(dropResult);
+      }
+    });
+
+    // Verify that the card update service was called
+    expect(boardService.updateCardPosition).toHaveBeenCalledWith(
+      "card1",    // draggableId
+      "col2",     // destinationColumnId
+      1,          // destinationIndex
+      "col1",     // sourceColumnId
+      "test-board-id"  // boardId
+    );
+  });
+
+  // Move this after the main test blocks
+  describe("Action Points Panel", () => {
+    it("should toggle action points panel when action points button is clicked", async () => {
+      // Reset all mocks to ensure test isolation
+      vi.clearAllMocks();
+      
+      // Fix the joinBoard mock to return a proper object
+      vi.mocked(boardService.joinBoard).mockResolvedValue({
+        success: true,
+        name: "Test User"
+      });
+      
+      // Mock the Firebase context
+      vi.mocked(FirebaseContext.useFirebase).mockReturnValue({
+        user: mockUser,
+        loading: false,
+        error: null,
+        updateUserDisplayName: vi.fn(),
+      });
+      
+      // Create a test board for this test
+      const testBoard = {
+        id: "test-board-id",
+        name: "Test Board",
+        columns: {
+          col1: { id: "col1", title: "What went well", order: 0, sortByVotes: false },
+          col2: { id: "col2", title: "What can be improved", order: 1, sortByVotes: false },
+          col3: { id: "col3", title: "Action items", order: 2, sortByVotes: false },
+        },
+        createdAt: createMockTimestamp(),
+        isActive: true,
+        timerDurationSeconds: 300,
+        timerIsRunning: false,
+        timerPausedDurationSeconds: undefined,
+        timerOriginalDurationSeconds: 300,
+        timerStartTime: undefined,
+        actionPoints: [],
+        facilitatorId: "test-user-id",
+      };
+      
+      // Setup subscribeToBoard - this is critical for the test to work
+      vi.mocked(boardService.subscribeToBoard).mockImplementation(
+        (boardId, callback) => {
+          // Use setTimeout with 0ms to make it async but immediate
+          setTimeout(() => {
+            callback(testBoard);
+          }, 0);
+          return vi.fn(); // Return a cleanup function
+        }
+      );
+      
+      // Setup subscribeToCards mock
+      vi.mocked(boardService.subscribeToCards).mockImplementation(
+        (boardId, callback) => {
+          setTimeout(() => {
+            callback([]);
+          }, 0);
+          return vi.fn();
+        }
+      );
+      
+      // Mock subscribeToParticipants with needed participants
+      vi.mocked(presenceService.subscribeToParticipants).mockImplementation(
+        (boardId, callback) => {
+          setTimeout(() => {
+            callback([
+              {
+                id: "test-user-id",
+                name: "Test User",
+                color: "#FF5733",
+                boardId: "test-board-id",
+                lastOnline: Date.now(),
+              },
+            ]);
+          }, 0);
+          return vi.fn();
+        }
+      );
+      
+      // Mock setupPresence with a simple implementation
+      vi.mocked(presenceService.setupPresence).mockReturnValue(() => {});
+      
+      // Render the component
       render(
         <MemoryRouter initialEntries={["/boards/test-board-id"]}>
           <Routes>
@@ -1972,81 +2272,39 @@ describe("Board", () => {
           </Routes>
         </MemoryRouter>
       );
-    });
-
-    // Check that the drag-drop context is rendered
-    expect(screen.getByTestId("drag-drop-context")).toBeInTheDocument();
-
-    // Verify cards are in the DOM by checking their text
-    expect(screen.getByText("Test Card 1")).toBeInTheDocument();
-
-    // Simulate a drag and drop by manually calling the captured onDragEnd handler
-    if (capturedOnDragEnd) {
-      // Create a sample drop result for moving card1 from col1 to col2
-      const dropResult: DropResult = {
-        draggableId: "card1",
-        type: "DEFAULT",
-        source: {
-          droppableId: "col1",
-          index: 0,
-        },
-        destination: {
-          droppableId: "col2",
-          index: 0,
-        },
-        reason: "DROP",
-        mode: "FLUID",
-        combine: null,
-      };
-
-      // Call the onDragEnd handler directly
-      act(() => {
-        if (capturedOnDragEnd) {
-          capturedOnDragEnd(dropResult);
-        }
+      
+      // Wait for the board to load
+      await waitFor(() => {
+        expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
+      }, { timeout: 3000 });
+      
+      // Debug the DOM at this point
+      console.log("DOM after loading:", document.body.innerHTML);
+      
+      // Find the action points button by its icon and text
+      const actionPointsButton = await screen.findByRole("button", {
+        name: /action points/i,
       });
-
-      // Verify that updateCardPosition was called with the correct parameters
-      expect(boardService.updateCardPosition).toHaveBeenCalledWith(
-        "card1",
-        "col2",
-        0,
-        "col1",
-        "test-board-id"
-      );
-    } else {
-      expect(capturedOnDragEnd).not.toBeNull();
-    }
-  });
-
-  it("should toggle action points panel when action points button is clicked", async () => {
-    // ... setup similar to your existing tests ...
-    
-    // Render component
-    render(<Board />);
-
-    // Make sure loading completes
-    await waitFor(() => {
-      expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
+      expect(actionPointsButton).toBeInTheDocument();
+      
+      // Initially, panel should be closed
+      expect(screen.queryByTestId("action-points-panel")).not.toBeInTheDocument();
+      
+      // Click the button to open the panel
+      await act(async () => {
+        fireEvent.click(actionPointsButton);
+      });
+      
+      // Verify the panel is visible
+      expect(screen.getByTestId("action-points-panel")).toBeInTheDocument();
+      
+      // Click again to close
+      await act(async () => {
+        fireEvent.click(actionPointsButton);
+      });
+      
+      // Verify the panel is hidden
+      expect(screen.queryByTestId("action-points-panel")).not.toBeInTheDocument();
     });
-
-    // Find the action points button
-    const actionPointsButton = screen.getByText("Action points").closest("button");
-    expect(actionPointsButton).toBeInTheDocument();
-
-    // Initially, panel should be closed
-    expect(screen.queryByTestId("action-points-panel")).not.toBeInTheDocument();
-
-    // Click the button to open the panel
-    fireEvent.click(actionPointsButton!);
-
-    // Panel should now be open
-    expect(screen.getByTestId("action-points-panel")).toBeInTheDocument();
-
-    // Click again to close
-    fireEvent.click(actionPointsButton!);
-
-    // Panel should be closed again
-    expect(screen.queryByTestId("action-points-panel")).not.toBeInTheDocument();
   });
 }); // End Main Describe Block

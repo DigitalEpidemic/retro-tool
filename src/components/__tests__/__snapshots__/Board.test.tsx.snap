@@ -33,46 +33,21 @@ exports[`Board > creates a snapshot of the component 1`] = `
             aria-label="Start timer"
             class="cursor-pointer text-blue-500 hover:text-blue-600"
           >
-            <svg
-              class="lucide lucide-play h-4 w-4"
-              fill="none"
-              height="24"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-              width="24"
-              xmlns="http://www.w3.org/2000/svg"
+            <span
+              data-testid="play-icon"
             >
-              <polygon
-                points="6 3 20 12 6 21 6 3"
-              />
-            </svg>
+              Play
+            </span>
           </button>
           <button
             aria-label="Reset timer"
             class="text-gray-400 hover:text-gray-600 cursor-pointer"
           >
-            <svg
-              class="lucide lucide-rotate-ccw h-4 w-4"
-              fill="none"
-              height="24"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-              width="24"
-              xmlns="http://www.w3.org/2000/svg"
+            <span
+              data-testid="rotateccw-icon"
             >
-              <path
-                d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"
-              />
-              <path
-                d="M3 3v5h5"
-              />
-            </svg>
+              RotateCcw
+            </span>
           </button>
         </div>
         <div
@@ -81,33 +56,11 @@ exports[`Board > creates a snapshot of the component 1`] = `
           <button
             class="text-gray-700 hover:text-gray-900 flex items-center cursor-pointer "
           >
-            <svg
-              class="lucide lucide-users h-5 w-5"
-              fill="none"
-              height="24"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-              width="24"
-              xmlns="http://www.w3.org/2000/svg"
+            <span
+              data-testid="users-icon"
             >
-              <path
-                d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"
-              />
-              <circle
-                cx="9"
-                cy="7"
-                r="4"
-              />
-              <path
-                d="M22 21v-2a4 4 0 0 0-3-3.87"
-              />
-              <path
-                d="M16 3.13a4 4 0 0 1 0 7.75"
-              />
-            </svg>
+              Users
+            </span>
             <span
               class="ml-1 text-sm"
             >
@@ -115,61 +68,32 @@ exports[`Board > creates a snapshot of the component 1`] = `
             </span>
           </button>
           <button
-            class="text-gray-700 hover:text-gray-900 flex items-center cursor-pointer"
+            class="text-gray-700 hover:text-gray-900 flex items-center cursor-pointer "
           >
-            <svg
-              class="lucide lucide-trending-up h-5 w-5"
-              fill="none"
-              height="24"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-              width="24"
-              xmlns="http://www.w3.org/2000/svg"
+            <span
+              data-testid="trendingup-icon"
             >
-              <polyline
-                points="22 7 13.5 15.5 8.5 10.5 2 17"
-              />
-              <polyline
-                points="16 7 22 7 22 13"
-              />
-            </svg>
+              TrendingUp
+            </span>
             <span
               class="ml-1 text-sm"
             >
               Action points
             </span>
+            <span
+              class="ml-1 bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full"
+            >
+              2
+            </span>
           </button>
           <button
             class="text-gray-700 hover:text-gray-900 flex items-center cursor-pointer"
           >
-            <svg
-              class="lucide lucide-download h-5 w-5"
-              fill="none"
-              height="24"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-              width="24"
-              xmlns="http://www.w3.org/2000/svg"
+            <span
+              data-testid="download-icon"
             >
-              <path
-                d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
-              />
-              <polyline
-                points="7 10 12 15 17 10"
-              />
-              <line
-                x1="12"
-                x2="12"
-                y1="15"
-                y2="3"
-              />
-            </svg>
+              Download
+            </span>
             <span
               class="ml-1 text-sm"
             >
@@ -179,46 +103,11 @@ exports[`Board > creates a snapshot of the component 1`] = `
           <button
             class="text-gray-700 hover:text-gray-900 flex items-center cursor-pointer"
           >
-            <svg
-              class="lucide lucide-share2 lucide-share-2 h-5 w-5"
-              fill="none"
-              height="24"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-              width="24"
-              xmlns="http://www.w3.org/2000/svg"
+            <span
+              data-testid="share2-icon"
             >
-              <circle
-                cx="18"
-                cy="5"
-                r="3"
-              />
-              <circle
-                cx="6"
-                cy="12"
-                r="3"
-              />
-              <circle
-                cx="18"
-                cy="19"
-                r="3"
-              />
-              <line
-                x1="8.59"
-                x2="15.42"
-                y1="13.51"
-                y2="17.49"
-              />
-              <line
-                x1="15.41"
-                x2="8.59"
-                y1="6.51"
-                y2="10.49"
-              />
-            </svg>
+              Share2
+            </span>
             <span
               class="ml-1 text-sm"
             >
@@ -228,27 +117,11 @@ exports[`Board > creates a snapshot of the component 1`] = `
           <button
             class="text-gray-700 hover:text-gray-900 flex items-center cursor-pointer"
           >
-            <svg
-              class="lucide lucide-settings h-5 w-5"
-              fill="none"
-              height="24"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-              width="24"
-              xmlns="http://www.w3.org/2000/svg"
+            <span
+              data-testid="settings-icon"
             >
-              <path
-                d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"
-              />
-              <circle
-                cx="12"
-                cy="12"
-                r="3"
-              />
-            </svg>
+              Settings
+            </span>
             <span
               class="ml-1 text-sm"
             >
@@ -287,31 +160,11 @@ exports[`Board > creates a snapshot of the component 1`] = `
                   class="flex items-center text-blue-600 hover:text-blue-700 cursor-pointer"
                   data-testid="sort-toggle-col1"
                 >
-                  <svg
-                    class="lucide lucide-arrow-up-down h-4 w-4"
-                    fill="none"
-                    height="24"
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    viewBox="0 0 24 24"
-                    width="24"
-                    xmlns="http://www.w3.org/2000/svg"
+                  <span
+                    data-testid="arrowupdown-icon"
                   >
-                    <path
-                      d="m21 16-4 4-4-4"
-                    />
-                    <path
-                      d="M17 20V4"
-                    />
-                    <path
-                      d="m3 8 4-4 4 4"
-                    />
-                    <path
-                      d="M7 4v16"
-                    />
-                  </svg>
+                    ArrowUpDown
+                  </span>
                   <span
                     class="sr-only"
                   >
@@ -321,34 +174,11 @@ exports[`Board > creates a snapshot of the component 1`] = `
                 <button
                   class="text-blue-600 hover:text-blue-700 cursor-pointer"
                 >
-                  <svg
-                    class="lucide lucide-ellipsis-vertical h-4 w-4"
-                    fill="none"
-                    height="24"
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    viewBox="0 0 24 24"
-                    width="24"
-                    xmlns="http://www.w3.org/2000/svg"
+                  <span
+                    data-testid="morevertical-icon"
                   >
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="1"
-                    />
-                    <circle
-                      cx="12"
-                      cy="5"
-                      r="1"
-                    />
-                    <circle
-                      cx="12"
-                      cy="19"
-                      r="1"
-                    />
-                  </svg>
+                    MoreVertical
+                  </span>
                   <span
                     class="sr-only"
                   >
@@ -406,31 +236,11 @@ exports[`Board > creates a snapshot of the component 1`] = `
                   class="flex items-center text-blue-600 hover:text-blue-700 cursor-pointer"
                   data-testid="sort-toggle-col2"
                 >
-                  <svg
-                    class="lucide lucide-arrow-up-down h-4 w-4"
-                    fill="none"
-                    height="24"
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    viewBox="0 0 24 24"
-                    width="24"
-                    xmlns="http://www.w3.org/2000/svg"
+                  <span
+                    data-testid="arrowupdown-icon"
                   >
-                    <path
-                      d="m21 16-4 4-4-4"
-                    />
-                    <path
-                      d="M17 20V4"
-                    />
-                    <path
-                      d="m3 8 4-4 4 4"
-                    />
-                    <path
-                      d="M7 4v16"
-                    />
-                  </svg>
+                    ArrowUpDown
+                  </span>
                   <span
                     class="sr-only"
                   >
@@ -440,34 +250,11 @@ exports[`Board > creates a snapshot of the component 1`] = `
                 <button
                   class="text-blue-600 hover:text-blue-700 cursor-pointer"
                 >
-                  <svg
-                    class="lucide lucide-ellipsis-vertical h-4 w-4"
-                    fill="none"
-                    height="24"
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    viewBox="0 0 24 24"
-                    width="24"
-                    xmlns="http://www.w3.org/2000/svg"
+                  <span
+                    data-testid="morevertical-icon"
                   >
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="1"
-                    />
-                    <circle
-                      cx="12"
-                      cy="5"
-                      r="1"
-                    />
-                    <circle
-                      cx="12"
-                      cy="19"
-                      r="1"
-                    />
-                  </svg>
+                    MoreVertical
+                  </span>
                   <span
                     class="sr-only"
                   >
@@ -525,31 +312,11 @@ exports[`Board > creates a snapshot of the component 1`] = `
                   class="flex items-center text-blue-600 hover:text-blue-700 cursor-pointer"
                   data-testid="sort-toggle-col3"
                 >
-                  <svg
-                    class="lucide lucide-arrow-up-down h-4 w-4"
-                    fill="none"
-                    height="24"
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    viewBox="0 0 24 24"
-                    width="24"
-                    xmlns="http://www.w3.org/2000/svg"
+                  <span
+                    data-testid="arrowupdown-icon"
                   >
-                    <path
-                      d="m21 16-4 4-4-4"
-                    />
-                    <path
-                      d="M17 20V4"
-                    />
-                    <path
-                      d="m3 8 4-4 4 4"
-                    />
-                    <path
-                      d="M7 4v16"
-                    />
-                  </svg>
+                    ArrowUpDown
+                  </span>
                   <span
                     class="sr-only"
                   >
@@ -559,34 +326,11 @@ exports[`Board > creates a snapshot of the component 1`] = `
                 <button
                   class="text-blue-600 hover:text-blue-700 cursor-pointer"
                 >
-                  <svg
-                    class="lucide lucide-ellipsis-vertical h-4 w-4"
-                    fill="none"
-                    height="24"
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    viewBox="0 0 24 24"
-                    width="24"
-                    xmlns="http://www.w3.org/2000/svg"
+                  <span
+                    data-testid="morevertical-icon"
                   >
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="1"
-                    />
-                    <circle
-                      cx="12"
-                      cy="5"
-                      r="1"
-                    />
-                    <circle
-                      cx="12"
-                      cy="19"
-                      r="1"
-                    />
-                  </svg>
+                    MoreVertical
+                  </span>
                   <span
                     class="sr-only"
                   >

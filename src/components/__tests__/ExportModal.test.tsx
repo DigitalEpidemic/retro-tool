@@ -4,7 +4,10 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Board, Card } from "../../services/firebase";
-import ExportModal, { createAndDownloadMarkdownFile, formatExportFilename } from "../ExportModal";
+import ExportModal, {
+  createAndDownloadMarkdownFile,
+  formatExportFilename,
+} from "../ExportModal";
 
 // Mock document.execCommand for clipboard test
 document.execCommand = vi.fn();
@@ -30,7 +33,10 @@ describe("ExportModal", () => {
       content: "Great teamwork",
       authorId: "user-1",
       authorName: "John",
-      createdAt: { toDate: () => new Date(), toMillis: () => Date.now() } as any,
+      createdAt: {
+        toDate: () => new Date(),
+        toMillis: () => Date.now(),
+      } as any,
       votes: 3,
       position: 0,
     },
@@ -41,7 +47,10 @@ describe("ExportModal", () => {
       content: "Communication could be better",
       authorId: "user-2",
       authorName: "Jane",
-      createdAt: { toDate: () => new Date(), toMillis: () => Date.now() } as any,
+      createdAt: {
+        toDate: () => new Date(),
+        toMillis: () => Date.now(),
+      } as any,
       votes: 2,
       position: 0,
     },
@@ -52,7 +61,10 @@ describe("ExportModal", () => {
       content: "Create more documentation",
       authorId: "user-3",
       authorName: "Bob",
-      createdAt: { toDate: () => new Date(), toMillis: () => Date.now() } as any,
+      createdAt: {
+        toDate: () => new Date(),
+        toMillis: () => Date.now(),
+      } as any,
       votes: 1,
       position: 0,
     },
@@ -86,9 +98,15 @@ describe("ExportModal", () => {
     );
 
     expect(screen.getByText("Export Board as Markdown")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Close panel" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Copy to Clipboard" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Save as File" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Close panel" })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Copy to Clipboard" })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Save as File" })
+    ).toBeInTheDocument();
   });
 
   it("should format markdown content correctly", () => {
@@ -102,21 +120,21 @@ describe("ExportModal", () => {
     );
 
     const textarea = screen.getByRole("textbox") as HTMLTextAreaElement;
-    
+
     // Check header
     expect(textarea.value).toContain(`# ${mockBoard.name}`);
     expect(textarea.value).toContain("Date:");
-    
+
     // Check column titles
     expect(textarea.value).toContain("## What went well");
     expect(textarea.value).toContain("## What can be improved");
     expect(textarea.value).toContain("## Action items");
-    
+
     // Check card content
     expect(textarea.value).toContain("Great teamwork");
     expect(textarea.value).toContain("Communication could be better");
     expect(textarea.value).toContain("Create more documentation");
-    
+
     // Check votes and authors
     expect(textarea.value).toContain("(3 votes, by John)");
     expect(textarea.value).toContain("(2 votes, by Jane)");
@@ -150,7 +168,7 @@ describe("ExportModal", () => {
 
     // Trigger copy action
     fireEvent.click(screen.getByRole("button", { name: "Copy to Clipboard" }));
-    
+
     // Check if document.execCommand was called with 'copy'
     expect(document.execCommand).toHaveBeenCalledWith("copy");
   });
@@ -159,7 +177,7 @@ describe("ExportModal", () => {
 describe("formatExportFilename", () => {
   // Original Date object
   const originalDate = global.Date;
-  
+
   beforeEach(() => {
     // Mock Date to return a fixed date
     const fixedDate = new Date("2025-04-07T12:00:00.000Z");
@@ -168,23 +186,35 @@ describe("formatExportFilename", () => {
         super();
         return fixedDate;
       }
-      
+
       toISOString() {
         return "2025-04-07T12:00:00.000Z";
       }
     } as any;
   });
-  
+
   afterEach(() => {
     // Restore original Date
     global.Date = originalDate;
   });
-  
+
   it.each([
     ["Test Board", "2025-04-07-test-board.md", "regular board name"],
-    ["Board: Test Board", "2025-04-07-test-board.md", "board name with 'Board: ' prefix"],
-    ["board: Test Board", "2025-04-07-test-board.md", "board name with case-insensitive 'board: ' prefix"],
-    ["My Amazing Board", "2025-04-07-my-amazing-board.md", "board name with spaces"]
+    [
+      "Board: Test Board",
+      "2025-04-07-test-board.md",
+      "board name with 'Board: ' prefix",
+    ],
+    [
+      "board: Test Board",
+      "2025-04-07-test-board.md",
+      "board name with case-insensitive 'board: ' prefix",
+    ],
+    [
+      "My Amazing Board",
+      "2025-04-07-my-amazing-board.md",
+      "board name with spaces",
+    ],
   ])("should format %s correctly as %s (%s)", (input, expected) => {
     const result = formatExportFilename(input);
     expect(result).toBe(expected);
@@ -196,45 +226,45 @@ describe("createAndDownloadMarkdownFile", () => {
   const originalURL = global.URL;
   const mockURL = {
     createObjectURL: vi.fn(() => "mock-blob-url"),
-    revokeObjectURL: vi.fn()
+    revokeObjectURL: vi.fn(),
   };
 
   // Setup mock for anchor element
   const mockLink = {
     href: "",
     download: "",
-    click: vi.fn()
+    click: vi.fn(),
   };
-  
+
   // Setup mocks for document methods with proper typing
   let originalCreateElement: typeof document.createElement;
   let originalAppendChild: typeof document.body.appendChild;
   let originalRemoveChild: typeof document.body.removeChild;
-  
+
   beforeEach(() => {
     // Clear mocks before each test
     vi.clearAllMocks();
-    
+
     // Mock URL functions
     global.URL = { ...mockURL } as any;
-    
+
     // Mock document.createElement
     originalCreateElement = document.createElement;
     document.createElement = vi.fn().mockImplementation((tag: string) => {
-      if (tag === 'a') {
+      if (tag === "a") {
         return mockLink as unknown as HTMLAnchorElement;
       }
       // For any other tag, call the original implementation
       return originalCreateElement.call(document, tag);
     });
-    
+
     // Mock document.body methods
     originalAppendChild = document.body.appendChild;
     originalRemoveChild = document.body.removeChild;
     document.body.appendChild = vi.fn().mockReturnValue(document.body);
     document.body.removeChild = vi.fn().mockReturnValue(document.body);
   });
-  
+
   afterEach(() => {
     // Restore all mocks
     global.URL = originalURL;
@@ -242,38 +272,38 @@ describe("createAndDownloadMarkdownFile", () => {
     document.body.appendChild = originalAppendChild;
     document.body.removeChild = originalRemoveChild;
   });
-  
+
   it("should create a blob and generate a URL", () => {
     // Call the function with test content
     createAndDownloadMarkdownFile("# Test Markdown", "test-file.md");
-    
+
     // Since we can't easily verify the Blob without type issues,
     // we'll just verify that createObjectURL was called
     expect(mockURL.createObjectURL).toHaveBeenCalledTimes(1);
   });
-  
+
   it("should create and configure an anchor element", () => {
     // Call the function
     createAndDownloadMarkdownFile("# Test Content", "test-file.md");
-    
+
     // Verify document.createElement was called to create an anchor
     expect(document.createElement).toHaveBeenCalledWith("a");
-    
+
     // Verify anchor element properties were set
     expect(mockLink.href).toBe("mock-blob-url");
     expect(mockLink.download).toBe("test-file.md");
   });
-  
+
   it("should trigger the download and clean up resources", () => {
     // Call the function
     createAndDownloadMarkdownFile("# Test Content", "test-file.md");
-    
+
     // Verify the anchor was appended to the body, clicked, and removed
     expect(document.body.appendChild).toHaveBeenCalledWith(mockLink);
     expect(mockLink.click).toHaveBeenCalled();
     expect(document.body.removeChild).toHaveBeenCalledWith(mockLink);
-    
+
     // Verify URL.revokeObjectURL was called to clean up
     expect(mockURL.revokeObjectURL).toHaveBeenCalledWith("mock-blob-url");
   });
-}); 
+});

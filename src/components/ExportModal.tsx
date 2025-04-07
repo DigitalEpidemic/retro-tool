@@ -10,16 +10,19 @@ interface ExportModalProps {
 }
 
 // Extract file saving logic to a testable function
-export function createAndDownloadMarkdownFile(markdownContent: string, fileName: string) {
+export function createAndDownloadMarkdownFile(
+  markdownContent: string,
+  fileName: string
+) {
   const blob = new Blob([markdownContent], { type: "text/markdown" });
   const url = URL.createObjectURL(blob);
-  
+
   const link = document.createElement("a");
   link.href = url;
   link.download = fileName;
   document.body.appendChild(link);
   link.click();
-  
+
   // Clean up
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
@@ -29,7 +32,7 @@ export function createAndDownloadMarkdownFile(markdownContent: string, fileName:
 export function formatExportFilename(boardName: string): string {
   // Remove "Board: " prefix from the board name
   const cleanedBoardName = boardName.replace(/^Board:\s*/i, "");
-  
+
   const dateStr = new Date().toISOString().split("T")[0];
   return `${dateStr}-${cleanedBoardName.replace(/\s+/g, "-").toLowerCase()}.md`;
 }
@@ -53,14 +56,14 @@ export default function ExportModal({
 
     // Group cards by columns
     const cardsByColumn: Record<string, Card[]> = {};
-    
+
     // Initialize empty arrays for each column
     Object.entries(board.columns).forEach(([columnId, column]) => {
       cardsByColumn[columnId] = [];
     });
-    
+
     // Populate cards by column
-    cards.forEach(card => {
+    cards.forEach((card) => {
       if (cardsByColumn[card.columnId]) {
         cardsByColumn[card.columnId].push(card);
       }
@@ -71,20 +74,22 @@ export default function ExportModal({
       .sort(([, a], [, b]) => a.order - b.order)
       .forEach(([columnId, column]) => {
         markdownContent += `## ${column.title}\n\n`;
-        
+
         // If no cards in this column
         if (!cardsByColumn[columnId] || cardsByColumn[columnId].length === 0) {
           markdownContent += "_No cards in this column_\n\n";
           return;
         }
-        
+
         // Sort cards by votes (descending) then add to markdown
-        const sortedCards = [...cardsByColumn[columnId]].sort((a, b) => b.votes - a.votes);
-        
-        sortedCards.forEach(card => {
+        const sortedCards = [...cardsByColumn[columnId]].sort(
+          (a, b) => b.votes - a.votes
+        );
+
+        sortedCards.forEach((card) => {
           markdownContent += `- ${card.content} _(${card.votes} votes, by ${card.authorName})_\n`;
         });
-        
+
         markdownContent += "\n";
       });
 
@@ -102,7 +107,7 @@ export default function ExportModal({
 
   const handleSaveAsFile = () => {
     if (!board) return;
-    
+
     const fileName = formatExportFilename(board.name);
     createAndDownloadMarkdownFile(markdown, fileName);
   };
@@ -113,7 +118,9 @@ export default function ExportModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-gray-500/30 p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl h-[80vh] flex flex-col overflow-hidden">
         <div className="flex justify-between items-center border-b border-gray-200 p-4">
-          <h2 className="text-xl font-semibold text-gray-800">Export Board as Markdown</h2>
+          <h2 className="text-xl font-semibold text-gray-800">
+            Export Board as Markdown
+          </h2>
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700"
@@ -122,7 +129,7 @@ export default function ExportModal({
             <X className="h-5 w-5" />
           </button>
         </div>
-        
+
         <div className="flex-grow p-4">
           <textarea
             ref={textareaRef}
@@ -131,7 +138,7 @@ export default function ExportModal({
             readOnly
           />
         </div>
-        
+
         <div className="flex justify-end space-x-3 border-t border-gray-200 p-4">
           <button
             onClick={handleCopyToClipboard}
@@ -151,4 +158,4 @@ export default function ExportModal({
       </div>
     </div>
   );
-} 
+}

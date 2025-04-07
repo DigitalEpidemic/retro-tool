@@ -1,7 +1,6 @@
-import { render, screen, fireEvent } from "@testing-library/react";
-import { vi } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import ActionPointsPanel, { ActionPoint } from "../ActionPointsPanel";
-
 // Mock Lucide React icons
 vi.mock("lucide-react", () => {
   const mockIcon = (name: string) =>
@@ -42,7 +41,7 @@ describe("ActionPointsPanel", () => {
         onDeleteActionPoint={mockOnDeleteActionPoint}
       />
     );
-    
+
     expect(screen.queryByText("Action Points")).not.toBeInTheDocument();
   });
 
@@ -57,7 +56,7 @@ describe("ActionPointsPanel", () => {
         onDeleteActionPoint={mockOnDeleteActionPoint}
       />
     );
-    
+
     expect(screen.getByText("Action Points")).toBeInTheDocument();
     expect(screen.getByText("To do")).toBeInTheDocument();
     expect(screen.getByText("Test action point 1")).toBeInTheDocument();
@@ -75,7 +74,7 @@ describe("ActionPointsPanel", () => {
         onDeleteActionPoint={mockOnDeleteActionPoint}
       />
     );
-    
+
     expect(screen.getByText("No action points yet")).toBeInTheDocument();
   });
 
@@ -90,7 +89,7 @@ describe("ActionPointsPanel", () => {
         onDeleteActionPoint={mockOnDeleteActionPoint}
       />
     );
-    
+
     fireEvent.click(screen.getByTestId("close-panel"));
     expect(mockOnClose).toHaveBeenCalledTimes(1);
   });
@@ -106,10 +105,12 @@ describe("ActionPointsPanel", () => {
         onDeleteActionPoint={mockOnDeleteActionPoint}
       />
     );
-    
+
     fireEvent.click(screen.getByTestId("add-action-point-button"));
-    
-    expect(screen.getByPlaceholderText("Enter action point...")).toBeInTheDocument();
+
+    expect(
+      screen.getByPlaceholderText("Enter action point...")
+    ).toBeInTheDocument();
     expect(screen.getByText("Cancel")).toBeInTheDocument();
     expect(screen.getByText("Add")).toBeInTheDocument();
   });
@@ -125,14 +126,14 @@ describe("ActionPointsPanel", () => {
         onDeleteActionPoint={mockOnDeleteActionPoint}
       />
     );
-    
+
     fireEvent.click(screen.getByTestId("add-action-point-button"));
-    
+
     const input = screen.getByPlaceholderText("Enter action point...");
     fireEvent.change(input, { target: { value: "New action point" } });
-    
+
     fireEvent.click(screen.getByTestId("add-action-point"));
-    
+
     expect(mockOnAddActionPoint).toHaveBeenCalledWith("New action point");
   });
 
@@ -147,10 +148,10 @@ describe("ActionPointsPanel", () => {
         onDeleteActionPoint={mockOnDeleteActionPoint}
       />
     );
-    
+
     const checkboxes = screen.getAllByRole("checkbox");
     fireEvent.click(checkboxes[0]);
-    
+
     expect(mockOnToggleActionPoint).toHaveBeenCalledWith("1");
   });
 
@@ -165,10 +166,10 @@ describe("ActionPointsPanel", () => {
         onDeleteActionPoint={mockOnDeleteActionPoint}
       />
     );
-    
+
     const deleteButtons = screen.getAllByLabelText("Delete action point");
     fireEvent.click(deleteButtons[0]);
-    
+
     expect(mockOnDeleteActionPoint).toHaveBeenCalledWith("1");
   });
-}); 
+});

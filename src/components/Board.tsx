@@ -27,6 +27,11 @@ import {
 } from "lucide-react";
 import { useFirebase } from "../contexts/FirebaseContext";
 import {
+  addActionPoint,
+  deleteActionPoint,
+  toggleActionPoint,
+} from "../services/actionPointsService"; // Import action points service
+import {
   createBoard,
   joinBoard,
   pauseTimer,
@@ -39,12 +44,11 @@ import {
   updateParticipantName as updateParticipantNameFirestore,
 } from "../services/boardService";
 import { Board as BoardType, Card as CardType, db } from "../services/firebase";
+import ActionPointsPanel, { ActionPoint } from "./ActionPointsPanel"; // Import ActionPointsPanel
 import CardComponent from "./Card";
 import Column from "./Column";
-import ParticipantsPanel from "./ParticipantsPanel"; // Add ParticipantsPanel import
 import ExportModal from "./ExportModal"; // Import the ExportModal component
-import ActionPointsPanel, { ActionPoint } from "./ActionPointsPanel"; // Import ActionPointsPanel
-import { addActionPoint, deleteActionPoint, getActionPoints, toggleActionPoint } from "../services/actionPointsService"; // Import action points service
+import ParticipantsPanel from "./ParticipantsPanel"; // Add ParticipantsPanel import
 
 // Import the new presence service
 import { OnlineUser } from "../services/firebase";
@@ -562,32 +566,38 @@ export default function Board() {
   const handleAddActionPoint = async (text: string) => {
     if (!boardId || !text.trim()) return;
 
-    // Create a temporary ID for optimistic update
+    // Create a temporary ID and action point for optimistic update
     const tempId = `temp-${Date.now()}`;
     const tempActionPoint: ActionPoint = {
       id: tempId,
       text: text.trim(),
-      completed: false
+      completed: false,
     };
 
     try {
-      // Update local state optimistically
-      setActionPoints((prev) => [...prev, tempActionPoint]);
-      
-      // Then add to Firestore
+      // Update local state optimistically for better UX
+      const updatedActionPoints = [...actionPoints, tempActionPoint];
+      setActionPoints(updatedActionPoints);
+
+      // Then add to Firestore and wait for response
       const newActionPoint = await addActionPoint(boardId, text);
-      
-      // Replace the temporary action point with the real one
-      setActionPoints((prev) => 
-        prev.map((ap) => ap.id === tempId ? newActionPoint : ap)
+
+      // Replace the temporary action point with the real one to maintain
+      // state consistency with Firestore
+      setActionPoints(
+        updatedActionPoints.map((ap) =>
+          ap.id === tempId ? newActionPoint : ap
+        )
       );
     } catch (error) {
       console.error("Error adding action point:", error);
       setError("Failed to add action point. Please try again.");
-      
+
       // Remove the temporary action point on error
-      setActionPoints((prev) => prev.filter((ap) => ap.id !== tempId));
-      
+      setActionPoints((prevPoints) =>
+        prevPoints.filter((ap) => ap.id !== tempId)
+      );
+
       setTimeout(() => setError(null), 3000);
     }
   };
@@ -596,30 +606,32 @@ export default function Board() {
   const handleToggleActionPoint = async (id: string) => {
     if (!boardId) return;
 
+    // Find the action point to toggle
+    const actionPoint = actionPoints.find((ap) => ap.id === id);
+    if (!actionPoint) return;
+
     try {
-      // First update local state optimistically for better UX
-      setActionPoints((prev) =>
-        prev.map((ap) =>
-          ap.id === id ? { ...ap, completed: !ap.completed } : ap
-        )
+      // Create a new array with the toggled action point
+      const updatedActionPoints = actionPoints.map((ap) =>
+        ap.id === id ? { ...ap, completed: !ap.completed } : ap
       );
-      
+
+      // Update local state optimistically
+      setActionPoints(updatedActionPoints);
+
       // Then update in Firestore
       await toggleActionPoint(boardId, id);
-      
-      // We don't need to update state again here as Firestore will trigger a document update
-      // which will be reflected when the board document updates
     } catch (error) {
       console.error("Error toggling action point:", error);
       setError("Failed to update action point. Please try again.");
-      
-      // Revert optimistic update on error
-      setActionPoints((prev) =>
-        prev.map((ap) =>
-          ap.id === id ? { ...ap, completed: !ap.completed } : ap
+
+      // Revert the local state on error
+      setActionPoints(
+        actionPoints.map((ap) =>
+          ap.id === id ? { ...ap, completed: actionPoint.completed } : ap
         )
       );
-      
+
       setTimeout(() => setError(null), 3000);
     }
   };
@@ -628,27 +640,26 @@ export default function Board() {
   const handleDeleteActionPoint = async (id: string) => {
     if (!boardId) return;
 
-    // Store the action point that's being deleted for potential recovery
-    const actionPointToDelete = actionPoints.find(ap => ap.id === id);
+    // Find the action point that's being deleted
+    const actionPointToDelete = actionPoints.find((ap) => ap.id === id);
     if (!actionPointToDelete) return;
 
     try {
-      // Update local state optimistically for better UX
-      setActionPoints((prev) => prev.filter((ap) => ap.id !== id));
-      
-      // Then update in Firestore
+      // Create a new array without the deleted action point
+      const updatedActionPoints = actionPoints.filter((ap) => ap.id !== id);
+
+      // Update local state optimistically
+      setActionPoints(updatedActionPoints);
+
+      // Then delete from Firestore
       await deleteActionPoint(boardId, id);
-      
-      // Firestore update will trigger a document update
     } catch (error) {
       console.error("Error deleting action point:", error);
       setError("Failed to delete action point. Please try again.");
-      
-      // Revert optimistic update on error by adding the action point back
-      if (actionPointToDelete) {
-        setActionPoints((prev) => [...prev, actionPointToDelete]);
-      }
-      
+
+      // Add the action point back on error
+      setActionPoints([...actionPoints]);
+
       setTimeout(() => setError(null), 3000);
     }
   };
@@ -866,7 +877,7 @@ export default function Board() {
               )}
             </button>
 
-            <button 
+            <button
               className={`text-gray-700 hover:text-gray-900 flex items-center cursor-pointer ${
                 isActionPointsPanelOpen ? "text-blue-500" : ""
               }`}
@@ -881,7 +892,7 @@ export default function Board() {
               )}
             </button>
 
-            <button 
+            <button
               className="text-gray-700 hover:text-gray-900 flex items-center cursor-pointer"
               onClick={handleExportClick}
             >
