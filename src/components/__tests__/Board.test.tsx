@@ -14,7 +14,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as FirebaseContext from "../../contexts/FirebaseContext";
 import * as boardService from "../../services/boardService";
 import type { Board as BoardType } from "../../services/firebase"; // Import types from firebase
-import * as presenceService from "../../services/presenceService";
 import Board from "../Board";
 
 // Create a mock document snapshot that implements the exists() method
@@ -117,23 +116,23 @@ vi.mock("lucide-react", () => {
   };
 });
 
-// Mock components
+// Mock components more concisely
 vi.mock("../ParticipantsPanel", () => ({
-  default: vi.fn().mockImplementation(({ isOpen }) => {
-    if (!isOpen) return null;
-    return <div data-testid="participants-panel">Participants Panel</div>;
-  }),
+  default: vi
+    .fn()
+    .mockImplementation(({ isOpen }) =>
+      isOpen ? (
+        <div data-testid="participants-panel">Participants Panel</div>
+      ) : null
+    ),
 }));
 
-// Using a more robust pattern for mocking modules with named exports
 vi.mock("../ActionPointsPanel", () => {
-  // Create the mock function with the proper implementation
-  const mockComponent = vi.fn(({ isOpen }) => {
-    if (!isOpen) return null;
-    return <div data-testid="action-points-panel">Action Points Panel</div>;
-  });
-
-  // Create a named export for ActionPoint (matches the actual component's exports)
+  const mockComponent = vi.fn(({ isOpen }) =>
+    isOpen ? (
+      <div data-testid="action-points-panel">Action Points Panel</div>
+    ) : null
+  );
   return {
     __esModule: true,
     default: mockComponent,
@@ -142,27 +141,12 @@ vi.mock("../ActionPointsPanel", () => {
 });
 
 vi.mock("../ExportModal", () => ({
-  default: vi.fn().mockImplementation(({ isOpen }) => {
-    if (!isOpen) return null;
-    return <div data-testid="export-modal">Export Modal</div>;
-  }),
+  default: vi
+    .fn()
+    .mockImplementation(({ isOpen }) =>
+      isOpen ? <div data-testid="export-modal">Export Modal</div> : null
+    ),
 }));
-
-// Define component mocks after the vi.mock() calls
-const mockParticipantsPanel = vi.fn().mockImplementation(({ isOpen }) => {
-  if (!isOpen) return null;
-  return <div data-testid="participants-panel">Participants Panel</div>;
-});
-
-const mockActionPointsPanel = vi.fn().mockImplementation(({ isOpen }) => {
-  if (!isOpen) return null;
-  return <div data-testid="action-points-panel">Action Points Panel</div>;
-});
-
-const mockExportModal = vi.fn().mockImplementation(({ isOpen }) => {
-  if (!isOpen) return null;
-  return <div data-testid="export-modal">Export Modal</div>;
-});
 
 // Mock the services
 vi.mock("../../services/boardService", () => {
@@ -465,6 +449,21 @@ vi.mock("../../services/actionPointsService", () => ({
 // const ExportModal = vi.mocked(import("../ExportModal")).default;
 
 describe("Board", () => {
+  // Helper function to render Board component consistently
+  const renderBoard = async (boardId = "test-board-id") => {
+    let result;
+    await act(async () => {
+      result = render(
+        <MemoryRouter initialEntries={[`/boards/${boardId}`]}>
+          <Routes>
+            <Route path="/boards/:boardId" element={<Board />} />
+          </Routes>
+        </MemoryRouter>
+      );
+    });
+    return result;
+  };
+
   // Clear all mocks between tests
   beforeEach(() => {
     vi.clearAllMocks();
@@ -507,20 +506,25 @@ describe("Board", () => {
     vi.mocked(boardService.createBoard).mockResolvedValue("test-board-id");
 
     // Reset the mock component implementations
-    mockParticipantsPanel.mockImplementation(({ isOpen }) => {
-      if (!isOpen) return null;
-      return <div data-testid="participants-panel">Participants Panel</div>;
-    });
+    vi.mocked(boardService.subscribeToBoard).mockImplementation(
+      (boardId, callback) => {
+        if (boardId === "test-board-id") {
+          act(() => callback(mockBoard));
+          return vi.fn();
+        }
+        return vi.fn();
+      }
+    );
 
-    mockActionPointsPanel.mockImplementation(({ isOpen }) => {
-      if (!isOpen) return null;
-      return <div data-testid="action-points-panel">Action Points Panel</div>;
-    });
-
-    mockExportModal.mockImplementation(({ isOpen }) => {
-      if (!isOpen) return null;
-      return <div data-testid="export-modal">Export Modal</div>;
-    });
+    vi.mocked(boardService.subscribeToCards).mockImplementation(
+      (boardId, callback) => {
+        if (boardId === "test-board-id") {
+          act(() => callback(mockCards));
+          return vi.fn();
+        }
+        return vi.fn();
+      }
+    );
   });
 
   afterEach(() => {
@@ -528,16 +532,7 @@ describe("Board", () => {
   });
 
   it("renders the board with columns and cards", async () => {
-    // Use act to wrap the render
-    await act(async () => {
-      render(
-        <MemoryRouter initialEntries={["/boards/test-board-id"]}>
-          <Routes>
-            <Route path="/boards/:boardId" element={<Board />} />
-          </Routes>
-        </MemoryRouter>
-      );
-    });
+    await renderBoard();
 
     // First check for loading state
     expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
@@ -574,16 +569,7 @@ describe("Board", () => {
       error: null,
     });
 
-    await act(async () => {
-      render(
-        <MemoryRouter initialEntries={["/boards/test-board-id"]}>
-          <Routes>
-            <Route path="/boards/:boardId" element={<Board />} />
-          </Routes>
-        </MemoryRouter>
-      );
-    });
-
+    await renderBoard();
     expect(screen.getByText("Loading...")).toBeInTheDocument();
   });
 
@@ -594,36 +580,18 @@ describe("Board", () => {
       error: new Error("Authentication failed"),
     });
 
-    await act(async () => {
-      render(
-        <MemoryRouter initialEntries={["/boards/test-board-id"]}>
-          <Routes>
-            <Route path="/boards/:boardId" element={<Board />} />
-          </Routes>
-        </MemoryRouter>
-      );
-    });
-
+    await renderBoard();
     expect(screen.getByText(/Authentication Error/)).toBeInTheDocument();
   });
 
   it("displays loading state when auth is loading", async () => {
     vi.mocked(FirebaseContext.useFirebase).mockReturnValue({
-      user: null, // Auth loading
+      user: null,
       loading: true,
       error: null,
     });
 
-    await act(async () => {
-      render(
-        <MemoryRouter initialEntries={["/boards/test-board-id"]}>
-          <Routes>
-            <Route path="/boards/:boardId" element={<Board />} />
-          </Routes>
-        </MemoryRouter>
-      );
-    });
-
+    await renderBoard();
     expect(screen.getByText("Loading...")).toBeInTheDocument();
     // Ensure subscriptions are not called yet
     expect(boardService.subscribeToBoard).not.toHaveBeenCalled();
@@ -2227,122 +2195,15 @@ describe("Board", () => {
   // Move this after the main test blocks
   describe("Action Points Panel", () => {
     it("should toggle action points panel when action points button is clicked", async () => {
-      // Reset all mocks to ensure test isolation
-      vi.clearAllMocks();
+      // Use the existing test setup from beforeEach
 
-      // Fix the joinBoard mock to return a proper object
-      vi.mocked(boardService.joinBoard).mockResolvedValue({
-        success: true,
-        name: "Test User",
-      });
+      // Render the component using our helper
+      await renderBoard();
 
-      // Mock the Firebase context
-      vi.mocked(FirebaseContext.useFirebase).mockReturnValue({
-        user: mockUser,
-        loading: false,
-        error: null,
-        updateUserDisplayName: vi.fn(),
-      });
-
-      // Create a test board for this test
-      const testBoard = {
-        id: "test-board-id",
-        name: "Test Board",
-        columns: {
-          col1: {
-            id: "col1",
-            title: "What went well",
-            order: 0,
-            sortByVotes: false,
-          },
-          col2: {
-            id: "col2",
-            title: "What can be improved",
-            order: 1,
-            sortByVotes: false,
-          },
-          col3: {
-            id: "col3",
-            title: "Action items",
-            order: 2,
-            sortByVotes: false,
-          },
-        },
-        createdAt: createMockTimestamp(),
-        isActive: true,
-        timerDurationSeconds: 300,
-        timerIsRunning: false,
-        timerPausedDurationSeconds: undefined,
-        timerOriginalDurationSeconds: 300,
-        timerStartTime: undefined,
-        actionPoints: [],
-        facilitatorId: "test-user-id",
-      };
-
-      // Setup subscribeToBoard - this is critical for the test to work
-      vi.mocked(boardService.subscribeToBoard).mockImplementation(
-        (boardId, callback) => {
-          // Use setTimeout with 0ms to make it async but immediate
-          setTimeout(() => {
-            callback(testBoard);
-          }, 0);
-          return vi.fn(); // Return a cleanup function
-        }
-      );
-
-      // Setup subscribeToCards mock
-      vi.mocked(boardService.subscribeToCards).mockImplementation(
-        (boardId, callback) => {
-          setTimeout(() => {
-            callback([]);
-          }, 0);
-          return vi.fn();
-        }
-      );
-
-      // Mock subscribeToParticipants with needed participants
-      vi.mocked(presenceService.subscribeToParticipants).mockImplementation(
-        (boardId, callback) => {
-          setTimeout(() => {
-            callback([
-              {
-                id: "test-user-id",
-                name: "Test User",
-                color: "#FF5733",
-                boardId: "test-board-id",
-                lastOnline: Date.now(),
-              },
-            ]);
-          }, 0);
-          return vi.fn();
-        }
-      );
-
-      // Mock setupPresence with a simple implementation
-      vi.mocked(presenceService.setupPresence).mockReturnValue(() => {});
-
-      // Render the component
-      render(
-        <MemoryRouter initialEntries={["/boards/test-board-id"]}>
-          <Routes>
-            <Route path="/boards/:boardId" element={<Board />} />
-          </Routes>
-        </MemoryRouter>
-      );
-
-      // Wait for the board to load
-      await waitFor(
-        () => {
-          expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
-        },
-        { timeout: 3000 }
-      );
-
-      // Find the action points button by its icon and text
-      const actionPointsButton = await screen.findByRole("button", {
+      // Find the action points button
+      const actionPointsButton = screen.getByRole("button", {
         name: /action points/i,
       });
-      expect(actionPointsButton).toBeInTheDocument();
 
       // Initially, panel should be closed
       expect(
