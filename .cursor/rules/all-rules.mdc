@@ -1,6 +1,6 @@
 ---
 description: 
-globs: *.tsx,*.ts,*.css,*.md,*.mdc,*.js,*.json
+globs: *.tsx,*.ts,*.css,*.md,*.mdc,*.js,*.json,*.*
 alwaysApply: false
 ---
  # All Rules
@@ -13,6 +13,7 @@ Always read all the referenced rules when this file is tagged.
 [coding-patterns.mdc](mdc:.cursor/rules/coding-patterns.mdc)
 [coding-workflow.mdc](mdc:.cursor/rules/coding-workflow.mdc)
 [tech-stack.mdc](mdc:.cursor/rules/tech-stack.mdc)
+[testing-standards.mdc](mdc:.cursor/rules/testing-standards.mdc)
 
 ## About Rules
 
@@ -21,3 +22,4 @@ Each rule file contains specific guidelines:
 1. **coding-patterns.mdc** - Code style, architecture, and implementation guidelines including testing practices
 2. **coding-workflow.mdc** - Workflow procedures and communication standards
 3. **tech-stack.mdc** - Technologies, libraries, and frameworks used in the project
+4. **testing-standards.mdc** - Test syntax, structure, and best practices

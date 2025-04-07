@@ -1,0 +1,30 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+ # Testing Standards
+
+## Test Syntax
+
+- Always use `it()` instead of `test()` for test cases
+- Always use descriptive test descriptions that explain what the test is checking
+- Prefer using `it.each` for parameterized testing when multiple test cases follow the same pattern
+- Format table-driven tests as readable arrays of test cases with descriptive explanations
+- Keep tests focused and avoid testing multiple things in one test case
+
+## Test Structure
+
+- Tests should be organized in a describe-it pattern
+- Group related tests under descriptive describe blocks
+- Use nested describe blocks for complex components with multiple behaviors
+- Setup and teardown should be handled with beforeEach/afterEach hooks
+
+## Testing Best Practices
+
+- Test components in isolation where possible
+- Mock dependencies that are outside the scope of the test
+- Write tests that validate functionality, not implementation details
+- Ensure tests are deterministic and don't depend on external state
+- Use appropriate assertions to validate the expected behavior
+- Use userEvent where possible instead of fireEvent for better simulation
