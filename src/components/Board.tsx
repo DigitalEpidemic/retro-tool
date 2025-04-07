@@ -907,7 +907,7 @@ export default function Board() {
               <span className="ml-1 text-sm">Export</span>
             </button>
 
-            <button 
+            <button
               className="text-gray-700 hover:text-gray-900 flex items-center cursor-pointer"
               onClick={handleShareClick}
             >
