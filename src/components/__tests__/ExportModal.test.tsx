@@ -1,7 +1,10 @@
+/**
+ * @vitest-environment jsdom
+ */
 import { fireEvent, render, screen } from "@testing-library/react";
-import { vi, describe, it, expect, beforeEach } from "vitest";
-import ExportModal from "../ExportModal";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Board, Card } from "../../services/firebase";
+import ExportModal, { createAndDownloadMarkdownFile } from "../ExportModal";
 
 // Mock document.execCommand for clipboard test
 document.execCommand = vi.fn();
@@ -150,5 +153,92 @@ describe("ExportModal", () => {
     
     // Check if document.execCommand was called with 'copy'
     expect(document.execCommand).toHaveBeenCalledWith("copy");
+  });
+});
+
+describe("createAndDownloadMarkdownFile", () => {
+  // Mock the browser APIs
+  const originalURL = global.URL;
+  const mockURL = {
+    createObjectURL: vi.fn(() => "mock-blob-url"),
+    revokeObjectURL: vi.fn()
+  };
+
+  // Setup mock for anchor element
+  const mockLink = {
+    href: "",
+    download: "",
+    click: vi.fn()
+  };
+  
+  // Setup mocks for document methods with proper typing
+  let originalCreateElement: typeof document.createElement;
+  let originalAppendChild: typeof document.body.appendChild;
+  let originalRemoveChild: typeof document.body.removeChild;
+  
+  beforeEach(() => {
+    // Clear mocks before each test
+    vi.clearAllMocks();
+    
+    // Mock URL functions
+    global.URL = { ...mockURL } as any;
+    
+    // Mock document.createElement
+    originalCreateElement = document.createElement;
+    document.createElement = vi.fn().mockImplementation((tag: string) => {
+      if (tag === 'a') {
+        return mockLink as unknown as HTMLAnchorElement;
+      }
+      // For any other tag, call the original implementation
+      return originalCreateElement.call(document, tag);
+    });
+    
+    // Mock document.body methods
+    originalAppendChild = document.body.appendChild;
+    originalRemoveChild = document.body.removeChild;
+    document.body.appendChild = vi.fn().mockReturnValue(document.body);
+    document.body.removeChild = vi.fn().mockReturnValue(document.body);
+  });
+  
+  afterEach(() => {
+    // Restore all mocks
+    global.URL = originalURL;
+    document.createElement = originalCreateElement;
+    document.body.appendChild = originalAppendChild;
+    document.body.removeChild = originalRemoveChild;
+  });
+  
+  it("should create a blob and generate a URL", () => {
+    // Call the function with test content
+    createAndDownloadMarkdownFile("# Test Markdown", "test-file.md");
+    
+    // Since we can't easily verify the Blob without type issues,
+    // we'll just verify that createObjectURL was called
+    expect(mockURL.createObjectURL).toHaveBeenCalledTimes(1);
+  });
+  
+  it("should create and configure an anchor element", () => {
+    // Call the function
+    createAndDownloadMarkdownFile("# Test Content", "test-file.md");
+    
+    // Verify document.createElement was called to create an anchor
+    expect(document.createElement).toHaveBeenCalledWith("a");
+    
+    // Verify anchor element properties were set
+    expect(mockLink.href).toBe("mock-blob-url");
+    expect(mockLink.download).toBe("test-file.md");
+  });
+  
+  it("should trigger the download and clean up resources", () => {
+    // Call the function
+    createAndDownloadMarkdownFile("# Test Content", "test-file.md");
+    
+    // Verify the anchor was appended to the body, clicked, and removed
+    expect(document.body.appendChild).toHaveBeenCalledWith(mockLink);
+    expect(mockLink.click).toHaveBeenCalled();
+    expect(document.body.removeChild).toHaveBeenCalledWith(mockLink);
+    
+    // Verify URL.revokeObjectURL was called to clean up
+    expect(mockURL.revokeObjectURL).toHaveBeenCalledWith("mock-blob-url");
   });
 }); 

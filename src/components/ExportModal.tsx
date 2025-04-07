@@ -1,4 +1,4 @@
-import { X, Clipboard, FileDown } from "lucide-react";
+import { Clipboard, FileDown, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Board, Card } from "../services/firebase";
 
@@ -7,6 +7,22 @@ interface ExportModalProps {
   onClose: () => void;
   board: Board | null;
   cards: Card[];
+}
+
+// Extract file saving logic to a testable function
+export function createAndDownloadMarkdownFile(markdownContent: string, fileName: string) {
+  const blob = new Blob([markdownContent], { type: "text/markdown" });
+  const url = URL.createObjectURL(blob);
+  
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  
+  // Clean up
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
 
 export default function ExportModal({
@@ -79,18 +95,7 @@ export default function ExportModal({
     if (!board) return;
     
     const fileName = `${board.name.replace(/\s+/g, "-").toLowerCase()}-${new Date().toISOString().split("T")[0]}.md`;
-    const blob = new Blob([markdown], { type: "text/markdown" });
-    const url = URL.createObjectURL(blob);
-    
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    
-    // Clean up
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    createAndDownloadMarkdownFile(markdown, fileName);
   };
 
   if (!isOpen) return null;
