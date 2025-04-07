@@ -42,6 +42,7 @@ import { Board as BoardType, Card as CardType, db } from "../services/firebase";
 import CardComponent from "./Card";
 import Column from "./Column";
 import ParticipantsPanel from "./ParticipantsPanel"; // Add ParticipantsPanel import
+import ExportModal from "./ExportModal"; // Import the ExportModal component
 
 // Import the new presence service
 import { OnlineUser } from "../services/firebase";
@@ -71,6 +72,7 @@ export default function Board() {
   >({}); // Track sort by votes per column
   const [isPanelOpen, setIsPanelOpen] = useState(false); // State for participants panel
   const [participants, setParticipants] = useState<OnlineUser[]>([]); // State for participants list
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false); // State for export modal
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null); // Ref to store interval ID
   const resetTimeoutRef = useRef<NodeJS.Timeout | null>(null); // Ref for delayed reset timeout
   const initialDurationSeconds = 300; // 5 minutes (default)
@@ -612,6 +614,11 @@ export default function Board() {
     }
   };
 
+  // Export functionality
+  const handleExportClick = () => {
+    setIsExportModalOpen(true);
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -744,7 +751,10 @@ export default function Board() {
               <span className="ml-1 text-sm">Action points</span>
             </button>
 
-            <button className="text-gray-700 hover:text-gray-900 flex items-center cursor-pointer">
+            <button 
+              className="text-gray-700 hover:text-gray-900 flex items-center cursor-pointer"
+              onClick={handleExportClick}
+            >
               <Download className="h-5 w-5" />
               <span className="ml-1 text-sm">Export</span>
             </button>
@@ -761,6 +771,14 @@ export default function Board() {
           </div>
         </div>
       </div>
+
+      {/* Export Modal */}
+      <ExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        board={board}
+        cards={cards}
+      />
 
       {/* Use the participants panel */}
       <ParticipantsPanel
