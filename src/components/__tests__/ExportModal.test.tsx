@@ -178,10 +178,14 @@ describe("ExportModal", () => {
     expect(textarea.value).toContain("## Action Points");
 
     // Check action points content and formatting
-    expect(textarea.value).toContain("- [ ] Schedule more frequent team check-ins");
-    expect(textarea.value).toContain("- [x] Update documentation with latest changes");
+    expect(textarea.value).toContain(
+      "- [ ] Schedule more frequent team check-ins"
+    );
+    expect(textarea.value).toContain(
+      "- [x] Update documentation with latest changes"
+    );
     expect(textarea.value).toContain("- [ ] Investigate performance issues");
-    
+
     // Check assignee display
     expect(textarea.value).toContain("_(Assigned to: Alice)_");
   });
@@ -201,7 +205,7 @@ describe("ExportModal", () => {
 
     // Check action points section header
     expect(textarea.value).toContain("## Action Points");
-    
+
     // Check "no action points" message
     expect(textarea.value).toContain("_No action points_");
   });
@@ -221,7 +225,7 @@ describe("ExportModal", () => {
 
     // Check action points section header
     expect(textarea.value).toContain("## Action Points");
-    
+
     // Check "no action points" message
     expect(textarea.value).toContain("_No action points_");
   });
