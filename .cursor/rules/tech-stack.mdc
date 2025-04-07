@@ -1,0 +1,18 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Technical stack
+
+- React 19 with TypeScript
+- Vite for build tooling and development server
+- Tailwind CSS for styling
+- Vitest for tests
+- Firebase + firestore for the realtime database and normal database
+- React Router for navigation
+- Lucide React for icons
+- @hello-pangea/dnd for drag and drop functionality
+- ESLint for code linting
+- date-fns for date manipulation
+- nanoid for ID generation

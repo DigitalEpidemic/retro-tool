@@ -1,0 +1,14 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Coding workflow
+
+- Always start every message with "Hello Chep Jepp"
+- Only focus on areas of the code relevant to the task
+- Do not touch code that is unrelated to the task
+- Write thorough tests for all major functionality
+- Avoid making major changes to the patterns and architecture of how a feature works after it was shown to work well, unless explicitly instructed
+- When editing a file, NEVER leave a comment like "//... (rest of the code remains unchanged) or // ... existing code ..." or // ... existing code ... or any equivalent

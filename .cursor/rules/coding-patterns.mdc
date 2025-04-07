@@ -1,0 +1,15 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Coding pattern preferences
+
+- Always prefer simple solutions
+- Avoid duplication of code whenever possible, which means checking for other areas of the codebase that might already have similar code or functionality
+- Be careful to only make changes that are requested
+- When fixing an issue or bug, do not introduce a new pattern or technology without first exhausting all options for the existing implementation. If you introduce a new pattern or technology, make sure to remove the old implementation afterwards so there is no duplicate logic
+- Keep the codebase clean, organized and easy to read
+- Avoid having files with over 300-400 lines of code. Refactor at that point. If the large file already exists before your changes, ask if I would like to refactor it before making changes
+- Never mock the component that is being tested in the test file. Example: If the test is Board.test.tsx, then Board.tsx must be directly used in the test not a mocked version
