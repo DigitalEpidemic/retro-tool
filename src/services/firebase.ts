@@ -2,6 +2,7 @@ import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getDatabase } from "firebase/database";
 import { getFirestore, Timestamp } from "firebase/firestore";
+import { ActionPoint } from "../components/ActionPointsPanel";
 
 // Your web app's Firebase configuration
 // In a real app, set this up as environment variables (.env file)
@@ -46,6 +47,7 @@ export interface Board {
   timerDurationSeconds?: number;
   timerPausedDurationSeconds?: number;
   timerOriginalDurationSeconds?: number;
+  actionPoints?: ActionPoint[];
 }
 
 // Type for a card (note card)

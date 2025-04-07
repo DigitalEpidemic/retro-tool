@@ -1,5 +1,5 @@
 import type { DropResult } from "@hello-pangea/dnd"; // Import DropResult
-import { act, fireEvent, render, screen } from "@testing-library/react"; // Added waitFor
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"; // Added waitFor
 import userEvent from "@testing-library/user-event";
 import type { User as FirebaseUser } from "firebase/auth";
 import { Timestamp, updateDoc } from "firebase/firestore";
@@ -324,6 +324,37 @@ vi.mock("../../services/presenceService", () => ({
     return vi.fn(); // Unsubscribe function
   }),
   updateParticipantName: vi.fn(() => Promise.resolve()),
+}));
+
+// Mock all the lucide-react icons to avoid issues with them
+vi.mock("lucide-react", () => {
+  const mockIcon = (name: string) =>
+    function MockIcon() {
+      return <span data-testid={`${name.toLowerCase()}-icon`}>{name}</span>;
+    };
+
+  return {
+    Users: mockIcon("Users"),
+    TrendingUp: mockIcon("TrendingUp"),
+    Share2: mockIcon("Share2"),
+    Settings: mockIcon("Settings"),
+    Play: mockIcon("Play"),
+    Pause: mockIcon("Pause"),
+    RotateCcw: mockIcon("RotateCcw"),
+    Download: mockIcon("Download"),
+    X: mockIcon("X"),
+    Edit2: mockIcon("Edit2"),
+    Check: mockIcon("Check"),
+    Plus: mockIcon("Plus"),
+  };
+});
+
+// Mock ActionPointsPanel component
+vi.mock("../ActionPointsPanel", () => ({
+  default: vi.fn().mockImplementation(({ isOpen }) => {
+    if (!isOpen) return null;
+    return <div data-testid="action-points-panel">Action Points Panel</div>;
+  }),
 }));
 
 describe("Board", () => {
@@ -1986,5 +2017,36 @@ describe("Board", () => {
     } else {
       expect(capturedOnDragEnd).not.toBeNull();
     }
+  });
+
+  it("should toggle action points panel when action points button is clicked", async () => {
+    // ... setup similar to your existing tests ...
+    
+    // Render component
+    render(<Board />);
+
+    // Make sure loading completes
+    await waitFor(() => {
+      expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
+    });
+
+    // Find the action points button
+    const actionPointsButton = screen.getByText("Action points").closest("button");
+    expect(actionPointsButton).toBeInTheDocument();
+
+    // Initially, panel should be closed
+    expect(screen.queryByTestId("action-points-panel")).not.toBeInTheDocument();
+
+    // Click the button to open the panel
+    fireEvent.click(actionPointsButton!);
+
+    // Panel should now be open
+    expect(screen.getByTestId("action-points-panel")).toBeInTheDocument();
+
+    // Click again to close
+    fireEvent.click(actionPointsButton!);
+
+    // Panel should be closed again
+    expect(screen.queryByTestId("action-points-panel")).not.toBeInTheDocument();
   });
 }); // End Main Describe Block

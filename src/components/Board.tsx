@@ -43,6 +43,8 @@ import CardComponent from "./Card";
 import Column from "./Column";
 import ParticipantsPanel from "./ParticipantsPanel"; // Add ParticipantsPanel import
 import ExportModal from "./ExportModal"; // Import the ExportModal component
+import ActionPointsPanel, { ActionPoint } from "./ActionPointsPanel"; // Import ActionPointsPanel
+import { addActionPoint, deleteActionPoint, getActionPoints, toggleActionPoint } from "../services/actionPointsService"; // Import action points service
 
 // Import the new presence service
 import { OnlineUser } from "../services/firebase";
@@ -71,7 +73,9 @@ export default function Board() {
     Record<string, boolean>
   >({}); // Track sort by votes per column
   const [isPanelOpen, setIsPanelOpen] = useState(false); // State for participants panel
+  const [isActionPointsPanelOpen, setIsActionPointsPanelOpen] = useState(false); // State for action points panel
   const [participants, setParticipants] = useState<OnlineUser[]>([]); // State for participants list
+  const [actionPoints, setActionPoints] = useState<ActionPoint[]>([]); // State for action points
   const [isExportModalOpen, setIsExportModalOpen] = useState(false); // State for export modal
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null); // Ref to store interval ID
   const resetTimeoutRef = useRef<NodeJS.Timeout | null>(null); // Ref for delayed reset timeout
@@ -144,6 +148,13 @@ export default function Board() {
                 newSortStates[id] = column.sortByVotes ?? false;
               });
               setColumnSortStates(newSortStates);
+            }
+
+            // Get action points if they exist
+            if (boardData.actionPoints) {
+              setActionPoints(boardData.actionPoints);
+            } else {
+              setActionPoints([]);
             }
           }
           setLoading(false); // Set loading false once we get *any* snapshot (or null)
@@ -531,6 +542,115 @@ export default function Board() {
   const toggleParticipantsPanel = () => {
     // Simply toggle the panel state
     setIsPanelOpen(!isPanelOpen);
+    // Close action points panel if open
+    if (isActionPointsPanelOpen) {
+      setIsActionPointsPanelOpen(false);
+    }
+  };
+
+  // Toggle action points panel
+  const toggleActionPointsPanel = () => {
+    // Simply toggle the panel state
+    setIsActionPointsPanelOpen(!isActionPointsPanelOpen);
+    // Close participants panel if open
+    if (isPanelOpen) {
+      setIsPanelOpen(false);
+    }
+  };
+
+  // Handle adding a new action point
+  const handleAddActionPoint = async (text: string) => {
+    if (!boardId || !text.trim()) return;
+
+    // Create a temporary ID for optimistic update
+    const tempId = `temp-${Date.now()}`;
+    const tempActionPoint: ActionPoint = {
+      id: tempId,
+      text: text.trim(),
+      completed: false
+    };
+
+    try {
+      // Update local state optimistically
+      setActionPoints((prev) => [...prev, tempActionPoint]);
+      
+      // Then add to Firestore
+      const newActionPoint = await addActionPoint(boardId, text);
+      
+      // Replace the temporary action point with the real one
+      setActionPoints((prev) => 
+        prev.map((ap) => ap.id === tempId ? newActionPoint : ap)
+      );
+    } catch (error) {
+      console.error("Error adding action point:", error);
+      setError("Failed to add action point. Please try again.");
+      
+      // Remove the temporary action point on error
+      setActionPoints((prev) => prev.filter((ap) => ap.id !== tempId));
+      
+      setTimeout(() => setError(null), 3000);
+    }
+  };
+
+  // Handle toggling an action point's completed status
+  const handleToggleActionPoint = async (id: string) => {
+    if (!boardId) return;
+
+    try {
+      // First update local state optimistically for better UX
+      setActionPoints((prev) =>
+        prev.map((ap) =>
+          ap.id === id ? { ...ap, completed: !ap.completed } : ap
+        )
+      );
+      
+      // Then update in Firestore
+      await toggleActionPoint(boardId, id);
+      
+      // We don't need to update state again here as Firestore will trigger a document update
+      // which will be reflected when the board document updates
+    } catch (error) {
+      console.error("Error toggling action point:", error);
+      setError("Failed to update action point. Please try again.");
+      
+      // Revert optimistic update on error
+      setActionPoints((prev) =>
+        prev.map((ap) =>
+          ap.id === id ? { ...ap, completed: !ap.completed } : ap
+        )
+      );
+      
+      setTimeout(() => setError(null), 3000);
+    }
+  };
+
+  // Handle deleting an action point
+  const handleDeleteActionPoint = async (id: string) => {
+    if (!boardId) return;
+
+    // Store the action point that's being deleted for potential recovery
+    const actionPointToDelete = actionPoints.find(ap => ap.id === id);
+    if (!actionPointToDelete) return;
+
+    try {
+      // Update local state optimistically for better UX
+      setActionPoints((prev) => prev.filter((ap) => ap.id !== id));
+      
+      // Then update in Firestore
+      await deleteActionPoint(boardId, id);
+      
+      // Firestore update will trigger a document update
+    } catch (error) {
+      console.error("Error deleting action point:", error);
+      setError("Failed to delete action point. Please try again.");
+      
+      // Revert optimistic update on error by adding the action point back
+      if (actionPointToDelete) {
+        setActionPoints((prev) => [...prev, actionPointToDelete]);
+      }
+      
+      setTimeout(() => setError(null), 3000);
+    }
   };
 
   const handleDragEnd = async (result: DropResult) => {
@@ -746,9 +866,19 @@ export default function Board() {
               )}
             </button>
 
-            <button className="text-gray-700 hover:text-gray-900 flex items-center cursor-pointer">
+            <button 
+              className={`text-gray-700 hover:text-gray-900 flex items-center cursor-pointer ${
+                isActionPointsPanelOpen ? "text-blue-500" : ""
+              }`}
+              onClick={toggleActionPointsPanel}
+            >
               <TrendingUp className="h-5 w-5" />
               <span className="ml-1 text-sm">Action points</span>
+              {actionPoints.length > 0 && (
+                <span className="ml-1 bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full">
+                  {actionPoints.length}
+                </span>
+              )}
             </button>
 
             <button 
@@ -787,6 +917,16 @@ export default function Board() {
         participants={participants}
         currentUserId={user?.uid || ""}
         onUpdateName={handleUpdateParticipantName}
+      />
+
+      {/* Use the action points panel */}
+      <ActionPointsPanel
+        isOpen={isActionPointsPanelOpen}
+        onClose={() => setIsActionPointsPanelOpen(false)}
+        actionPoints={actionPoints}
+        onAddActionPoint={handleAddActionPoint}
+        onToggleActionPoint={handleToggleActionPoint}
+        onDeleteActionPoint={handleDeleteActionPoint}
       />
 
       <DragDropContext onDragEnd={handleDragEnd}>
