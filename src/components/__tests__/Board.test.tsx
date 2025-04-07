@@ -8,6 +8,7 @@ import {
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { User as FirebaseUser } from "firebase/auth";
+import * as firestore from "firebase/firestore";
 import { Timestamp, updateDoc } from "firebase/firestore";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -50,7 +51,17 @@ vi.mock("../../services/firebase", () => {
     auth: {
       currentUser: { uid: "test-user-id" },
     },
+    rtdb: {},
     signInAnonymousUser: vi.fn(),
+    Board: {},
+    Card: {},
+    Timestamp: {
+      now: () => createMockTimestamp(),
+      fromDate: (date: Date) => createMockTimestamp(date.getTime()),
+      fromMillis: (ms: number) => createMockTimestamp(ms),
+    },
+    OnlineUser: {},
+    ActionPoint: {},
   };
 });
 
@@ -107,6 +118,8 @@ vi.mock("lucide-react", () => {
     ArrowUpDown: mockIcon("ArrowUpDown"),
     EllipsisVertical: mockIcon("EllipsisVertical"),
     MoreVertical: mockIcon("MoreVertical"),
+    Trash2: mockIcon("Trash2"),
+    AlertCircle: mockIcon("AlertCircle"),
   };
 });
 
@@ -245,6 +258,7 @@ vi.mock("../../services/boardService", () => {
     updateParticipantNameFirestore: vi.fn(() => Promise.resolve()),
     updateParticipantNameRTDB: vi.fn(() => Promise.resolve()),
     joinBoard: vi.fn(() => Promise.resolve()),
+    deleteBoard: vi.fn((boardId, userId) => Promise.resolve(true)),
     testFirestoreWrite: vi.fn(() => Promise.resolve()),
     cleanupInactiveUsers: vi.fn(() => Promise.resolve()),
   };
@@ -386,9 +400,7 @@ const mockCards = [
 ];
 
 vi.mock("../../services/presenceService", () => ({
-  setupPresence: vi.fn(() => {
-    return Promise.resolve(() => Promise.resolve());
-  }),
+  setupPresence: vi.fn().mockReturnValue(() => {}),
   subscribeToParticipants: vi.fn((boardId, callback) => {
     setTimeout(() => {
       callback([
@@ -403,7 +415,7 @@ vi.mock("../../services/presenceService", () => ({
     }, 0);
     return vi.fn();
   }),
-  updateParticipantName: vi.fn(() => Promise.resolve()),
+  updateParticipantName: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock("../../services/actionPointsService", () => ({
@@ -416,6 +428,18 @@ vi.mock("../../services/actionPointsService", () => ({
   toggleActionPoint: vi.fn().mockResolvedValue({}),
   getActionPoints: vi.fn().mockResolvedValue([]),
 }));
+
+// Mock for navigate function
+const mockNavigate = vi.fn();
+
+// Mock react-router-dom
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual("react-router-dom");
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
 
 describe("Board", () => {
   const renderBoard = async (boardId = "test-board-id") => {
@@ -573,54 +597,79 @@ describe("Board", () => {
   });
 
   it("displays error when board is not found and creation fails", async () => {
-    mockDocExists = false;
-    mockDocData = {};
-    const createError = new Error("Permission Denied");
-    vi.mocked(boardService.createBoard).mockRejectedValue(createError);
-    const consoleErrorSpy = vi
-      .spyOn(console, "error")
-      .mockImplementation(() => {});
+    // Mock getDoc to simulate a non-existent board
+    vi.spyOn(firestore, "getDoc").mockResolvedValueOnce(
+      createMockDocSnap(false) as any
+    );
 
-    await act(async () => {
-      render(
-        <MemoryRouter initialEntries={["/boards/non-existent-board"]}>
-          <Routes>
-            <Route path="/boards/:boardId" element={<Board />} />
-          </Routes>
-        </MemoryRouter>
-      );
+    // Mock createBoard to simulate a failure
+    vi.spyOn(boardService, "createBoard").mockRejectedValueOnce(
+      new Error(`Failed to create board "non-existent-board"`)
+    );
+
+    // Reset mockNavigate for this test
+    mockNavigate.mockReset();
+
+    render(
+      <MemoryRouter initialEntries={["/board/non-existent-board"]}>
+        <Routes>
+          <Route path="/board/:boardId" element={<Board />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    // Wait for the redirect to occur
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith("/");
     });
 
-    expect(
-      screen.getByText(/Failed to create board "non-existent-board"/)
-    ).toBeInTheDocument();
-    expect(boardService.createBoard).toHaveBeenCalled();
-    consoleErrorSpy.mockRestore();
+    // After navigation occurs, the error wouldn't be visible anymore in this component
+    // The error handling would need to be done in the home component
   });
 
   it("displays error when board subscription returns null", async () => {
-    vi.mocked(boardService.subscribeToBoard).mockImplementation(
+    // Mock getDoc to simulate a board that exists
+    vi.spyOn(firestore, "getDoc").mockResolvedValueOnce(
+      createMockDocSnap(true, { id: "non-existent-board" }) as any
+    );
+
+    // Mock subscribeToBoard to return null in the callback
+    let boardCallback: (board: BoardType | null) => void = () => {};
+    vi.spyOn(boardService, "subscribeToBoard").mockImplementation(
       (_, callback) => {
-        act(() => {
-          callback(null);
-        });
+        boardCallback = callback;
         return vi.fn();
       }
     );
 
-    await act(async () => {
-      render(
-        <MemoryRouter initialEntries={["/boards/non-existent-board"]}>
-          <Routes>
-            <Route path="/boards/:boardId" element={<Board />} />
-          </Routes>
-        </MemoryRouter>
-      );
+    // Reset mockNavigate for this test
+    mockNavigate.mockReset();
+
+    render(
+      <MemoryRouter initialEntries={["/board/non-existent-board"]}>
+        <Routes>
+          <Route path="/board/:boardId" element={<Board />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    // Wait for the component to finish loading
+    await waitFor(() => {
+      expect(boardService.subscribeToBoard).toHaveBeenCalled();
     });
 
-    expect(
-      screen.getByText(/Board with ID "non-existent-board" not found/)
-    ).toBeInTheDocument();
+    // Simulate board being null in subscription
+    act(() => {
+      boardCallback(null);
+    });
+
+    // Wait for the redirect to occur
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith("/");
+    });
+
+    // After navigation occurs, the error wouldn't be visible anymore in this component
+    // The error handling would need to be done in the home component
   });
 
   it("displays error when initial getDoc fails unexpectedly", async () => {
@@ -646,69 +695,37 @@ describe("Board", () => {
     consoleErrorSpy.mockRestore();
   });
 
-  it("creates a new board when the board does not exist", async () => {
-    mockDocExists = false;
-    mockDocData = {};
+  it("navigates to home when board does not exist", async () => {
+    // We need to mock the component behavior when a board doesn't exist
 
-    let boardCallCount = 0;
-    vi.mocked(boardService.subscribeToBoard).mockImplementation(
-      (_, callback) => {
-        if (boardCallCount === 0) {
-          boardCallCount++;
-          act(() => {
-            callback(null);
-          });
-        } else {
-          act(() => {
-            callback(mockBoard);
-          });
-        }
-        return vi.fn();
-      }
+    // Mock getDoc to return that the board doesn't exist
+    vi.spyOn(firestore, "getDoc").mockResolvedValueOnce(
+      createMockDocSnap(false) as any
     );
 
-    vi.mocked(boardService.createBoard).mockImplementation(
-      async (name, creatorId, boardId) => {
-        await Promise.resolve();
-        boardCallCount++;
-        return boardId || "test-board-id";
-      }
+    // Clear the navigate mock to track navigation
+    mockNavigate.mockClear();
+
+    // Render the component with a board ID that doesn't exist
+    render(
+      <MemoryRouter initialEntries={["/board/non-existent-board"]}>
+        <Routes>
+          <Route path="/board/:boardId" element={<Board />} />
+          <Route
+            path="/"
+            element={<div data-testid="home-page">Home Page</div>}
+          />
+        </Routes>
+      </MemoryRouter>
     );
 
-    vi.mocked(boardService.subscribeToBoard).mockImplementation(
-      (boardId, callback) => {
-        if (boardCallCount === 0) {
-          act(() => {
-            callback(null);
-          });
-        } else {
-          act(() => {
-            callback(mockBoard);
-          });
-        }
-        return vi.fn();
-      }
-    );
-
-    await act(async () => {
-      render(
-        <MemoryRouter initialEntries={["/boards/test-board-id"]}>
-          <Routes>
-            <Route path="/boards/:boardId" element={<Board />} />
-          </Routes>
-        </MemoryRouter>
-      );
-      await Promise.resolve();
+    // Verify navigation to home page occurs when board doesn't exist
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith("/");
     });
 
-    expect(boardService.createBoard).toHaveBeenCalledWith(
-      expect.stringContaining("test-board-id"),
-      mockUser.uid,
-      "test-board-id"
-    );
-
-    await screen.findByTestId("drag-drop-context");
-    expect(screen.getByTestId("column-col1")).toBeInTheDocument();
+    // Verify that createBoard was not called
+    expect(boardService.createBoard).not.toHaveBeenCalled();
   });
 
   describe("Timer Functionality", () => {
@@ -1619,35 +1636,52 @@ describe("Board", () => {
   });
 
   it("displays error if board subscription fails after initial load", async () => {
-    const originalMockDocExists = mockDocExists;
-    mockDocExists = false;
+    // Mock getDoc to simulate an existing board
+    vi.spyOn(firestore, "getDoc").mockResolvedValueOnce(
+      createMockDocSnap(true, { id: "test-board-id" }) as any
+    );
 
-    const mockCreateError = new Error("Permission denied to create");
-    vi.mocked(boardService.createBoard).mockRejectedValue(mockCreateError);
+    // Mock subscribeToBoard to simulate initial success, then a failure
+    let boardCallback: (board: BoardType | null) => void = () => {};
+    vi.spyOn(boardService, "subscribeToBoard").mockImplementation(
+      (_, callback) => {
+        boardCallback = callback;
+        return vi.fn();
+      }
+    );
 
-    const consoleErrorSpy = vi
-      .spyOn(console, "error")
-      .mockImplementation(() => {});
+    // Mock createBoard to simulate a failure if needed
+    vi.spyOn(boardService, "createBoard").mockRejectedValueOnce(
+      new Error(
+        'Failed to create board "test-board-id". Check permissions or console.'
+      )
+    );
 
-    await act(async () => {
-      render(
-        <MemoryRouter initialEntries={["/boards/test-board-id"]}>
-          <Routes>
-            <Route path="/boards/:boardId" element={<Board />} />
-          </Routes>
-        </MemoryRouter>
-      );
+    // Reset mockNavigate for this test
+    mockNavigate.mockReset();
+
+    render(
+      <MemoryRouter initialEntries={["/board/test-board-id"]}>
+        <Routes>
+          <Route path="/board/:boardId" element={<Board />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    // Wait for the component to finish initial loading
+    await waitFor(() => {
+      expect(boardService.subscribeToBoard).toHaveBeenCalled();
     });
 
-    expect(
-      screen.getByText(
-        /Failed to create board "test-board-id". Check permissions or console./
-      )
-    ).toBeInTheDocument();
+    // Send null in the callback to simulate board not found/deleted
+    act(() => {
+      boardCallback(null);
+    });
 
-    consoleErrorSpy.mockRestore();
-    mockDocExists = originalMockDocExists;
-    vi.mocked(boardService.createBoard).mockResolvedValue("test-board-id");
+    // Verify navigation occurs - that's the expected behavior
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith("/");
+    });
   });
 
   it("displays error if startTimer fails", async () => {
@@ -1981,6 +2015,262 @@ describe("Board", () => {
       expect(
         screen.queryByTestId("action-points-panel")
       ).not.toBeInTheDocument();
+    });
+  });
+
+  // Tests for board deletion functionality
+  describe("Board Deletion", () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it("should allow board creator to delete the board", async () => {
+      // Set up Firebase context mock with a user that matches the creator ID
+      vi.spyOn(FirebaseContext, "useFirebase").mockReturnValue({
+        user: { ...mockUser, uid: "test-creator-id" },
+        loading: false,
+        error: null,
+        updateUserDisplayName: vi.fn(),
+      });
+
+      // Mock joinBoard to return success
+      vi.spyOn(boardService, "joinBoard").mockResolvedValue({
+        success: true,
+        name: "Test Creator",
+      });
+
+      // Mock subscribeToBoard to provide test board data
+      const boardData = {
+        id: "test-board-id",
+        name: "Test Board",
+        createdAt: createMockTimestamp(),
+        isActive: true,
+        columns: {
+          col1: { id: "col1", title: "What went well", order: 0 },
+        },
+        facilitatorId: "test-creator-id", // Set creator ID to match the user
+        timerIsRunning: false,
+        timerDurationSeconds: 300,
+      };
+
+      let boardCallback: Function;
+      vi.spyOn(boardService, "subscribeToBoard").mockImplementation(
+        (_, callback) => {
+          boardCallback = callback;
+          setTimeout(() => {
+            callback(boardData);
+          }, 0);
+          return vi.fn();
+        }
+      );
+
+      // Mock deleteBoard to resolve successfully
+      vi.spyOn(boardService, "deleteBoard").mockResolvedValue(true);
+
+      // Render component
+      render(
+        <MemoryRouter initialEntries={["/board/test-board-id"]}>
+          <Routes>
+            <Route path="/board/:boardId" element={<Board />} />
+          </Routes>
+        </MemoryRouter>
+      );
+
+      // Wait for the board to load completely
+      await waitFor(() => {
+        expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
+      });
+
+      // Open options panel
+      const optionsButton = screen
+        .getByTestId("settings-icon")
+        .closest("button");
+      if (!optionsButton) throw new Error("Options button not found");
+      fireEvent.click(optionsButton);
+
+      // Wait for options panel to appear
+      const optionsPanel = await screen.findByTestId("options-panel");
+      expect(optionsPanel).toBeInTheDocument();
+
+      // Click delete button
+      const deleteButton = screen.getByTestId("delete-board-button");
+      expect(deleteButton).not.toBeDisabled();
+      fireEvent.click(deleteButton);
+
+      // Click confirm deletion
+      const confirmButton = await screen.findByTestId("confirm-delete");
+      fireEvent.click(confirmButton);
+
+      // Verify deleteBoard was called with the correct parameters
+      expect(boardService.deleteBoard).toHaveBeenCalledWith(
+        "test-board-id",
+        "test-creator-id"
+      );
+    });
+
+    it("should prevent non-creator from deleting the board", async () => {
+      // Set up Firebase context mock with a different user ID
+      vi.spyOn(FirebaseContext, "useFirebase").mockReturnValue({
+        user: { ...mockUser, uid: "non-creator-id" },
+        loading: false,
+        error: null,
+        updateUserDisplayName: vi.fn(),
+      });
+
+      // Mock joinBoard to return success
+      vi.spyOn(boardService, "joinBoard").mockResolvedValue({
+        success: true,
+        name: "Non Creator",
+      });
+
+      // Mock subscribeToBoard to provide test board data
+      const boardData = {
+        id: "test-board-id",
+        name: "Test Board",
+        createdAt: createMockTimestamp(),
+        isActive: true,
+        columns: {
+          col1: { id: "col1", title: "What went well", order: 0 },
+        },
+        facilitatorId: "test-creator-id", // Different from the user ID
+        timerIsRunning: false,
+        timerDurationSeconds: 300,
+      };
+
+      let boardCallback: Function;
+      vi.spyOn(boardService, "subscribeToBoard").mockImplementation(
+        (_, callback) => {
+          boardCallback = callback;
+          setTimeout(() => {
+            callback(boardData);
+          }, 0);
+          return vi.fn();
+        }
+      );
+
+      // Render component
+      render(
+        <MemoryRouter initialEntries={["/board/test-board-id"]}>
+          <Routes>
+            <Route path="/board/:boardId" element={<Board />} />
+          </Routes>
+        </MemoryRouter>
+      );
+
+      // Wait for the board to load completely
+      await waitFor(() => {
+        expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
+      });
+
+      // Open options panel
+      const optionsButton = screen
+        .getByTestId("settings-icon")
+        .closest("button");
+      if (!optionsButton) throw new Error("Options button not found");
+      fireEvent.click(optionsButton);
+
+      // Wait for options panel to appear
+      const optionsPanel = await screen.findByTestId("options-panel");
+      expect(optionsPanel).toBeInTheDocument();
+
+      // Verify delete button is disabled
+      const deleteButton = screen.getByTestId("delete-board-button");
+      expect(deleteButton).toBeDisabled();
+
+      // Verify message is displayed
+      expect(
+        screen.getByText("Only the board creator can delete this board")
+      ).toBeInTheDocument();
+
+      // Verify deleteBoard was not called
+      expect(boardService.deleteBoard).not.toHaveBeenCalled();
+    });
+
+    it("should show error message if board deletion fails", async () => {
+      // Set up Firebase context mock with a user that matches the creator ID
+      vi.spyOn(FirebaseContext, "useFirebase").mockReturnValue({
+        user: { ...mockUser, uid: "test-creator-id" },
+        loading: false,
+        error: null,
+        updateUserDisplayName: vi.fn(),
+      });
+
+      // Mock joinBoard to return success
+      vi.spyOn(boardService, "joinBoard").mockResolvedValue({
+        success: true,
+        name: "Test Creator",
+      });
+
+      // Mock subscribeToBoard to provide test board data
+      const boardData = {
+        id: "test-board-id",
+        name: "Test Board",
+        createdAt: createMockTimestamp(),
+        isActive: true,
+        columns: {
+          col1: { id: "col1", title: "What went well", order: 0 },
+        },
+        facilitatorId: "test-creator-id", // Set creator ID to match the user
+        timerIsRunning: false,
+        timerDurationSeconds: 300,
+      };
+
+      let boardCallback: Function;
+      vi.spyOn(boardService, "subscribeToBoard").mockImplementation(
+        (_, callback) => {
+          boardCallback = callback;
+          setTimeout(() => {
+            callback(boardData);
+          }, 0);
+          return vi.fn();
+        }
+      );
+
+      // Mock deleteBoard to reject with an error
+      vi.spyOn(boardService, "deleteBoard").mockRejectedValueOnce(
+        new Error("Permission denied")
+      );
+
+      // Render component
+      render(
+        <MemoryRouter initialEntries={["/board/test-board-id"]}>
+          <Routes>
+            <Route path="/board/:boardId" element={<Board />} />
+          </Routes>
+        </MemoryRouter>
+      );
+
+      // Wait for the board to load completely
+      await waitFor(() => {
+        expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
+      });
+
+      // Open options panel
+      const optionsButton = screen
+        .getByTestId("settings-icon")
+        .closest("button");
+      if (!optionsButton) throw new Error("Options button not found");
+      fireEvent.click(optionsButton);
+
+      // Wait for options panel to appear
+      const optionsPanel = await screen.findByTestId("options-panel");
+      expect(optionsPanel).toBeInTheDocument();
+
+      // Click delete button
+      const deleteButton = screen.getByTestId("delete-board-button");
+      expect(deleteButton).not.toBeDisabled();
+      fireEvent.click(deleteButton);
+
+      // Click confirm deletion
+      const confirmButton = await screen.findByTestId("confirm-delete");
+      fireEvent.click(confirmButton);
+
+      // Verify the error message is displayed
+      await waitFor(() => {
+        expect(
+          screen.getByText("Error: Permission denied")
+        ).toBeInTheDocument();
+      });
     });
   });
 });

@@ -1,7 +1,19 @@
 import { render, screen } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
+import { describe, expect, it, vi } from "vitest";
 import App from "./App"; // The component we're testing
+import * as FirebaseContext from "./contexts/FirebaseContext";
+
+// Mock the FirebaseContext to provide the necessary values
+vi.mock("./contexts/FirebaseContext", () => ({
+  useFirebase: vi.fn(() => ({
+    user: { uid: "test-user-id", displayName: "Test User" },
+    loading: false,
+    error: null,
+    updateUserDisplayName: vi.fn(),
+  })),
+  FirebaseProvider: ({ children }: { children: React.ReactNode }) => children, // Mock FirebaseProvider as a passthrough
+}));
 
 // Mock the Board component since we only want to test routing logic in App.tsx
 vi.mock("./components/Board", () => ({
@@ -13,28 +25,30 @@ describe("App Routing", () => {
   it('renders the Home component for the root path "/"', () => {
     // Render the App component wrapped in MemoryRouter, starting at the root path
     render(
-      <MemoryRouter initialEntries={["/"]}>
-        <App />
-      </MemoryRouter>
+      <FirebaseContext.FirebaseProvider>
+        <MemoryRouter initialEntries={["/"]}>
+          <App />
+        </MemoryRouter>
+      </FirebaseContext.FirebaseProvider>
     );
 
     // Check if the welcome text from the Home component is present
     expect(
-      screen.getByText(/Welcome to the Retrospective Board/i)
+      screen.getByRole("heading", { level: 1, name: /Retrospective Board/i })
     ).toBeInTheDocument();
     // Check if the link suggestion is present
-    expect(
-      screen.getByText(/navigate to a specific board URL/i)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/collaborate with your team/i)).toBeInTheDocument();
   });
 
   it('renders the Board component for the "/board/:boardId" path', () => {
     const testBoardId = "test-board-123";
     // Render the App component, navigating to a specific board route
     render(
-      <MemoryRouter initialEntries={[`/board/${testBoardId}`]}>
-        <App />
-      </MemoryRouter>
+      <FirebaseContext.FirebaseProvider>
+        <MemoryRouter initialEntries={[`/board/${testBoardId}`]}>
+          <App />
+        </MemoryRouter>
+      </FirebaseContext.FirebaseProvider>
     );
 
     // Check if the mocked Board component's content is rendered
@@ -45,9 +59,13 @@ describe("App Routing", () => {
   it("renders the Not Found page for an unknown route", () => {
     // Render the App component, navigating to a route that doesn't exist
     render(
-      <MemoryRouter initialEntries={["/some/random/path/that/does/not/exist"]}>
-        <App />
-      </MemoryRouter>
+      <FirebaseContext.FirebaseProvider>
+        <MemoryRouter
+          initialEntries={["/some/random/path/that/does/not/exist"]}
+        >
+          <App />
+        </MemoryRouter>
+      </FirebaseContext.FirebaseProvider>
     );
 
     // Check if the "Page Not Found" text is displayed

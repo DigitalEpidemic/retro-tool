@@ -23,6 +23,7 @@ const mockServerTimestamp = vi.fn(() => ({ toMillis: () => Date.now() }));
 const mockIncrement = vi.fn((val) => ({ __increment: val }));
 const mockOnSnapshot = vi.fn();
 const mockGetDocs = vi.fn();
+const mockGetDoc = vi.fn();
 const mockWriteBatch = vi.fn();
 
 vi.mock("firebase/firestore", () => {
@@ -37,6 +38,7 @@ vi.mock("firebase/firestore", () => {
     where: (...args: any[]) => mockWhere(...args),
     onSnapshot: (...args: any[]) => mockOnSnapshot(...args),
     getDocs: (...args: any[]) => mockGetDocs(...args),
+    getDoc: (...args: any[]) => mockGetDoc(...args),
     writeBatch: (...args: any[]) => mockWriteBatch(...args),
     serverTimestamp: () => mockServerTimestamp(),
     increment: (val: number) => mockIncrement(val),
@@ -671,6 +673,135 @@ describe("boardService", () => {
           [`columns.${columnId}.sortByVotes`]: sortByVotes,
         }
       );
+    });
+  });
+
+  describe("deleteBoard", () => {
+    let mockBoardData: any;
+    let mockBoardSnap: any;
+
+    beforeEach(() => {
+      mockBoardData = {
+        facilitatorId: "test-user-id",
+        name: "Test Board",
+      };
+
+      mockBoardSnap = {
+        exists: vi.fn(() => true),
+        data: vi.fn(() => mockBoardData),
+      };
+
+      mockDoc.mockReturnValue({ id: "board-id" });
+      mockGetDocs.mockImplementation(() => {
+        // Check the latest mockQuery call to determine which query is being executed
+        if (
+          mockCollection.mock.calls.length > 0 &&
+          mockCollection.mock.calls[mockCollection.mock.calls.length - 1][1] ===
+            "cards"
+        ) {
+          // This is a cards query
+          return Promise.resolve({
+            size: 2,
+            docs: [
+              { id: "card1", ref: { id: "card1" } },
+              { id: "card2", ref: { id: "card2" } },
+            ],
+            forEach: (fn) => {
+              fn({ id: "card1", ref: { id: "card1" } });
+              fn({ id: "card2", ref: { id: "card2" } });
+            },
+          });
+        } else {
+          // This is a users query
+          return Promise.resolve({
+            size: 1,
+            docs: [{ id: "user1", ref: { id: "user1" } }],
+            forEach: (fn) => {
+              fn({ id: "user1", ref: { id: "user1" } });
+            },
+          });
+        }
+      });
+    });
+
+    it("should delete a board when user is the facilitator", async () => {
+      // Mock getDoc to return a board with the test user as facilitator
+      mockGetDoc.mockResolvedValueOnce(mockBoardSnap);
+
+      const result = await boardService.deleteBoard("board-id", "test-user-id");
+
+      // Check that the board document was checked
+      expect(mockDoc).toHaveBeenCalledWith({}, "boards", "board-id");
+      expect(mockGetDoc).toHaveBeenCalled();
+
+      // Check that the board was deleted
+      expect(mockDeleteDoc).toHaveBeenCalled();
+
+      // Check that cards were queried and batch deleted
+      expect(mockQuery).toHaveBeenCalled();
+      expect(mockWhere).toHaveBeenCalledWith("boardId", "==", "board-id");
+      expect(mockGetDocs).toHaveBeenCalled();
+      expect(mockWriteBatch).toHaveBeenCalled();
+      expect(batchUpdateMock.delete).toHaveBeenCalled();
+      expect(batchUpdateMock.commit).toHaveBeenCalled();
+
+      // Check that user records were updated
+      expect(batchUpdateMock.update).toHaveBeenCalled();
+
+      // Check function returned true on success
+      expect(result).toBe(true);
+    });
+
+    it("should throw an error when board does not exist", async () => {
+      // Mock getDoc to return a non-existent board
+      mockBoardSnap.exists.mockReturnValue(false);
+      mockGetDoc.mockResolvedValueOnce(mockBoardSnap);
+
+      await expect(
+        boardService.deleteBoard("nonexistent-board", "test-user-id")
+      ).rejects.toThrow("Board with ID nonexistent-board not found");
+
+      // Board shouldn't be deleted if it doesn't exist
+      expect(mockDeleteDoc).not.toHaveBeenCalled();
+    });
+
+    it("should throw an error when user is not the facilitator", async () => {
+      // Mock getDoc to return a board with a different facilitator
+      mockBoardData.facilitatorId = "different-user-id";
+      mockGetDoc.mockResolvedValueOnce(mockBoardSnap);
+
+      await expect(
+        boardService.deleteBoard("board-id", "test-user-id")
+      ).rejects.toThrow("Only the board creator can delete the board");
+
+      // Board shouldn't be deleted if user is not the facilitator
+      expect(mockDeleteDoc).not.toHaveBeenCalled();
+    });
+
+    it("should handle errors during deletion", async () => {
+      // Mock getDoc to return a valid board
+      mockGetDoc.mockResolvedValueOnce(mockBoardSnap);
+
+      // But make deleteDoc fail
+      mockDeleteDoc.mockRejectedValueOnce(new Error("Database error"));
+
+      await expect(
+        boardService.deleteBoard("board-id", "test-user-id")
+      ).rejects.toThrow("Database error");
+
+      // Check that error was logged
+      const consoleSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+
+      try {
+        await boardService.deleteBoard("board-id", "test-user-id");
+      } catch (e) {
+        // Expected to throw
+      }
+
+      expect(consoleSpy).toHaveBeenCalled();
+      consoleSpy.mockRestore();
     });
   });
 });

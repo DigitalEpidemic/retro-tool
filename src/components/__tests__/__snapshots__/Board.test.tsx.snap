@@ -14,7 +14,7 @@ exports[`Board > creates a snapshot of the component 1`] = `
         <h1
           class="text-lg font-semibold text-gray-800"
         >
-          test-board-id
+          Test Board
         </h1>
       </div>
       <div
@@ -115,7 +115,7 @@ exports[`Board > creates a snapshot of the component 1`] = `
             </span>
           </button>
           <button
-            class="text-gray-700 hover:text-gray-900 flex items-center cursor-pointer"
+            class="text-gray-700 hover:text-gray-900 flex items-center cursor-pointer "
           >
             <span
               data-testid="settings-icon"
