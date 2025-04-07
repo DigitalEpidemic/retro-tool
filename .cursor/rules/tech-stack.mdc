@@ -3,6 +3,7 @@ description:
 globs: 
 alwaysApply: true
 ---
+
 # Technical stack
 
 - React 19 with TypeScript
