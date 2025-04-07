@@ -4,7 +4,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Board, Card } from "../../services/firebase";
-import ExportModal, { createAndDownloadMarkdownFile } from "../ExportModal";
+import ExportModal, { createAndDownloadMarkdownFile, formatExportFilename } from "../ExportModal";
 
 // Mock document.execCommand for clipboard test
 document.execCommand = vi.fn();
@@ -153,6 +153,41 @@ describe("ExportModal", () => {
     
     // Check if document.execCommand was called with 'copy'
     expect(document.execCommand).toHaveBeenCalledWith("copy");
+  });
+});
+
+describe("formatExportFilename", () => {
+  // Original Date object
+  const originalDate = global.Date;
+  
+  beforeEach(() => {
+    // Mock Date to return a fixed date
+    const fixedDate = new Date("2025-04-07T12:00:00.000Z");
+    global.Date = class extends Date {
+      constructor() {
+        super();
+        return fixedDate;
+      }
+      
+      toISOString() {
+        return "2025-04-07T12:00:00.000Z";
+      }
+    } as any;
+  });
+  
+  afterEach(() => {
+    // Restore original Date
+    global.Date = originalDate;
+  });
+  
+  it.each([
+    ["Test Board", "2025-04-07-test-board.md", "regular board name"],
+    ["Board: Test Board", "2025-04-07-test-board.md", "board name with 'Board: ' prefix"],
+    ["board: Test Board", "2025-04-07-test-board.md", "board name with case-insensitive 'board: ' prefix"],
+    ["My Amazing Board", "2025-04-07-my-amazing-board.md", "board name with spaces"]
+  ])("should format %s correctly as %s (%s)", (input, expected) => {
+    const result = formatExportFilename(input);
+    expect(result).toBe(expected);
   });
 });
 

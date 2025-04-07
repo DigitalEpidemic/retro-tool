@@ -25,6 +25,15 @@ export function createAndDownloadMarkdownFile(markdownContent: string, fileName:
   URL.revokeObjectURL(url);
 }
 
+// Export the filename creation logic for testing
+export function formatExportFilename(boardName: string): string {
+  // Remove "Board: " prefix from the board name
+  const cleanedBoardName = boardName.replace(/^Board:\s*/i, "");
+  
+  const dateStr = new Date().toISOString().split("T")[0];
+  return `${dateStr}-${cleanedBoardName.replace(/\s+/g, "-").toLowerCase()}.md`;
+}
+
 export default function ExportModal({
   isOpen,
   onClose,
@@ -94,7 +103,7 @@ export default function ExportModal({
   const handleSaveAsFile = () => {
     if (!board) return;
     
-    const fileName = `${board.name.replace(/\s+/g, "-").toLowerCase()}-${new Date().toISOString().split("T")[0]}.md`;
+    const fileName = formatExportFilename(board.name);
     createAndDownloadMarkdownFile(markdown, fileName);
   };
 
