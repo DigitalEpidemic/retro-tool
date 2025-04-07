@@ -15,6 +15,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as FirebaseContext from "../../contexts/FirebaseContext";
 import * as boardService from "../../services/boardService";
 import type { Board as BoardType } from "../../services/firebase";
+import * as presenceService from "../../services/presenceService";
 import Board from "../Board";
 
 const createMockDocSnap = (
@@ -2020,10 +2021,6 @@ describe("Board", () => {
 
   // Tests for board deletion functionality
   describe("Board Deletion", () => {
-    beforeEach(() => {
-      vi.clearAllMocks();
-    });
-
     it("should allow board creator to delete the board", async () => {
       // Set up Firebase context mock with a user that matches the creator ID
       vi.spyOn(FirebaseContext, "useFirebase").mockReturnValue({
@@ -2271,6 +2268,116 @@ describe("Board", () => {
           screen.getByText("Error: Permission denied")
         ).toBeInTheDocument();
       });
+    });
+
+    it("redirects all users to home when board is deleted", async () => {
+      vi.clearAllMocks();
+      let boardSubscriptionCallback: (board: BoardType | null) => void;
+
+      // Reset mockNavigate for this test
+      mockNavigate.mockReset();
+
+      // Mock the board subscription to initially return a board and then simulate deletion
+      vi.mocked(boardService.subscribeToBoard).mockImplementation(
+        (boardId, callback) => {
+          boardSubscriptionCallback = callback;
+
+          // Initially return a valid board
+          setTimeout(() => {
+            callback({
+              id: "test-board-id",
+              name: "Test Board",
+              columns: {
+                col1: {
+                  id: "col1",
+                  title: "What went well",
+                  order: 0,
+                  sortByVotes: false,
+                },
+                col2: {
+                  id: "col2",
+                  title: "What can be improved",
+                  order: 1,
+                  sortByVotes: false,
+                },
+              },
+              createdAt: createMockTimestamp(),
+              isActive: true,
+              timerDurationSeconds: 300,
+              timerIsRunning: false,
+              facilitatorId: "test-user-id",
+            });
+          }, 0);
+
+          return vi.fn();
+        }
+      );
+
+      // Mock participants
+      vi.mocked(presenceService.subscribeToParticipants).mockImplementation(
+        (boardId, callback) => {
+          setTimeout(() => {
+            callback([
+              {
+                id: "test-user-id",
+                name: "Admin User",
+                color: "#ff0000",
+                boardId,
+                lastOnline: Date.now(),
+              },
+              {
+                id: "other-user-id",
+                name: "Regular User",
+                color: "#00ff00",
+                boardId,
+                lastOnline: Date.now(),
+              },
+            ]);
+          }, 0);
+
+          return vi.fn();
+        }
+      );
+
+      // Mock the delete board function
+      vi.mocked(boardService.deleteBoard).mockResolvedValue(true);
+
+      // Set up the user context with admin user
+      vi.mocked(FirebaseContext.useFirebase).mockReturnValue({
+        user: {
+          uid: "test-user-id",
+          displayName: "Admin User",
+        } as FirebaseUser,
+        loading: false,
+        error: null,
+        updateUserDisplayName: vi.fn(),
+      });
+
+      // Render the board component
+      render(
+        <MemoryRouter initialEntries={["/boards/test-board-id"]}>
+          <Routes>
+            <Route path="/boards/:boardId" element={<Board />} />
+            <Route
+              path="/"
+              element={<div data-testid="home-page">Home Page</div>}
+            />
+          </Routes>
+        </MemoryRouter>
+      );
+
+      // Wait for the board to load
+      await waitFor(() => {
+        expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
+      });
+
+      // Now simulate a board deletion by returning null in the subscription callback
+      act(() => {
+        boardSubscriptionCallback(null);
+      });
+
+      // Verify the navigation occurred
+      expect(mockNavigate).toHaveBeenCalledWith("/");
     });
   });
 });
