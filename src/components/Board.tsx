@@ -120,53 +120,48 @@ export default function Board() {
         const boardSnap = await getDoc(boardRef);
 
         if (!boardSnap.exists()) {
-          // Board doesn't exist, try to create it
-          console.log(`Board ${boardId} not found, attempting to create...`);
-          try {
-            // Use boardId as name for simplicity, or prompt user?
-            await createBoard(`Board: ${boardId}`, user.uid, boardId);
-            console.log(`Board ${boardId} created successfully.`);
-          } catch (createError) {
-            console.error("Error creating board:", createError);
-            setError(
-              `Failed to create board "${boardId}". Check permissions or console.`
-            );
-            setLoading(false);
-            return; // Stop if creation failed
-          }
+          // Board doesn't exist, redirect to home page
+          console.log(`Board ${boardId} not found, redirecting to home page...`);
+          navigate('/');
+          return;
         }
 
-        // Now that we know the board exists (or was just created), subscribe
+        // Now that we know the board exists, subscribe
         setLoading(true); // Ensure loading is true before subscription potentially sets it false
         setError(null);
 
         // Subscribe to board changes
         unsubscribeBoard = subscribeToBoard(boardId, (boardData) => {
           if (!boardData) {
-            // This case might happen briefly or if deleted after creation attempt
-            setError(`Board with ID "${boardId}" not found or access denied.`);
-            setBoard(null);
-          } else {
-            setBoard(boardData);
-            setError(null); // Clear error on successful load/update
-
-            // Initialize column sort states from Firestore
-            if (boardData.columns) {
-              const newSortStates: Record<string, boolean> = {};
-              Object.entries(boardData.columns).forEach(([id, column]) => {
-                newSortStates[id] = column.sortByVotes ?? false;
-              });
-              setColumnSortStates(newSortStates);
-            }
-
-            // Get action points if they exist
-            if (boardData.actionPoints) {
-              setActionPoints(boardData.actionPoints);
-            } else {
-              setActionPoints([]);
-            }
+            // Board doesn't exist or was deleted - unsubscribe and redirect
+            console.log(`Board ${boardId} not found in subscription, redirecting to home...`);
+            unsubscribeBoard();
+            unsubscribeCards();
+            unsubscribeParticipants();
+            navigate('/');
+            return;
           }
-          setLoading(false); // Set loading false once we get *any* snapshot (or null)
+          
+          setBoard(boardData);
+          setError(null); // Clear error on successful load/update
+
+          // Initialize column sort states from Firestore
+          if (boardData.columns) {
+            const newSortStates: Record<string, boolean> = {};
+            Object.entries(boardData.columns).forEach(([id, column]) => {
+              newSortStates[id] = column.sortByVotes ?? false;
+            });
+            setColumnSortStates(newSortStates);
+          }
+
+          // Get action points if they exist
+          if (boardData.actionPoints) {
+            setActionPoints(boardData.actionPoints);
+          } else {
+            setActionPoints([]);
+          }
+          
+          setLoading(false); // Set loading false once we get *any* snapshot
         });
 
         // Subscribe to cards changes (can run concurrently)
@@ -781,16 +776,32 @@ export default function Board() {
 
   // Handle deleting the board
   const handleDeleteBoard = async () => {
-    if (!boardId || !user) return;
+    if (!boardId || !user) {
+      setError("You must be logged in to delete a board.");
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
 
     try {
       setLoading(true);
+      
+      // First check if the user is the facilitator
+      if (board?.facilitatorId !== user.uid) {
+        setError("Only the board creator can delete this board.");
+        setLoading(false);
+        setTimeout(() => setError(null), 3000);
+        return;
+      }
+      
+      // Delete the board first
       await deleteBoard(boardId, user.uid);
-      // Navigate to home page after successful deletion
+      
+      // Then navigate to home page after successful deletion
       navigate("/");
+      
     } catch (error) {
       console.error("Error deleting board:", error);
-      setError("Failed to delete board. Please try again.");
+      setError(error instanceof Error ? error.message : "Failed to delete board. Please try again.");
       setLoading(false);
       setTimeout(() => setError(null), 3000);
     }

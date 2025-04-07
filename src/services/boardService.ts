@@ -582,7 +582,7 @@ export const cleanupInactiveUsers = async (boardId: string) => {
 // Delete a board and all its related data (cards)
 export const deleteBoard = async (boardId: string, userId: string) => {
   try {
-    // First check if the user is the facilitator of the board
+    // 1. Check if the user is the facilitator of the board
     const boardRef = doc(db, "boards", boardId);
     const boardSnap = await getDoc(boardRef);
     
@@ -595,13 +595,12 @@ export const deleteBoard = async (boardId: string, userId: string) => {
       throw new Error("Only the board creator can delete the board");
     }
     
-    // Create a batch for atomic operations
-    const batch = writeBatch(db);
+    // 2. Since we've verified permissions, use a direct approach for deletion
     
-    // 1. Delete the board document
-    batch.delete(boardRef);
+    // First delete the board document itself - this is the most critical part
+    await deleteDoc(boardRef);
     
-    // 2. Find all cards associated with this board
+    // Then find and delete cards
     const cardsQuery = query(
       collection(db, "cards"),
       where("boardId", "==", boardId)
@@ -609,13 +608,31 @@ export const deleteBoard = async (boardId: string, userId: string) => {
     
     const cardsSnapshot = await getDocs(cardsQuery);
     
-    // 3. Delete all cards (facilitator has permission to delete all cards)
-    cardsSnapshot.forEach((cardDoc) => {
-      batch.delete(doc(db, "cards", cardDoc.id));
-    });
+    // Delete cards using a batch - but even if this fails, the board is already gone
+    if (cardsSnapshot.size > 0) {
+      const batch = writeBatch(db);
+      cardsSnapshot.docs.forEach(doc => batch.delete(doc.ref));
+      await batch.commit();
+    }
     
-    // 4. Commit the batch
-    await batch.commit();
+    // Update user records to remove associations with this board
+    const usersQuery = query(
+      collection(db, "users"),
+      where("boardId", "==", boardId)
+    );
+    
+    const usersSnapshot = await getDocs(usersQuery);
+    
+    if (usersSnapshot.size > 0) {
+      const batch = writeBatch(db);
+      usersSnapshot.docs.forEach(doc => 
+        batch.update(doc.ref, {
+          boardId: null,
+          lastLeaveTime: serverTimestamp()
+        })
+      );
+      await batch.commit();
+    }
     
     return true;
   } catch (error) {
