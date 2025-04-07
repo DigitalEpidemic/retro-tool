@@ -32,7 +32,6 @@ import {
   toggleActionPoint,
 } from "../services/actionPointsService"; // Import action points service
 import {
-  createBoard,
   deleteBoard,
   joinBoard,
   pauseTimer,
@@ -121,8 +120,10 @@ export default function Board() {
 
         if (!boardSnap.exists()) {
           // Board doesn't exist, redirect to home page
-          console.log(`Board ${boardId} not found, redirecting to home page...`);
-          navigate('/');
+          console.log(
+            `Board ${boardId} not found, redirecting to home page...`
+          );
+          navigate("/");
           return;
         }
 
@@ -134,14 +135,16 @@ export default function Board() {
         unsubscribeBoard = subscribeToBoard(boardId, (boardData) => {
           if (!boardData) {
             // Board doesn't exist or was deleted - unsubscribe and redirect
-            console.log(`Board ${boardId} not found in subscription, redirecting to home...`);
+            console.log(
+              `Board ${boardId} not found in subscription, redirecting to home...`
+            );
             unsubscribeBoard();
             unsubscribeCards();
             unsubscribeParticipants();
-            navigate('/');
+            navigate("/");
             return;
           }
-          
+
           setBoard(boardData);
           setError(null); // Clear error on successful load/update
 
@@ -160,7 +163,7 @@ export default function Board() {
           } else {
             setActionPoints([]);
           }
-          
+
           setLoading(false); // Set loading false once we get *any* snapshot
         });
 
@@ -784,7 +787,7 @@ export default function Board() {
 
     try {
       setLoading(true);
-      
+
       // First check if the user is the facilitator
       if (board?.facilitatorId !== user.uid) {
         setError("Only the board creator can delete this board.");
@@ -792,16 +795,19 @@ export default function Board() {
         setTimeout(() => setError(null), 3000);
         return;
       }
-      
+
       // Delete the board first
       await deleteBoard(boardId, user.uid);
-      
+
       // Then navigate to home page after successful deletion
       navigate("/");
-      
     } catch (error) {
       console.error("Error deleting board:", error);
-      setError(error instanceof Error ? error.message : "Failed to delete board. Please try again.");
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Failed to delete board. Please try again."
+      );
       setLoading(false);
       setTimeout(() => setError(null), 3000);
     }
@@ -856,7 +862,7 @@ export default function Board() {
       <div className="px-6 py-3 border-b border-gray-200 bg-white flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <h1 className="text-lg font-semibold text-gray-800">
-            {boardId || "test-board"}
+            {board.name || "Unnamed Board"}
           </h1>
           {/* <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
             Free retrospective
@@ -965,7 +971,7 @@ export default function Board() {
               <span className="ml-1 text-sm">Share</span>
             </button>
 
-            <button 
+            <button
               className={`text-gray-700 hover:text-gray-900 flex items-center cursor-pointer ${
                 isOptionsPanelOpen ? "text-blue-500" : ""
               }`}
