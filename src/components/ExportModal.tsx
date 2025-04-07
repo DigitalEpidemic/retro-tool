@@ -1,6 +1,7 @@
 import { Clipboard, FileDown, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Board, Card } from "../services/firebase";
+import { ActionPoint } from "./ActionPointsPanel";
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -92,6 +93,34 @@ export default function ExportModal({
 
         markdownContent += "\n";
       });
+
+    // Add action points section
+    markdownContent += `## Action Points\n\n`;
+    
+    const actionPoints = board.actionPoints || [];
+    
+    if (actionPoints.length === 0) {
+      markdownContent += "_No action points_\n\n";
+    } else {
+      // Sort action points by completion status (incomplete first)
+      const sortedActionPoints = [...actionPoints].sort(
+        (a, b) => Number(a.completed) - Number(b.completed)
+      );
+      
+      sortedActionPoints.forEach((actionPoint) => {
+        const status = actionPoint.completed ? "[x]" : "[ ]";
+        let actionPointText = `- ${status} ${actionPoint.text}`;
+        
+        // Add assignee if available
+        if (actionPoint.assignee) {
+          actionPointText += ` _(Assigned to: ${actionPoint.assignee})_`;
+        }
+        
+        markdownContent += `${actionPointText}\n`;
+      });
+      
+      markdownContent += "\n";
+    }
 
     setMarkdown(markdownContent);
   }, [isOpen, board, cards]);

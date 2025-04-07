@@ -8,11 +8,31 @@ import ExportModal, {
   createAndDownloadMarkdownFile,
   formatExportFilename,
 } from "../ExportModal";
+import { ActionPoint } from "../ActionPointsPanel";
 
 // Mock document.execCommand for clipboard test
 document.execCommand = vi.fn();
 
 describe("ExportModal", () => {
+  const mockActionPoints: ActionPoint[] = [
+    {
+      id: "ap-1",
+      text: "Schedule more frequent team check-ins",
+      completed: false,
+    },
+    {
+      id: "ap-2",
+      text: "Update documentation with latest changes",
+      completed: true,
+    },
+    {
+      id: "ap-3",
+      text: "Investigate performance issues",
+      completed: false,
+      assignee: "Alice",
+    },
+  ];
+
   const mockBoard: Board = {
     id: "board-1",
     name: "Test Retro Board",
@@ -23,6 +43,7 @@ describe("ExportModal", () => {
       col2: { id: "col2", title: "What can be improved", order: 1 },
       col3: { id: "col3", title: "Action items", order: 2 },
     },
+    actionPoints: mockActionPoints,
   };
 
   const mockCards: Card[] = [
@@ -139,6 +160,70 @@ describe("ExportModal", () => {
     expect(textarea.value).toContain("(3 votes, by John)");
     expect(textarea.value).toContain("(2 votes, by Jane)");
     expect(textarea.value).toContain("(1 votes, by Bob)");
+  });
+
+  it("should include action points in markdown export", () => {
+    render(
+      <ExportModal
+        isOpen={true}
+        onClose={vi.fn()}
+        board={mockBoard}
+        cards={mockCards}
+      />
+    );
+
+    const textarea = screen.getByRole("textbox") as HTMLTextAreaElement;
+
+    // Check action points section header
+    expect(textarea.value).toContain("## Action Points");
+
+    // Check action points content and formatting
+    expect(textarea.value).toContain("- [ ] Schedule more frequent team check-ins");
+    expect(textarea.value).toContain("- [x] Update documentation with latest changes");
+    expect(textarea.value).toContain("- [ ] Investigate performance issues");
+    
+    // Check assignee display
+    expect(textarea.value).toContain("_(Assigned to: Alice)_");
+  });
+
+  it("should handle board with no action points", () => {
+    const boardWithoutActionPoints = { ...mockBoard, actionPoints: undefined };
+    render(
+      <ExportModal
+        isOpen={true}
+        onClose={vi.fn()}
+        board={boardWithoutActionPoints}
+        cards={mockCards}
+      />
+    );
+
+    const textarea = screen.getByRole("textbox") as HTMLTextAreaElement;
+
+    // Check action points section header
+    expect(textarea.value).toContain("## Action Points");
+    
+    // Check "no action points" message
+    expect(textarea.value).toContain("_No action points_");
+  });
+
+  it("should handle board with empty action points array", () => {
+    const boardWithEmptyActionPoints = { ...mockBoard, actionPoints: [] };
+    render(
+      <ExportModal
+        isOpen={true}
+        onClose={vi.fn()}
+        board={boardWithEmptyActionPoints}
+        cards={mockCards}
+      />
+    );
+
+    const textarea = screen.getByRole("textbox") as HTMLTextAreaElement;
+
+    // Check action points section header
+    expect(textarea.value).toContain("## Action Points");
+    
+    // Check "no action points" message
+    expect(textarea.value).toContain("_No action points_");
   });
 
   it("should call onClose when close button is clicked", () => {
