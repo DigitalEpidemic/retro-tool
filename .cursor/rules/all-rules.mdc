@@ -1,0 +1,23 @@
+---
+description: 
+globs: *.tsx,*.ts,*.css,*.md,*.mdc,*.js,*.json
+alwaysApply: false
+---
+ # All Rules
+
+This file serves as a single entry point to reference all rule files in the codebase.
+Always read all the referenced rules when this file is tagged.
+
+## Rules Reference
+
+[coding-patterns.mdc](mdc:.cursor/rules/coding-patterns.mdc)
+[coding-workflow.mdc](mdc:.cursor/rules/coding-workflow.mdc)
+[tech-stack.mdc](mdc:.cursor/rules/tech-stack.mdc)
+
+## About Rules
+
+Each rule file contains specific guidelines:
+
+1. **coding-patterns.mdc** - Code style, architecture, and implementation guidelines including testing practices
+2. **coding-workflow.mdc** - Workflow procedures and communication standards
+3. **tech-stack.mdc** - Technologies, libraries, and frameworks used in the project

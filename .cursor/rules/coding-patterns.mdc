@@ -15,3 +15,10 @@ alwaysApply: true
 - Never mock the component that is being tested in the test file. (e.g., If the test is Board.test.tsx, then Board.tsx must be directly used in the test not a mocked version)
 - When using icons, always check similar components in the codebase to maintain consistency in icon usage, size, style, and appearance (e.g., if working on a modal close button, check how other modals implement their close buttons)
 - Always write tests for all new components and features. Each new component should have a corresponding test file in the __tests__ directory that tests all key functionality.
+
+# Testing Guidelines
+
+- Always use `it.each` for parameterized testing when multiple test cases follow the same pattern with different inputs and expected outputs
+- Prefer table-driven tests over repetitive individual test cases
+- Format test data as readable arrays of test cases with descriptive explanations
+- Maintain clear test descriptions that explain the input, expected output, and test purpose
