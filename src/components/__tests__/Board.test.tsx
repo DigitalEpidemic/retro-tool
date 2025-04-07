@@ -2278,9 +2278,6 @@ describe("Board", () => {
         expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
       }, { timeout: 3000 });
       
-      // Debug the DOM at this point
-      console.log("DOM after loading:", document.body.innerHTML);
-      
       // Find the action points button by its icon and text
       const actionPointsButton = await screen.findByRole("button", {
         name: /action points/i,
