@@ -73,7 +73,7 @@ const ActionPointsPanel = memo(
           <h2 className="text-lg font-semibold text-gray-800">Action Points</h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
+            className="text-gray-500 hover:text-gray-700 cursor-pointer"
             aria-label="Close panel"
             data-testid="close-panel"
           >
@@ -116,7 +116,7 @@ const ActionPointsPanel = memo(
 
                   <button
                     onClick={() => onDeleteActionPoint(actionPoint.id)}
-                    className="text-gray-400 hover:text-red-500 ml-2"
+                    className="text-gray-400 hover:text-red-500 ml-2 cursor-pointer"
                     aria-label="Delete action point"
                   >
                     <X className="h-4 w-4" />
@@ -141,14 +141,14 @@ const ActionPointsPanel = memo(
               <div className="flex justify-end mt-2 space-x-2">
                 <button
                   onClick={handleCancelAdd}
-                  className="px-2 py-1 text-xs text-gray-600 hover:text-gray-800"
+                  className="px-2 py-1 text-xs text-gray-600 hover:text-gray-800 cursor-pointer"
                   data-testid="cancel-action-point"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleAddActionPoint}
-                  className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+                  className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 cursor-pointer"
                   data-testid="add-action-point"
                 >
                   Add
@@ -158,7 +158,7 @@ const ActionPointsPanel = memo(
           ) : (
             <button
               onClick={handleStartAdd}
-              className="flex items-center text-blue-600 hover:text-blue-700 font-medium text-sm"
+              className="flex items-center text-blue-600 hover:text-blue-700 font-medium text-sm cursor-pointer"
               data-testid="add-action-point-button"
             >
               <Plus className="h-4 w-4 mr-1" />

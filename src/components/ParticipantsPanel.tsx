@@ -62,7 +62,7 @@ const ParticipantsPanel = memo(
           <h2 className="text-lg font-semibold text-gray-800">Participants</h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
+            className="text-gray-500 hover:text-gray-700 cursor-pointer"
             aria-label="Close panel"
             data-testid="close-panel"
           >
@@ -120,7 +120,7 @@ const ParticipantsPanel = memo(
                         onClick={() =>
                           handleStartEdit(participant.id, participant.name)
                         }
-                        className="text-gray-400 hover:text-blue-500"
+                        className="text-gray-400 hover:text-blue-500 cursor-pointer"
                         aria-label="Edit your name"
                         data-testid={`edit-name-${participant.id}`}
                       >
@@ -131,7 +131,7 @@ const ParticipantsPanel = memo(
                   {editingUser === participant.id && (
                     <button
                       onClick={handleSaveName}
-                      className="text-green-500 hover:text-green-600"
+                      className="text-green-500 hover:text-green-600 cursor-pointer"
                       aria-label="Save name"
                       data-testid={`save-name-${participant.id}`}
                     >
