@@ -49,6 +49,7 @@ import CardComponent from "./Card";
 import Column from "./Column";
 import ExportModal from "./ExportModal"; // Import the ExportModal component
 import ParticipantsPanel from "./ParticipantsPanel"; // Add ParticipantsPanel import
+import ShareModal from "./ShareModal"; // Import the ShareModal component
 
 // Import the new presence service
 import { OnlineUser } from "../services/firebase";
@@ -81,6 +82,7 @@ export default function Board() {
   const [participants, setParticipants] = useState<OnlineUser[]>([]); // State for participants list
   const [actionPoints, setActionPoints] = useState<ActionPoint[]>([]); // State for action points
   const [isExportModalOpen, setIsExportModalOpen] = useState(false); // State for export modal
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false); // State for share modal
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null); // Ref to store interval ID
   const resetTimeoutRef = useRef<NodeJS.Timeout | null>(null); // Ref for delayed reset timeout
   const initialDurationSeconds = 300; // 5 minutes (default)
@@ -750,6 +752,11 @@ export default function Board() {
     setIsExportModalOpen(true);
   };
 
+  // Share functionality
+  const handleShareClick = () => {
+    setIsShareModalOpen(true);
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -900,7 +907,10 @@ export default function Board() {
               <span className="ml-1 text-sm">Export</span>
             </button>
 
-            <button className="text-gray-700 hover:text-gray-900 flex items-center cursor-pointer">
+            <button 
+              className="text-gray-700 hover:text-gray-900 flex items-center cursor-pointer"
+              onClick={handleShareClick}
+            >
               <Share2 className="h-5 w-5" />
               <span className="ml-1 text-sm">Share</span>
             </button>
@@ -919,6 +929,13 @@ export default function Board() {
         onClose={() => setIsExportModalOpen(false)}
         board={board}
         cards={cards}
+      />
+
+      {/* Share Modal */}
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        boardId={boardId || ""}
       />
 
       {/* Use the participants panel */}
