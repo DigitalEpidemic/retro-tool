@@ -33,6 +33,7 @@ import {
 } from "../services/actionPointsService"; // Import action points service
 import {
   createBoard,
+  deleteBoard,
   joinBoard,
   pauseTimer,
   resetTimer,
@@ -48,6 +49,7 @@ import ActionPointsPanel, { ActionPoint } from "./ActionPointsPanel"; // Import 
 import CardComponent from "./Card";
 import Column from "./Column";
 import ExportModal from "./ExportModal"; // Import the ExportModal component
+import OptionsPanel from "./OptionsPanel"; // Import the OptionsPanel component
 import ParticipantsPanel from "./ParticipantsPanel"; // Add ParticipantsPanel import
 import ShareModal from "./ShareModal"; // Import the ShareModal component
 
@@ -79,6 +81,7 @@ export default function Board() {
   >({}); // Track sort by votes per column
   const [isPanelOpen, setIsPanelOpen] = useState(false); // State for participants panel
   const [isActionPointsPanelOpen, setIsActionPointsPanelOpen] = useState(false); // State for action points panel
+  const [isOptionsPanelOpen, setIsOptionsPanelOpen] = useState(false); // State for options panel
   const [participants, setParticipants] = useState<OnlineUser[]>([]); // State for participants list
   const [actionPoints, setActionPoints] = useState<ActionPoint[]>([]); // State for action points
   const [isExportModalOpen, setIsExportModalOpen] = useState(false); // State for export modal
@@ -548,9 +551,12 @@ export default function Board() {
   const toggleParticipantsPanel = () => {
     // Simply toggle the panel state
     setIsPanelOpen(!isPanelOpen);
-    // Close action points panel if open
+    // Close other panels if open
     if (isActionPointsPanelOpen) {
       setIsActionPointsPanelOpen(false);
+    }
+    if (isOptionsPanelOpen) {
+      setIsOptionsPanelOpen(false);
     }
   };
 
@@ -558,9 +564,25 @@ export default function Board() {
   const toggleActionPointsPanel = () => {
     // Simply toggle the panel state
     setIsActionPointsPanelOpen(!isActionPointsPanelOpen);
-    // Close participants panel if open
+    // Close other panels if open
     if (isPanelOpen) {
       setIsPanelOpen(false);
+    }
+    if (isOptionsPanelOpen) {
+      setIsOptionsPanelOpen(false);
+    }
+  };
+
+  // Toggle options panel
+  const toggleOptionsPanel = () => {
+    // Simply toggle the panel state
+    setIsOptionsPanelOpen(!isOptionsPanelOpen);
+    // Close other panels if open
+    if (isPanelOpen) {
+      setIsPanelOpen(false);
+    }
+    if (isActionPointsPanelOpen) {
+      setIsActionPointsPanelOpen(false);
     }
   };
 
@@ -757,6 +779,23 @@ export default function Board() {
     setIsShareModalOpen(true);
   };
 
+  // Handle deleting the board
+  const handleDeleteBoard = async () => {
+    if (!boardId || !user) return;
+
+    try {
+      setLoading(true);
+      await deleteBoard(boardId, user.uid);
+      // Navigate to home page after successful deletion
+      navigate("/");
+    } catch (error) {
+      console.error("Error deleting board:", error);
+      setError("Failed to delete board. Please try again.");
+      setLoading(false);
+      setTimeout(() => setError(null), 3000);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -915,7 +954,12 @@ export default function Board() {
               <span className="ml-1 text-sm">Share</span>
             </button>
 
-            <button className="text-gray-700 hover:text-gray-900 flex items-center cursor-pointer">
+            <button 
+              className={`text-gray-700 hover:text-gray-900 flex items-center cursor-pointer ${
+                isOptionsPanelOpen ? "text-blue-500" : ""
+              }`}
+              onClick={toggleOptionsPanel}
+            >
               <Settings className="h-5 w-5" />
               <span className="ml-1 text-sm">Options</span>
             </button>
@@ -955,6 +999,14 @@ export default function Board() {
         onAddActionPoint={handleAddActionPoint}
         onToggleActionPoint={handleToggleActionPoint}
         onDeleteActionPoint={handleDeleteActionPoint}
+      />
+
+      {/* Use the options panel */}
+      <OptionsPanel
+        isOpen={isOptionsPanelOpen}
+        onClose={() => setIsOptionsPanelOpen(false)}
+        onDeleteBoard={handleDeleteBoard}
+        isBoardCreator={user?.uid === board.facilitatorId}
       />
 
       <DragDropContext onDragEnd={handleDragEnd}>

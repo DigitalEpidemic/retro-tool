@@ -8,8 +8,9 @@ service cloud.firestore {
     match /boards/{boardId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null;
-      // For now, allow any authenticated user to update/delete. Refine as needed.
-      allow update, delete: if request.auth != null;
+      // Only the facilitator can delete the board
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null && resource.data.facilitatorId == request.auth.uid;
     }
 
     // Cards:
@@ -17,13 +18,23 @@ service cloud.firestore {
     // - Allow authenticated users to create cards, ensuring they set themselves as the author.
     // - Allow any authenticated user to update cards (covers voting, reordering).
     //   You could restrict content updates to the author specifically if required.
-    // - Allow users to delete only their own cards.
+    // - Allow users to delete only their own cards OR allow the board facilitator to delete any card.
     match /cards/{cardId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
                     && request.resource.data.authorId == request.auth.uid; // Ensure author is self
       allow update: if request.auth != null; // Allows voting, reordering by anyone authenticated
-      allow delete: if request.auth != null && resource.data.authorId == request.auth.uid; // Only author can delete
+      allow delete: if request.auth != null && 
+                     (resource.data.authorId == request.auth.uid || 
+                      isFacilitatorOfCardBoard(cardId, request.auth.uid)); // Only author OR board facilitator can delete
+    }
+
+    // Function to check if the user is the facilitator of the board a card belongs to
+    function isFacilitatorOfCardBoard(cardId, userId) {
+      let card = get(/databases/$(database)/documents/cards/$(cardId)).data;
+      let boardId = card.boardId;
+      let board = get(/databases/$(database)/documents/boards/$(boardId)).data;
+      return board.facilitatorId == userId;
     }
 
     // Users collection - this is critical for participant functionality

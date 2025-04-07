@@ -578,3 +578,48 @@ export const cleanupInactiveUsers = async (boardId: string) => {
     return false;
   }
 };
+
+// Delete a board and all its related data (cards)
+export const deleteBoard = async (boardId: string, userId: string) => {
+  try {
+    // First check if the user is the facilitator of the board
+    const boardRef = doc(db, "boards", boardId);
+    const boardSnap = await getDoc(boardRef);
+    
+    if (!boardSnap.exists()) {
+      throw new Error(`Board with ID ${boardId} not found`);
+    }
+    
+    const boardData = boardSnap.data();
+    if (boardData.facilitatorId !== userId) {
+      throw new Error("Only the board creator can delete the board");
+    }
+    
+    // Create a batch for atomic operations
+    const batch = writeBatch(db);
+    
+    // 1. Delete the board document
+    batch.delete(boardRef);
+    
+    // 2. Find all cards associated with this board
+    const cardsQuery = query(
+      collection(db, "cards"),
+      where("boardId", "==", boardId)
+    );
+    
+    const cardsSnapshot = await getDocs(cardsQuery);
+    
+    // 3. Delete all cards (facilitator has permission to delete all cards)
+    cardsSnapshot.forEach((cardDoc) => {
+      batch.delete(doc(db, "cards", cardDoc.id));
+    });
+    
+    // 4. Commit the batch
+    await batch.commit();
+    
+    return true;
+  } catch (error) {
+    console.error("Error deleting board:", error);
+    throw error;
+  }
+};
