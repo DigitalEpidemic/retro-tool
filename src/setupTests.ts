@@ -2,6 +2,7 @@ import "@testing-library/jest-dom";
 import * as matchers from "@testing-library/jest-dom/matchers";
 import { cleanup } from "@testing-library/react";
 import { afterEach, expect, vi } from "vitest";
+import type { DropResult } from "@hello-pangea/dnd";
 
 // Extend Vitest's expect method with methods from react-testing-library
 expect.extend(matchers);
@@ -69,3 +70,10 @@ console.error = (...args: any[]) => {
     originalConsoleError(...args);
   }
 };
+
+// Global type declaration for drag and drop testing
+declare global {
+  interface Window {
+    capturedOnDragEnd: ((result: DropResult) => void) | null;
+  }
+}

@@ -1,4 +1,3 @@
-import type { DropResult } from "@hello-pangea/dnd";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { User as FirebaseUser } from "firebase/auth";
@@ -58,12 +57,6 @@ vi.mock("../../services/firebase", () => {
     ActionPoint: {},
   };
 });
-
-declare global {
-  interface Window {
-    capturedOnDragEnd: ((result: DropResult) => void) | null;
-  }
-}
 
 vi.mock("@hello-pangea/dnd", () => {
   return {

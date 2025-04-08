@@ -67,12 +67,6 @@ vi.mock("../../services/firebase", () => {
   };
 });
 
-declare global {
-  interface Window {
-    capturedOnDragEnd: ((result: DropResult) => void) | null;
-  }
-}
-
 vi.mock("@hello-pangea/dnd", () => {
   return {
     DragDropContext: ({ children, onDragEnd }: any) => {
