@@ -152,11 +152,14 @@ export default function Column({
             required
             autoFocus
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
+              if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
                 if (newCardContent.trim() && user) {
                   handleAddCard(e);
                 }
+              } else if (e.key === "Escape") {
+                e.preventDefault();
+                setIsAddingCard(false);
               }
             }}
           />

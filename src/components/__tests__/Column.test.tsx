@@ -394,39 +394,39 @@ describe("Column", () => {
   describe("Column menu functionality", () => {
     it("opens the dropdown menu when clicking the MoreVertical icon", () => {
       renderColumn();
-      
+
       // Initially, the dropdown should not be visible
       expect(screen.queryByText("Delete column")).not.toBeInTheDocument();
-      
+
       // Click the menu button
       const menuButton = screen.getByTestId("column-menu-column-1");
       fireEvent.click(menuButton);
-      
+
       // Now the dropdown should be visible
       expect(screen.getByText("Delete column")).toBeInTheDocument();
     });
-    
+
     it("shows a disabled delete option for non-owner users", () => {
       renderColumn({ isBoardOwner: false });
-      
+
       // Open the menu
       const menuButton = screen.getByTestId("column-menu-column-1");
       fireEvent.click(menuButton);
-      
+
       // Find the delete button and check it's disabled
       const deleteButton = screen.getByTestId("delete-column-column-1");
       expect(deleteButton).toBeDisabled();
       expect(deleteButton).toHaveClass("text-gray-400");
       expect(deleteButton).toHaveClass("cursor-not-allowed");
     });
-    
+
     it("shows an enabled delete option for board owners", () => {
       renderColumn({ isBoardOwner: true });
-      
+
       // Open the menu
       const menuButton = screen.getByTestId("column-menu-column-1");
       fireEvent.click(menuButton);
-      
+
       // Find the delete button and check it's enabled
       const deleteButton = screen.getByTestId("delete-column-column-1");
       expect(deleteButton).not.toBeDisabled();
@@ -434,23 +434,23 @@ describe("Column", () => {
       expect(deleteButton).toHaveClass("hover:bg-gray-100");
       expect(deleteButton).toHaveClass("cursor-pointer");
     });
-    
+
     it("calls deleteColumn when delete button is clicked by board owner", async () => {
       // Import deleteColumn from the mock
       const { deleteColumn } = await import("../../services/boardService");
       // Setup the mock to return success
       vi.mocked(deleteColumn).mockResolvedValue({ success: true });
-      
+
       renderColumn({ isBoardOwner: true });
-      
+
       // Open the menu
       const menuButton = screen.getByTestId("column-menu-column-1");
       fireEvent.click(menuButton);
-      
+
       // Click the delete button
       const deleteButton = screen.getByTestId("delete-column-column-1");
       fireEvent.click(deleteButton);
-      
+
       // Check if deleteColumn was called correctly
       await waitFor(() => {
         expect(deleteColumn).toHaveBeenCalledTimes(1);
@@ -460,31 +460,31 @@ describe("Column", () => {
         );
       });
     });
-    
+
     it("handles error when deleteColumn fails", async () => {
       // Spy on console.error
       const consoleErrorSpy = vi
         .spyOn(console, "error")
         .mockImplementation(() => {});
-        
+
       // Import deleteColumn from the mock
       const { deleteColumn } = await import("../../services/boardService");
       // Setup the mock to return failure
-      vi.mocked(deleteColumn).mockResolvedValue({ 
+      vi.mocked(deleteColumn).mockResolvedValue({
         success: false,
-        error: "Failed to delete column" 
+        error: "Failed to delete column",
       });
-      
+
       renderColumn({ isBoardOwner: true });
-      
+
       // Open the menu
       const menuButton = screen.getByTestId("column-menu-column-1");
       fireEvent.click(menuButton);
-      
+
       // Click the delete button
       const deleteButton = screen.getByTestId("delete-column-column-1");
       fireEvent.click(deleteButton);
-      
+
       // Check if error was logged
       await waitFor(() => {
         expect(consoleErrorSpy).toHaveBeenCalledWith(
@@ -492,43 +492,43 @@ describe("Column", () => {
           "Failed to delete column"
         );
       });
-      
+
       consoleErrorSpy.mockRestore();
     });
-    
+
     it("closes the menu when clicking outside", () => {
       renderColumn();
-      
+
       // Open the menu
       const menuButton = screen.getByTestId("column-menu-column-1");
       fireEvent.click(menuButton);
-      
+
       // The dropdown should be visible
       expect(screen.getByText("Delete column")).toBeInTheDocument();
-      
+
       // Click outside the menu
       fireEvent.mouseDown(document.body);
-      
+
       // Now the dropdown should be hidden
       expect(screen.queryByText("Delete column")).not.toBeInTheDocument();
     });
   });
-  
+
   // Test for Enter key functionality
   it("adds a card when pressing Enter in the textarea", async () => {
     renderColumn();
     fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
-    
+
     const textarea = screen.getByPlaceholderText(
       "Type here... Press Enter to save."
     );
-    
+
     // Enter content
     fireEvent.change(textarea, { target: { value: "New card via Enter key" } });
-    
+
     // Press Enter key
-    fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' });
-    
+    fireEvent.keyDown(textarea, { key: "Enter", code: "Enter" });
+
     // Check if addCard was called correctly
     await waitFor(() => {
       expect(addCard).toHaveBeenCalledTimes(1);
@@ -540,56 +540,92 @@ describe("Column", () => {
         mockUser.displayName || "Anonymous User"
       );
     });
-    
+
     // Form should be hidden after submission
-    expect(screen.queryByPlaceholderText(
-      "Type here... Press Enter to save."
-    )).not.toBeInTheDocument();
+    expect(
+      screen.queryByPlaceholderText("Type here... Press Enter to save.")
+    ).not.toBeInTheDocument();
   });
-  
+
   it("does not add a card when pressing Enter with Shift key", async () => {
     renderColumn();
     fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
-    
+
     const textarea = screen.getByPlaceholderText(
       "Type here... Press Enter to save."
     );
-    
+
     // Enter content
-    fireEvent.change(textarea, { target: { value: "Content with line break" } });
-    
+    fireEvent.change(textarea, {
+      target: { value: "Content with line break" },
+    });
+
     // Press Enter with Shift key (should add a new line instead of submitting)
-    fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter', shiftKey: true });
-    
+    fireEvent.keyDown(textarea, {
+      key: "Enter",
+      code: "Enter",
+      shiftKey: true,
+    });
+
     // Check that addCard was not called
     expect(addCard).not.toHaveBeenCalled();
-    
+
     // Form should still be visible
-    expect(screen.getByPlaceholderText(
-      "Type here... Press Enter to save."
-    )).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText("Type here... Press Enter to save.")
+    ).toBeInTheDocument();
   });
-  
+
   it("does not add a card when pressing Enter with empty content", async () => {
     renderColumn();
     fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
-    
+
     const textarea = screen.getByPlaceholderText(
       "Type here... Press Enter to save."
     );
-    
+
     // Leave content empty
     fireEvent.change(textarea, { target: { value: "" } });
-    
+
     // Press Enter key
-    fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' });
-    
+    fireEvent.keyDown(textarea, { key: "Enter", code: "Enter" });
+
     // Check that addCard was not called
     expect(addCard).not.toHaveBeenCalled();
-    
+
     // Form should still be visible
-    expect(screen.getByPlaceholderText(
+    expect(
+      screen.getByPlaceholderText("Type here... Press Enter to save.")
+    ).toBeInTheDocument();
+  });
+
+  it("cancels adding a card when pressing Escape key", () => {
+    renderColumn();
+    fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+
+    const textarea = screen.getByPlaceholderText(
       "Type here... Press Enter to save."
-    )).toBeInTheDocument();
+    );
+
+    // Enter some content
+    fireEvent.change(textarea, {
+      target: { value: "Content that will be discarded" },
+    });
+
+    // Press Escape key
+    fireEvent.keyDown(textarea, { key: "Escape", code: "Escape" });
+
+    // Form should be hidden after Escape
+    expect(
+      screen.queryByPlaceholderText("Type here... Press Enter to save.")
+    ).not.toBeInTheDocument();
+
+    // "Add a card" button should be visible again
+    expect(
+      screen.getByRole("button", { name: "+ Add a card" })
+    ).toBeInTheDocument();
+
+    // addCard should not have been called
+    expect(addCard).not.toHaveBeenCalled();
   });
 });
