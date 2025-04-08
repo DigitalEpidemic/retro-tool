@@ -691,3 +691,59 @@ export const deleteColumn = async (boardId: string, columnId: string) => {
     };
   }
 };
+
+// Add a new column to a board
+export const addColumn = async (boardId: string, title: string) => {
+  try {
+    // 1. Get the board document
+    const boardRef = doc(db, "boards", boardId);
+    const boardSnap = await getDoc(boardRef);
+    
+    if (!boardSnap.exists()) {
+      throw new Error(`Board with ID ${boardId} not found`);
+    }
+    
+    // 2. Get the board data and existing columns
+    const boardData = boardSnap.data() as Board;
+    const columns = boardData.columns || {};
+    
+    // 3. Generate a unique ID for the new column
+    const columnId = `col-${Date.now()}`;
+    
+    // 4. Determine the highest order value
+    const highestOrder = Object.values(columns).reduce(
+      (max, col) => Math.max(max, col.order),
+      -1
+    );
+    
+    // 5. Create the new column object
+    const newColumn = {
+      id: columnId,
+      title,
+      order: highestOrder + 1,
+      sortByVotes: false
+    };
+    
+    // 6. Add the new column to the columns object
+    const updatedColumns = { 
+      ...columns,
+      [columnId]: newColumn 
+    };
+    
+    // 7. Update the board document with the modified columns
+    await updateDoc(boardRef, {
+      columns: updatedColumns
+    });
+    
+    return { 
+      success: true,
+      columnId 
+    };
+  } catch (error) {
+    console.error("Error adding column:", error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : "Unknown error" 
+    };
+  }
+};

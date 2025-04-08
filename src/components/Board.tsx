@@ -51,6 +51,7 @@ import ExportModal from "./ExportModal"; // Import the ExportModal component
 import OptionsPanel from "./OptionsPanel"; // Import the OptionsPanel component
 import ParticipantsPanel from "./ParticipantsPanel"; // Add ParticipantsPanel import
 import ShareModal from "./ShareModal"; // Import the ShareModal component
+import AddColumnPlaceholder from "./AddColumnPlaceholder"; // Import the AddColumnPlaceholder component
 
 // Import the new presence service
 import { OnlineUser } from "../services/firebase";
@@ -1027,7 +1028,9 @@ export default function Board() {
       />
 
       <DragDropContext onDragEnd={handleDragEnd}>
-        <div className="grid grid-cols-3 gap-6 px-6 py-4 flex-1 overflow-hidden">
+        <div className={`grid ${board.facilitatorId === user?.uid ? 'auto-cols-fr' : 'grid-cols-3'} gap-6 px-6 py-4 flex-1 overflow-hidden`} style={{
+          gridTemplateColumns: board.facilitatorId === user?.uid ? `repeat(${Math.min(Object.keys(board.columns).length + 1, 4)}, minmax(0, 1fr))` : ''
+        }}>
           {Object.values(board.columns)
             .sort((a: ColumnType, b: ColumnType) => a.order - b.order)
             .map((column: ColumnType) => (
@@ -1096,6 +1099,17 @@ export default function Board() {
                 </Column>
               </div>
             ))}
+            
+          {/* Add Column Placeholder - only visible to board owner */}
+          {board.facilitatorId === user?.uid && (
+            <AddColumnPlaceholder 
+              boardId={boardId!}
+              onColumnAdded={() => {
+                // Optional callback when a new column is added
+                // Could refresh data or show notification
+              }}
+            />
+          )}
         </div>
       </DragDropContext>
     </div>
