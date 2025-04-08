@@ -512,6 +512,10 @@ describe("Board", () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
+    // Mock console methods to prevent cluttering test output
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
     mockDocExists = true;
     mockDocData = { name: "Test Board" };
 
@@ -564,6 +568,7 @@ describe("Board", () => {
 
   afterEach(() => {
     vi.resetAllMocks();
+    vi.restoreAllMocks(); // Restore console mocks
   });
 
   it("renders the board with columns and cards", async () => {
@@ -951,6 +956,11 @@ describe("Board", () => {
     const mockTimerError = new Error("Timer start failed");
     vi.mocked(boardService.startTimer).mockRejectedValueOnce(mockTimerError);
 
+    // Spy on console.error to verify it's called with the expected error
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+
     // Render the component
     await renderBoard();
 
@@ -962,6 +972,12 @@ describe("Board", () => {
 
     // Click the button (without wrapping in act)
     await user.click(playButton);
+
+    // Verify the error was logged to console
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "Error starting/resuming timer:",
+      mockTimerError
+    );
 
     // Allow any pending promises to resolve
     await vi.waitFor(() => {
@@ -975,6 +991,11 @@ describe("Board", () => {
     // Setup: Mock the pauseTimer function to reject with an error
     const mockTimerError = new Error("Timer pause failed");
     vi.mocked(boardService.pauseTimer).mockRejectedValueOnce(mockTimerError);
+
+    // Spy on console.error to verify it's called with the expected error
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
 
     // Setup: Mock a running board
     const runningBoard = {
@@ -1001,6 +1022,12 @@ describe("Board", () => {
     // Click the button
     await user.click(pauseButton);
 
+    // Verify the error was logged to console
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "Error pausing timer:",
+      mockTimerError
+    );
+
     // Wait for the error message to appear
     await vi.waitFor(() => {
       expect(
@@ -1014,6 +1041,11 @@ describe("Board", () => {
     const mockTimerError = new Error("Timer reset failed");
     vi.mocked(boardService.resetTimer).mockRejectedValueOnce(mockTimerError);
 
+    // Spy on console.error to verify it's called with the expected error
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+
     // Render the component
     await renderBoard();
 
@@ -1025,6 +1057,12 @@ describe("Board", () => {
 
     // Click the button
     await user.click(resetButton);
+
+    // Verify the error was logged to console
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "Error resetting timer:",
+      mockTimerError
+    );
 
     // Wait for the error message to appear
     await vi.waitFor(() => {
@@ -1038,6 +1076,11 @@ describe("Board", () => {
     // Setup: Mock updateDoc to reject with an error
     const mockUpdateError = new Error("Firestore update failed");
     vi.mocked(updateDoc).mockRejectedValueOnce(mockUpdateError);
+
+    // Spy on console.error to verify it's called with the expected error
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
 
     // Setup: Mock a paused board
     const pausedBoard = {
@@ -1068,6 +1111,12 @@ describe("Board", () => {
     // Press Enter to submit
     await user.keyboard("{Enter}");
 
+    // Verify the error was logged to console
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "Error updating timer duration:",
+      mockUpdateError
+    );
+
     // Wait for the error message to appear
     await vi.waitFor(() => {
       expect(
@@ -1079,9 +1128,12 @@ describe("Board", () => {
   it("displays error if updateColumnSortState fails", async () => {
     vi.clearAllMocks();
 
-    const consoleErrorSpy = vi.spyOn(console, "error");
-
     const mockError = new Error("Failed to update sort state");
+
+    // Spy on console.error to verify it's called with the expected error
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
 
     vi.mocked(boardService.updateColumnSortState).mockRejectedValue(mockError);
 
@@ -1117,8 +1169,6 @@ describe("Board", () => {
       "Error updating sort state:",
       mockError
     );
-
-    consoleErrorSpy.mockRestore();
   });
 
   it("handles drag and drop operations correctly", async () => {
