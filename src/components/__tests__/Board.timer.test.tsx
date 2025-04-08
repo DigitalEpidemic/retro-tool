@@ -89,7 +89,9 @@ vi.mock("../../services/boardService", () => {
     startTimer: vi.fn(() => Promise.resolve()),
     pauseTimer: vi.fn(() => Promise.resolve()),
     resetTimer: vi.fn(() => Promise.resolve()),
-    joinBoard: vi.fn(() => Promise.resolve()),
+    joinBoard: vi.fn(() =>
+      Promise.resolve({ success: true, name: "Test User" })
+    ),
   };
 });
 
@@ -167,9 +169,9 @@ const mockBoard: BoardType = {
 };
 
 vi.mock("../../services/presenceService", () => ({
-  setupPresence: vi.fn().mockReturnValue(() => {}),
+  setupPresence: vi.fn(() => () => {}),
   subscribeToParticipants: vi.fn((boardId, callback) => {
-    setTimeout(() => {
+    act(() => {
       callback([
         {
           id: "test-user-id",
@@ -179,7 +181,7 @@ vi.mock("../../services/presenceService", () => ({
           lastOnline: Date.now(),
         },
       ]);
-    }, 0);
+    });
     return vi.fn();
   }),
   updateParticipantName: vi.fn().mockResolvedValue(undefined),
@@ -200,6 +202,10 @@ describe("Timer Functionality", () => {
 
     mockDocExists = true;
     mockDocData = { name: "Test Board" };
+
+    // Mock console methods to prevent cluttering test output
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "warn").mockImplementation(() => {});
 
     vi.mocked(FirebaseContext.useFirebase).mockReturnValue({
       user: {} as FirebaseUser,
@@ -228,6 +234,7 @@ describe("Timer Functionality", () => {
 
   afterEach(() => {
     vi.resetAllMocks();
+    vi.restoreAllMocks(); // Restore console mocks
   });
 
   it("handles timer controls correctly (start, pause, reset)", async () => {
@@ -397,9 +404,6 @@ describe("Timer Functionality", () => {
     };
     const resetError = new Error("Failed to auto-reset");
     vi.mocked(boardService.resetTimer).mockRejectedValue(resetError);
-    const consoleErrorSpy = vi
-      .spyOn(console, "error")
-      .mockImplementation(() => {});
 
     vi.mocked(boardService.subscribeToBoard).mockImplementation(
       (_, callback) => {
@@ -426,14 +430,13 @@ describe("Timer Functionality", () => {
       "test-board-id",
       shortDuration
     );
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
+    expect(vi.mocked(console.error)).toHaveBeenCalledWith(
       "Error auto-resetting timer:",
       resetError
     );
 
     expect(screen.getByText("0:00")).toBeInTheDocument();
 
-    consoleErrorSpy.mockRestore();
     vi.useRealTimers();
   });
 
@@ -582,9 +585,6 @@ describe("Timer Functionality", () => {
       act(() => cb(pausedBoard));
       return vi.fn();
     });
-    const consoleWarnSpy = vi
-      .spyOn(console, "warn")
-      .mockImplementation(() => {});
 
     await act(async () => {
       render(
@@ -603,11 +603,10 @@ describe("Timer Functionality", () => {
 
     expect(timerInput).toHaveValue("2:00");
     expect(vi.mocked(updateDoc)).not.toHaveBeenCalled();
-    expect(consoleWarnSpy).toHaveBeenCalledWith(
+    expect(vi.mocked(console.warn)).toHaveBeenCalledWith(
       "Invalid time format entered:",
       "abc"
     );
-    consoleWarnSpy.mockRestore();
   });
 
   it("reverts timer input to last valid time on invalid entry (Blur)", async () => {
@@ -617,9 +616,6 @@ describe("Timer Functionality", () => {
       act(() => cb(pausedBoard));
       return vi.fn();
     });
-    const consoleWarnSpy = vi
-      .spyOn(console, "warn")
-      .mockImplementation(() => {});
 
     await act(async () => {
       render(
@@ -640,11 +636,10 @@ describe("Timer Functionality", () => {
 
     expect(timerInput).toHaveValue("2:00");
     expect(vi.mocked(updateDoc)).not.toHaveBeenCalled();
-    expect(consoleWarnSpy).toHaveBeenCalledWith(
+    expect(vi.mocked(console.warn)).toHaveBeenCalledWith(
       "Invalid time format entered:",
       "5:60"
     );
-    consoleWarnSpy.mockRestore();
   });
 
   it("reverts timer input on Escape key press", async () => {
