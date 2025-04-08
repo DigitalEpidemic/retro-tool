@@ -30,19 +30,24 @@ exports[`Column > matches snapshot 1`] = `
             Sort
           </span>
         </button>
-        <button
-          class="text-blue-600 hover:text-blue-700 cursor-pointer"
+        <div
+          class="relative"
         >
-          <svg
-            class="h-4 w-4"
-            data-testid="more-vertical-icon"
-          />
-          <span
-            class="sr-only"
+          <button
+            class="text-blue-600 hover:text-blue-700 cursor-pointer"
+            data-testid="column-menu-column-1"
           >
-            More options
-          </span>
-        </button>
+            <svg
+              class="h-4 w-4"
+              data-testid="more-vertical-icon"
+            />
+            <span
+              class="sr-only"
+            >
+              More options
+            </span>
+          </button>
+        </div>
       </div>
     </div>
     <div
@@ -95,19 +100,24 @@ exports[`Column > matches snapshot when adding card 1`] = `
             Sort
           </span>
         </button>
-        <button
-          class="text-blue-600 hover:text-blue-700 cursor-pointer"
+        <div
+          class="relative"
         >
-          <svg
-            class="h-4 w-4"
-            data-testid="more-vertical-icon"
-          />
-          <span
-            class="sr-only"
+          <button
+            class="text-blue-600 hover:text-blue-700 cursor-pointer"
+            data-testid="column-menu-column-1"
           >
-            More options
-          </span>
-        </button>
+            <svg
+              class="h-4 w-4"
+              data-testid="more-vertical-icon"
+            />
+            <span
+              class="sr-only"
+            >
+              More options
+            </span>
+          </button>
+        </div>
       </div>
     </div>
     <div
@@ -184,19 +194,24 @@ exports[`Column > matches snapshot when sorted by votes 1`] = `
             Sort
           </span>
         </button>
-        <button
-          class="text-blue-600 hover:text-blue-700 cursor-pointer"
+        <div
+          class="relative"
         >
-          <svg
-            class="h-4 w-4"
-            data-testid="more-vertical-icon"
-          />
-          <span
-            class="sr-only"
+          <button
+            class="text-blue-600 hover:text-blue-700 cursor-pointer"
+            data-testid="column-menu-column-1"
           >
-            More options
-          </span>
-        </button>
+            <svg
+              class="h-4 w-4"
+              data-testid="more-vertical-icon"
+            />
+            <span
+              class="sr-only"
+            >
+              More options
+            </span>
+          </button>
+        </div>
       </div>
     </div>
     <div

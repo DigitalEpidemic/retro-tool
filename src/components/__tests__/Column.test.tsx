@@ -13,6 +13,7 @@ vi.mock("../../contexts/FirebaseContext", () => ({
 
 vi.mock("../../services/boardService", () => ({
   addCard: vi.fn(),
+  deleteColumn: vi.fn(),
 }));
 
 // Mock lucide-react icons
@@ -58,6 +59,7 @@ describe("Column", () => {
     boardId: mockBoardId,
     sortByVotes: false,
     onSortToggle: mockOnSortToggle,
+    isBoardOwner: false, // Default to not being the board owner
   };
 
   // Helper function to render the component
@@ -386,5 +388,129 @@ describe("Column", () => {
   it("matches snapshot when sorted by votes", () => {
     const { container } = renderColumn({ sortByVotes: true });
     expect(container).toMatchSnapshot();
+  });
+
+  // Add tests for column menu
+  describe("Column menu functionality", () => {
+    it("opens the dropdown menu when clicking the MoreVertical icon", () => {
+      renderColumn();
+      
+      // Initially, the dropdown should not be visible
+      expect(screen.queryByText("Delete column")).not.toBeInTheDocument();
+      
+      // Click the menu button
+      const menuButton = screen.getByTestId("column-menu-column-1");
+      fireEvent.click(menuButton);
+      
+      // Now the dropdown should be visible
+      expect(screen.getByText("Delete column")).toBeInTheDocument();
+    });
+    
+    it("shows a disabled delete option for non-owner users", () => {
+      renderColumn({ isBoardOwner: false });
+      
+      // Open the menu
+      const menuButton = screen.getByTestId("column-menu-column-1");
+      fireEvent.click(menuButton);
+      
+      // Find the delete button and check it's disabled
+      const deleteButton = screen.getByTestId("delete-column-column-1");
+      expect(deleteButton).toBeDisabled();
+      expect(deleteButton).toHaveClass("text-gray-400");
+      expect(deleteButton).toHaveClass("cursor-not-allowed");
+    });
+    
+    it("shows an enabled delete option for board owners", () => {
+      renderColumn({ isBoardOwner: true });
+      
+      // Open the menu
+      const menuButton = screen.getByTestId("column-menu-column-1");
+      fireEvent.click(menuButton);
+      
+      // Find the delete button and check it's enabled
+      const deleteButton = screen.getByTestId("delete-column-column-1");
+      expect(deleteButton).not.toBeDisabled();
+      expect(deleteButton).toHaveClass("text-red-600");
+      expect(deleteButton).toHaveClass("hover:bg-gray-100");
+      expect(deleteButton).toHaveClass("cursor-pointer");
+    });
+    
+    it("calls deleteColumn when delete button is clicked by board owner", async () => {
+      // Import deleteColumn from the mock
+      const { deleteColumn } = await import("../../services/boardService");
+      // Setup the mock to return success
+      vi.mocked(deleteColumn).mockResolvedValue({ success: true });
+      
+      renderColumn({ isBoardOwner: true });
+      
+      // Open the menu
+      const menuButton = screen.getByTestId("column-menu-column-1");
+      fireEvent.click(menuButton);
+      
+      // Click the delete button
+      const deleteButton = screen.getByTestId("delete-column-column-1");
+      fireEvent.click(deleteButton);
+      
+      // Check if deleteColumn was called correctly
+      await waitFor(() => {
+        expect(deleteColumn).toHaveBeenCalledTimes(1);
+        expect(vi.mocked(deleteColumn)).toHaveBeenCalledWith(
+          mockBoardId,
+          mockColumnId
+        );
+      });
+    });
+    
+    it("handles error when deleteColumn fails", async () => {
+      // Spy on console.error
+      const consoleErrorSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+        
+      // Import deleteColumn from the mock
+      const { deleteColumn } = await import("../../services/boardService");
+      // Setup the mock to return failure
+      vi.mocked(deleteColumn).mockResolvedValue({ 
+        success: false,
+        error: "Failed to delete column" 
+      });
+      
+      renderColumn({ isBoardOwner: true });
+      
+      // Open the menu
+      const menuButton = screen.getByTestId("column-menu-column-1");
+      fireEvent.click(menuButton);
+      
+      // Click the delete button
+      const deleteButton = screen.getByTestId("delete-column-column-1");
+      fireEvent.click(deleteButton);
+      
+      // Check if error was logged
+      await waitFor(() => {
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+          "Failed to delete column:",
+          "Failed to delete column"
+        );
+      });
+      
+      consoleErrorSpy.mockRestore();
+    });
+    
+    it("closes the menu when clicking outside", () => {
+      renderColumn();
+      
+      // Open the menu
+      const menuButton = screen.getByTestId("column-menu-column-1");
+      fireEvent.click(menuButton);
+      
+      // The dropdown should be visible
+      expect(screen.getByText("Delete column")).toBeInTheDocument();
+      
+      // Click outside the menu
+      fireEvent.mouseDown(document.body);
+      
+      // Now the dropdown should be hidden
+      expect(screen.queryByText("Delete column")).not.toBeInTheDocument();
+    });
   });
 });

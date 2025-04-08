@@ -1042,6 +1042,7 @@ export default function Board() {
                   title={column.title}
                   boardId={boardId!}
                   sortByVotes={columnSortStates[column.id] || false}
+                  isBoardOwner={board.facilitatorId === user?.uid}
                   onSortToggle={async () => {
                     const newSortState = !columnSortStates[column.id];
                     try {

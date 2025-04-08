@@ -171,20 +171,25 @@ exports[`Board > creates a snapshot of the component 1`] = `
                     Sort
                   </span>
                 </button>
-                <button
-                  class="text-blue-600 hover:text-blue-700 cursor-pointer"
+                <div
+                  class="relative"
                 >
-                  <span
-                    data-testid="morevertical-icon"
+                  <button
+                    class="text-blue-600 hover:text-blue-700 cursor-pointer"
+                    data-testid="column-menu-col1"
                   >
-                    MoreVertical
-                  </span>
-                  <span
-                    class="sr-only"
-                  >
-                    More options
-                  </span>
-                </button>
+                    <span
+                      data-testid="morevertical-icon"
+                    >
+                      MoreVertical
+                    </span>
+                    <span
+                      class="sr-only"
+                    >
+                      More options
+                    </span>
+                  </button>
+                </div>
               </div>
             </div>
             <div
@@ -247,20 +252,25 @@ exports[`Board > creates a snapshot of the component 1`] = `
                     Sort
                   </span>
                 </button>
-                <button
-                  class="text-blue-600 hover:text-blue-700 cursor-pointer"
+                <div
+                  class="relative"
                 >
-                  <span
-                    data-testid="morevertical-icon"
+                  <button
+                    class="text-blue-600 hover:text-blue-700 cursor-pointer"
+                    data-testid="column-menu-col2"
                   >
-                    MoreVertical
-                  </span>
-                  <span
-                    class="sr-only"
-                  >
-                    More options
-                  </span>
-                </button>
+                    <span
+                      data-testid="morevertical-icon"
+                    >
+                      MoreVertical
+                    </span>
+                    <span
+                      class="sr-only"
+                    >
+                      More options
+                    </span>
+                  </button>
+                </div>
               </div>
             </div>
             <div
@@ -323,20 +333,25 @@ exports[`Board > creates a snapshot of the component 1`] = `
                     Sort
                   </span>
                 </button>
-                <button
-                  class="text-blue-600 hover:text-blue-700 cursor-pointer"
+                <div
+                  class="relative"
                 >
-                  <span
-                    data-testid="morevertical-icon"
+                  <button
+                    class="text-blue-600 hover:text-blue-700 cursor-pointer"
+                    data-testid="column-menu-col3"
                   >
-                    MoreVertical
-                  </span>
-                  <span
-                    class="sr-only"
-                  >
-                    More options
-                  </span>
-                </button>
+                    <span
+                      data-testid="morevertical-icon"
+                    >
+                      MoreVertical
+                    </span>
+                    <span
+                      class="sr-only"
+                    >
+                      More options
+                    </span>
+                  </button>
+                </div>
               </div>
             </div>
             <div

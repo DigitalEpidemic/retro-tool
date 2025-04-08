@@ -1,7 +1,7 @@
 import { ArrowUpDown, MoreVertical } from "lucide-react"; // Import icons
-import React from "react";
+import React, { useRef, useState } from "react";
 import { useFirebase } from "../contexts/FirebaseContext"; // To get user ID
-import { addCard } from "../services/boardService"; // To add new cards
+import { addCard, deleteColumn } from "../services/boardService"; // To add new cards and delete columns
 
 interface ColumnProps {
   id: string;
@@ -9,6 +9,7 @@ interface ColumnProps {
   boardId: string;
   sortByVotes: boolean;
   onSortToggle: () => void;
+  isBoardOwner: boolean; // Add prop to check if the current user is the board owner
   children: React.ReactNode; // To render Droppable content from Board.tsx
 }
 
@@ -18,11 +19,28 @@ export default function Column({
   boardId,
   sortByVotes,
   onSortToggle,
+  isBoardOwner,
   children,
 }: ColumnProps) {
   const { user } = useFirebase();
   const [newCardContent, setNewCardContent] = React.useState("");
   const [isAddingCard, setIsAddingCard] = React.useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   // Map column titles to RetroTool style titles based on the id
   const getMappedTitle = () => {
@@ -54,6 +72,20 @@ export default function Column({
     }
   };
 
+  const handleDeleteColumn = async () => {
+    if (!isBoardOwner) return;
+    
+    try {
+      const result = await deleteColumn(boardId, id);
+      if (!result.success) {
+        console.error("Failed to delete column:", result.error);
+      }
+      setIsMenuOpen(false);
+    } catch (error) {
+      console.error("Error deleting column:", error);
+    }
+  };
+
   return (
     <div className="w-full bg-white flex flex-col h-full overflow-hidden">
       {/* Column header */}
@@ -71,10 +103,33 @@ export default function Column({
             <ArrowUpDown className="h-4 w-4" />
             <span className="sr-only">Sort</span>
           </button>
-          <button className="text-blue-600 hover:text-blue-700 cursor-pointer">
-            <MoreVertical className="h-4 w-4" />
-            <span className="sr-only">More options</span>
-          </button>
+          <div className="relative" ref={menuRef}>
+            <button 
+              className="text-blue-600 hover:text-blue-700 cursor-pointer"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              data-testid={`column-menu-${id}`}
+            >
+              <MoreVertical className="h-4 w-4" />
+              <span className="sr-only">More options</span>
+            </button>
+            
+            {isMenuOpen && (
+              <div className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg py-1 z-10 border border-gray-200">
+                <button
+                  className={`w-full text-left px-4 py-2 text-sm ${
+                    isBoardOwner 
+                      ? "text-red-600 hover:bg-gray-100 cursor-pointer" 
+                      : "text-gray-400 cursor-not-allowed"
+                  }`}
+                  onClick={handleDeleteColumn}
+                  disabled={!isBoardOwner}
+                  data-testid={`delete-column-${id}`}
+                >
+                  Delete column
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

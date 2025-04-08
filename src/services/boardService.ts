@@ -640,3 +640,54 @@ export const deleteBoard = async (boardId: string, userId: string) => {
     throw error;
   }
 };
+
+// Delete a column from a board
+export const deleteColumn = async (boardId: string, columnId: string) => {
+  try {
+    // 1. Get the board document
+    const boardRef = doc(db, "boards", boardId);
+    const boardSnap = await getDoc(boardRef);
+    
+    if (!boardSnap.exists()) {
+      throw new Error(`Board with ID ${boardId} not found`);
+    }
+    
+    // 2. Get the board data and update columns
+    const boardData = boardSnap.data() as Board;
+    const columns = boardData.columns || {};
+    
+    // Create a new columns object without the deleted column
+    const updatedColumns = { ...columns };
+    delete updatedColumns[columnId];
+    
+    // 3. Update the board document with the modified columns
+    await updateDoc(boardRef, {
+      columns: updatedColumns
+    });
+    
+    // 4. Delete all cards associated with this column
+    const cardsQuery = query(
+      collection(db, "cards"),
+      where("boardId", "==", boardId),
+      where("columnId", "==", columnId)
+    );
+    
+    const querySnapshot = await getDocs(cardsQuery);
+    const batch = writeBatch(db);
+    
+    querySnapshot.forEach((document) => {
+      batch.delete(doc(db, "cards", document.id));
+    });
+    
+    // Commit the batch delete
+    await batch.commit();
+    
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting column:", error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : "Unknown error" 
+    };
+  }
+};
