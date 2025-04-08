@@ -657,6 +657,9 @@ describe("Board", () => {
     // Reset mockNavigate for this test
     mockNavigate.mockReset();
 
+    // Mock console.log to prevent output and allow verification
+    const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
     render(
       <MemoryRouter initialEntries={["/board/non-existent-board"]}>
         <Routes>
@@ -670,8 +673,15 @@ describe("Board", () => {
       expect(mockNavigate).toHaveBeenCalledWith("/");
     });
 
-    // After navigation occurs, the error wouldn't be visible anymore in this component
-    // The error handling would need to be done in the home component
+    // Verify the log message was correct
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      expect.stringContaining(
+        "Board non-existent-board not found, redirecting to home page"
+      )
+    );
+
+    // Restore console.log
+    consoleLogSpy.mockRestore();
   });
 
   it("displays error when board subscription returns null", async () => {
@@ -691,6 +701,9 @@ describe("Board", () => {
 
     // Reset mockNavigate for this test
     mockNavigate.mockReset();
+
+    // Mock console.log to prevent output and allow verification
+    const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
     render(
       <MemoryRouter initialEntries={["/board/non-existent-board"]}>
@@ -715,8 +728,15 @@ describe("Board", () => {
       expect(mockNavigate).toHaveBeenCalledWith("/");
     });
 
-    // After navigation occurs, the error wouldn't be visible anymore in this component
-    // The error handling would need to be done in the home component
+    // Verify the log message was correct
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      expect.stringContaining(
+        "Board non-existent-board not found in subscription, redirecting to home"
+      )
+    );
+
+    // Restore console.log
+    consoleLogSpy.mockRestore();
   });
 
   it("displays error when initial getDoc fails unexpectedly", async () => {
@@ -753,6 +773,9 @@ describe("Board", () => {
     // Clear the navigate mock to track navigation
     mockNavigate.mockClear();
 
+    // Mock console.log to prevent output and allow verification
+    const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
     // Render the component with a board ID that doesn't exist
     render(
       <MemoryRouter initialEntries={["/board/non-existent-board"]}>
@@ -770,6 +793,16 @@ describe("Board", () => {
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith("/");
     });
+
+    // Verify the log message was correct
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      expect.stringContaining(
+        "Board non-existent-board not found, redirecting to home page"
+      )
+    );
+
+    // Restore console.log
+    consoleLogSpy.mockRestore();
 
     // Verify that createBoard was not called
     expect(boardService.createBoard).not.toHaveBeenCalled();
@@ -870,6 +903,9 @@ describe("Board", () => {
     // Reset mockNavigate for this test
     mockNavigate.mockReset();
 
+    // Mock console.log to prevent output and allow verification
+    const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
     render(
       <MemoryRouter initialEntries={["/board/test-board-id"]}>
         <Routes>
@@ -892,6 +928,16 @@ describe("Board", () => {
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith("/");
     });
+
+    // Verify the log message was correct
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      expect.stringContaining(
+        "Board test-board-id not found in subscription, redirecting to home"
+      )
+    );
+
+    // Restore console.log
+    consoleLogSpy.mockRestore();
   });
 
   it("displays error if startTimer fails", async () => {
