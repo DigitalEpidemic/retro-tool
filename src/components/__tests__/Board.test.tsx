@@ -801,77 +801,6 @@ describe("Board", () => {
     expect(boardService.createBoard).not.toHaveBeenCalled();
   });
 
-  describe("Column Sorting", () => {
-    it("handles toggling column sort state", async () => {
-      const user = userEvent.setup();
-
-      await act(async () => {
-        render(
-          <MemoryRouter initialEntries={["/boards/test-board-id"]}>
-            <Routes>
-              <Route path="/boards/:boardId" element={<Board />} />
-            </Routes>
-          </MemoryRouter>
-        );
-      });
-
-      const sortButton = screen.getByTestId("sort-toggle-col1");
-      await user.click(sortButton);
-
-      expect(boardService.updateColumnSortState).toHaveBeenCalledWith(
-        "test-board-id",
-        "col1",
-        true
-      );
-    });
-
-    it("sorts cards by position by default", async () => {
-      expect(mockBoard.columns.col1.sortByVotes).toBe(false);
-
-      const cards = [
-        { id: "1", position: 1, votes: 5 },
-        { id: "2", position: 0, votes: 2 },
-      ];
-
-      const sorted = [...cards].sort((a, b) => a.position - b.position);
-      expect(sorted[0].id).toBe("2");
-      expect(sorted[1].id).toBe("1");
-    });
-
-    it("sorts cards by votes when toggled", async () => {
-      const user = userEvent.setup();
-
-      await act(async () => {
-        render(
-          <MemoryRouter initialEntries={["/boards/test-board-id"]}>
-            <Routes>
-              <Route path="/boards/:boardId" element={<Board />} />
-            </Routes>
-          </MemoryRouter>
-        );
-      });
-
-      const sortButton = screen.getByTestId("sort-toggle-col1");
-
-      await user.click(sortButton);
-
-      expect(boardService.updateColumnSortState).toHaveBeenCalledWith(
-        "test-board-id",
-        "col1",
-        true
-      );
-
-      const cards = [
-        { id: "1", position: 1, votes: 5 },
-        { id: "2", position: 0, votes: 2 },
-      ];
-
-      const sortedCards = [...cards].sort((a, b) => b.votes - a.votes);
-      expect(sortedCards[0].id).toBe("1");
-      expect(sortedCards[1].id).toBe("2");
-    });
-  });
-
   it("marks cards as owned if the user is the author", async () => {
     await act(async () => {
       render(
@@ -1297,99 +1226,161 @@ describe("Board", () => {
     );
   });
 
-  describe("Action Points Panel", () => {
-    it("should toggle action points panel when action points button is clicked", async () => {
-      await renderBoard();
+  it("should toggle action points panel when action points button is clicked", async () => {
+    await renderBoard();
 
-      const actionPointsButton = screen.getByRole("button", {
-        name: /action points/i,
-      });
-
-      expect(
-        screen.queryByTestId("action-points-panel")
-      ).not.toBeInTheDocument();
-
-      await act(async () => {
-        fireEvent.click(actionPointsButton);
-      });
-
-      expect(screen.getByTestId("action-points-panel")).toBeInTheDocument();
-
-      await act(async () => {
-        fireEvent.click(actionPointsButton);
-      });
-
-      expect(
-        screen.queryByTestId("action-points-panel")
-      ).not.toBeInTheDocument();
+    const actionPointsButton = screen.getByRole("button", {
+      name: /action points/i,
     });
+
+    expect(screen.queryByTestId("action-points-panel")).not.toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.click(actionPointsButton);
+    });
+
+    expect(screen.getByTestId("action-points-panel")).toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.click(actionPointsButton);
+    });
+
+    expect(screen.queryByTestId("action-points-panel")).not.toBeInTheDocument();
   });
 
-  // Add a test for AddColumnPlaceholder visibility
-  describe("Add Column Placeholder", () => {
-    it("should show AddColumnPlaceholder for board creator when enabled", async () => {
-      // Set up Firebase context mock with a user that matches the creator ID
-      vi.spyOn(FirebaseContext, "useFirebase").mockReturnValue({
-        user: { ...mockUser, uid: "test-creator-id" },
-        loading: false,
-        error: null,
-        updateUserDisplayName: vi.fn(),
+  it("should show AddColumnPlaceholder for board creator when enabled", async () => {
+    // Set up Firebase context mock with a user that matches the creator ID
+    vi.spyOn(FirebaseContext, "useFirebase").mockReturnValue({
+      user: { ...mockUser, uid: "test-creator-id" },
+      loading: false,
+      error: null,
+      updateUserDisplayName: vi.fn(),
+    });
+
+    // Mock board subscription to return a board with a matching facilitatorId and showAddColumnPlaceholder enabled
+    const mockUnsubscribe = vi.fn();
+
+    vi.spyOn(boardService, "subscribeToBoard").mockImplementation(
+      (boardId, callback) => {
+        setTimeout(() => {
+          callback({
+            id: "test-board-id",
+            name: "Test Board",
+            createdAt: createMockTimestamp(),
+            isActive: true,
+            columns: {
+              col1: { id: "col1", title: "What went well", order: 0 },
+            },
+            facilitatorId: "test-creator-id", // Set creator ID to match the user
+            showAddColumnPlaceholder: true, // Enable placeholder
+            timerIsRunning: false,
+            timerDurationSeconds: 300,
+          });
+        }, 0);
+        return mockUnsubscribe;
+      }
+    );
+
+    // Render the component
+    render(
+      <MemoryRouter initialEntries={["/board/test-board-id"]}>
+        <Routes>
+          <Route path="/board/:boardId" element={<Board />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    // Wait for loading to complete
+    await waitFor(() => {
+      expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
+    });
+
+    // Verify that the conditions needed for AddColumnPlaceholder to render are correct
+    // 1. Check the mocked user ID matches the board creator ID
+    const user = vi.mocked(FirebaseContext.useFirebase)().user;
+    expect(user?.uid).toBe("test-creator-id");
+
+    // 2. Confirm the board data has showAddColumnPlaceholder set to true
+    const mockBoardData = {
+      id: "test-board-id",
+      name: "Test Board",
+      facilitatorId: "test-creator-id",
+      showAddColumnPlaceholder: true,
+    };
+
+    // With these conditions satisfied, the AddColumnPlaceholder should be rendered in the Board component
+    expect(mockBoardData.facilitatorId).toBe(user?.uid);
+    expect(mockBoardData.showAddColumnPlaceholder).toBe(true);
+  });
+
+  describe("Column Sorting", () => {
+    it("handles toggling column sort state", async () => {
+      const user = userEvent.setup();
+
+      await act(async () => {
+        render(
+          <MemoryRouter initialEntries={["/boards/test-board-id"]}>
+            <Routes>
+              <Route path="/boards/:boardId" element={<Board />} />
+            </Routes>
+          </MemoryRouter>
+        );
       });
 
-      // Mock board subscription to return a board with a matching facilitatorId and showAddColumnPlaceholder enabled
-      const mockUnsubscribe = vi.fn();
+      const sortButton = screen.getByTestId("sort-toggle-col1");
+      await user.click(sortButton);
 
-      vi.spyOn(boardService, "subscribeToBoard").mockImplementation(
-        (boardId, callback) => {
-          setTimeout(() => {
-            callback({
-              id: "test-board-id",
-              name: "Test Board",
-              createdAt: createMockTimestamp(),
-              isActive: true,
-              columns: {
-                col1: { id: "col1", title: "What went well", order: 0 },
-              },
-              facilitatorId: "test-creator-id", // Set creator ID to match the user
-              showAddColumnPlaceholder: true, // Enable placeholder
-              timerIsRunning: false,
-              timerDurationSeconds: 300,
-            });
-          }, 0);
-          return mockUnsubscribe;
-        }
+      expect(boardService.updateColumnSortState).toHaveBeenCalledWith(
+        "test-board-id",
+        "col1",
+        true
       );
+    });
 
-      // Render the component
-      render(
-        <MemoryRouter initialEntries={["/board/test-board-id"]}>
-          <Routes>
-            <Route path="/board/:boardId" element={<Board />} />
-          </Routes>
-        </MemoryRouter>
-      );
+    it("sorts cards by position by default", async () => {
+      expect(mockBoard.columns.col1.sortByVotes).toBe(false);
 
-      // Wait for loading to complete
-      await waitFor(() => {
-        expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
+      const cards = [
+        { id: "1", position: 1, votes: 5 },
+        { id: "2", position: 0, votes: 2 },
+      ];
+
+      const sorted = [...cards].sort((a, b) => a.position - b.position);
+      expect(sorted[0].id).toBe("2");
+      expect(sorted[1].id).toBe("1");
+    });
+
+    it("sorts cards by votes when toggled", async () => {
+      const user = userEvent.setup();
+
+      await act(async () => {
+        render(
+          <MemoryRouter initialEntries={["/boards/test-board-id"]}>
+            <Routes>
+              <Route path="/boards/:boardId" element={<Board />} />
+            </Routes>
+          </MemoryRouter>
+        );
       });
 
-      // Verify that the conditions needed for AddColumnPlaceholder to render are correct
-      // 1. Check the mocked user ID matches the board creator ID
-      const user = vi.mocked(FirebaseContext.useFirebase)().user;
-      expect(user?.uid).toBe("test-creator-id");
+      const sortButton = screen.getByTestId("sort-toggle-col1");
 
-      // 2. Confirm the board data has showAddColumnPlaceholder set to true
-      const mockBoardData = {
-        id: "test-board-id",
-        name: "Test Board",
-        facilitatorId: "test-creator-id",
-        showAddColumnPlaceholder: true,
-      };
+      await user.click(sortButton);
 
-      // With these conditions satisfied, the AddColumnPlaceholder should be rendered in the Board component
-      expect(mockBoardData.facilitatorId).toBe(user?.uid);
-      expect(mockBoardData.showAddColumnPlaceholder).toBe(true);
+      expect(boardService.updateColumnSortState).toHaveBeenCalledWith(
+        "test-board-id",
+        "col1",
+        true
+      );
+
+      const cards = [
+        { id: "1", position: 1, votes: 5 },
+        { id: "2", position: 0, votes: 2 },
+      ];
+
+      const sortedCards = [...cards].sort((a, b) => b.votes - a.votes);
+      expect(sortedCards[0].id).toBe("1");
+      expect(sortedCards[1].id).toBe("2");
     });
   });
 });
