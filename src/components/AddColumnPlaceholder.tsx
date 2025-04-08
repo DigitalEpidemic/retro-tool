@@ -41,7 +41,7 @@ export default function AddColumnPlaceholder({ boardId, onColumnAdded }: AddColu
   if (isAddingColumn) {
     return (
       <div className="border-r border-l border-gray-200 bg-white rounded shadow-sm h-full flex flex-col overflow-hidden">
-        <div className="flex justify-between items-center px-4 py-3 border-b border-gray-200">
+        <div className="flex justify-between items-center px-4 py-3 border-b border-gray-200 flex-shrink-0">
           <h2 className="text-lg font-medium text-gray-800">New Column</h2>
         </div>
         

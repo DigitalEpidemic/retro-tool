@@ -1058,88 +1058,94 @@ export default function Board() {
       />
 
       <DragDropContext onDragEnd={handleDragEnd}>
-        <div className={`grid ${board.facilitatorId === user?.uid ? 'auto-cols-fr' : 'grid-cols-3'} gap-6 px-6 py-4 flex-1 overflow-hidden`} style={{
-          gridTemplateColumns: board.facilitatorId === user?.uid ? `repeat(${Math.min(Object.keys(board.columns).length + 1, 4)}, minmax(0, 1fr))` : ''
-        }}>
-          {Object.values(board.columns)
-            .sort((a: ColumnType, b: ColumnType) => a.order - b.order)
-            .map((column: ColumnType) => (
-              <div
-                key={column.id}
-                className="border-r border-l border-gray-200 bg-white rounded shadow-sm h-full flex flex-col overflow-hidden"
-                data-testid={`column-${column.id}`}
-                data-title={column.title}
-              >
-                <Column
-                  id={column.id}
-                  title={column.title}
-                  boardId={boardId!}
-                  sortByVotes={columnSortStates[column.id] || false}
-                  isBoardOwner={board.facilitatorId === user?.uid}
-                  onSortToggle={async () => {
-                    const newSortState = !columnSortStates[column.id];
-                    try {
-                      await updateColumnSortState(
-                        boardId!,
-                        column.id,
-                        newSortState
-                      );
-                      setColumnSortStates((prev) => ({
-                        ...prev,
-                        [column.id]: newSortState,
-                      }));
-                    } catch (error) {
-                      console.error("Error updating sort state:", error);
-                    }
-                  }}
+        <div className="flex-1 px-6 py-4 overflow-hidden">
+          <div className="grid h-full gap-6" 
+            style={{
+              gridTemplateColumns: `repeat(${board.facilitatorId === user?.uid && showAddColumnPlaceholder 
+                ? Math.min(Object.keys(board.columns).length + 1, 4) 
+                : Math.min(Object.keys(board.columns).length, 4)}, minmax(0, 1fr))`,
+              gridAutoFlow: "column dense"
+            }}>
+            {Object.values(board.columns)
+              .sort((a: ColumnType, b: ColumnType) => a.order - b.order)
+              .map((column: ColumnType) => (
+                <div
+                  key={column.id}
+                  className="border-r border-l border-gray-200 bg-white rounded shadow-sm h-full flex flex-col overflow-hidden"
+                  data-testid={`column-${column.id}`}
+                  data-title={column.title}
                 >
-                  <Droppable droppableId={column.id}>
-                    {(provided) => (
-                      <div
-                        {...provided.droppableProps}
-                        ref={provided.innerRef}
-                        className="h-full overflow-y-scroll scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400"
-                      >
-                        {cards
-                          .filter((card) => card.columnId === column.id)
-                          .sort((a, b) =>
-                            columnSortStates[column.id]
-                              ? b.votes - a.votes
-                              : a.position - b.position
-                          )
-                          .map((card, index) => (
-                            <Draggable
-                              key={card.id}
-                              draggableId={card.id}
-                              index={index}
-                            >
-                              {(provided) => (
-                                <CardComponent
-                                  provided={provided}
-                                  card={card}
-                                  isOwner={card.authorId === user?.uid}
-                                />
-                              )}
-                            </Draggable>
-                          ))}
-                        {provided.placeholder}
-                      </div>
-                    )}
-                  </Droppable>
-                </Column>
-              </div>
-            ))}
+                  <Column
+                    id={column.id}
+                    title={column.title}
+                    boardId={boardId!}
+                    sortByVotes={columnSortStates[column.id] || false}
+                    isBoardOwner={board.facilitatorId === user?.uid}
+                    onSortToggle={async () => {
+                      const newSortState = !columnSortStates[column.id];
+                      try {
+                        await updateColumnSortState(
+                          boardId!,
+                          column.id,
+                          newSortState
+                        );
+                        setColumnSortStates((prev) => ({
+                          ...prev,
+                          [column.id]: newSortState,
+                        }));
+                      } catch (error) {
+                        console.error("Error updating sort state:", error);
+                      }
+                    }}
+                  >
+                    <Droppable droppableId={column.id}>
+                      {(provided) => (
+                        <div
+                          {...provided.droppableProps}
+                          ref={provided.innerRef}
+                          className="h-full overflow-y-scroll scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400"
+                        >
+                          {cards
+                            .filter((card) => card.columnId === column.id)
+                            .sort((a, b) =>
+                              columnSortStates[column.id]
+                                ? b.votes - a.votes
+                                : a.position - b.position
+                            )
+                            .map((card, index) => (
+                              <Draggable
+                                key={card.id}
+                                draggableId={card.id}
+                                index={index}
+                              >
+                                {(provided) => (
+                                  <CardComponent
+                                    provided={provided}
+                                    card={card}
+                                    isOwner={card.authorId === user?.uid}
+                                  />
+                                )}
+                              </Draggable>
+                            ))}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
+                  </Column>
+                </div>
+              ))}
             
-          {/* Add Column Placeholder - only visible to board owner and when showAddColumnPlaceholder is true */}
-          {board.facilitatorId === user?.uid && showAddColumnPlaceholder && (
-            <AddColumnPlaceholder 
-              boardId={boardId!}
-              onColumnAdded={() => {
-                // Optional callback when a new column is added
-                // Could refresh data or show notification
-              }}
-            />
-          )}
+            {/* Add Column Placeholder - only visible to board owner and when showAddColumnPlaceholder is true */}
+            {board.facilitatorId === user?.uid && showAddColumnPlaceholder && (
+              <AddColumnPlaceholder 
+                boardId={boardId!}
+                onColumnAdded={() => {
+                  // Optional callback when a new column is added
+                  // Could refresh data or show notification
+                }}
+              />
+            )}
+          </div>
         </div>
       </DragDropContext>
     </div>

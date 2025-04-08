@@ -87,9 +87,9 @@ export default function Column({
   };
 
   return (
-    <div className="w-full bg-white flex flex-col h-full overflow-hidden">
+    <div className="w-full h-full bg-white flex flex-col overflow-hidden">
       {/* Column header */}
-      <div className="flex justify-between items-center px-4 py-3 border-b border-gray-200">
+      <div className="flex justify-between items-center px-4 py-3 border-b border-gray-200 flex-shrink-0">
         <h2 className="text-lg font-medium text-gray-800">
           {getMappedTitle()}
         </h2>
@@ -137,12 +137,11 @@ export default function Column({
       <div className="flex-grow overflow-y-auto p-3 space-y-3">{children}</div>
 
       {/* Add card section */}
-      {/* TODO: Enter to save */}
       {isAddingCard ? (
         <form
           onSubmit={handleAddCard}
-          className="p-3 border-t border-gray-200"
-          data-testid="add-card-form" // Add data-testid here
+          className="p-3 border-t border-gray-200 flex-shrink-0"
+          data-testid="add-card-form"
         >
           <textarea
             value={newCardContent}
@@ -171,7 +170,7 @@ export default function Column({
           </div>
         </form>
       ) : (
-        <div className="p-3 border-t border-gray-200">
+        <div className="p-3 border-t border-gray-200 flex-shrink-0">
           <button
             onClick={() => setIsAddingCard(true)}
             className="w-full p-2 text-sm text-blue-600 bg-gray-50 hover:bg-gray-100 rounded flex items-center justify-center cursor-pointer"
