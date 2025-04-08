@@ -3,10 +3,10 @@
 exports[`Column > matches snapshot 1`] = `
 <div>
   <div
-    class="w-full bg-white flex flex-col h-full overflow-hidden"
+    class="w-full h-full bg-white flex flex-col overflow-hidden"
   >
     <div
-      class="flex justify-between items-center px-4 py-3 border-b border-gray-200"
+      class="flex justify-between items-center px-4 py-3 border-b border-gray-200 flex-shrink-0"
     >
       <h2
         class="text-lg font-medium text-gray-800"
@@ -58,7 +58,7 @@ exports[`Column > matches snapshot 1`] = `
       </div>
     </div>
     <div
-      class="p-3 border-t border-gray-200"
+      class="p-3 border-t border-gray-200 flex-shrink-0"
     >
       <button
         class="w-full p-2 text-sm text-blue-600 bg-gray-50 hover:bg-gray-100 rounded flex items-center justify-center cursor-pointer"
@@ -73,10 +73,10 @@ exports[`Column > matches snapshot 1`] = `
 exports[`Column > matches snapshot when adding card 1`] = `
 <div>
   <div
-    class="w-full bg-white flex flex-col h-full overflow-hidden"
+    class="w-full h-full bg-white flex flex-col overflow-hidden"
   >
     <div
-      class="flex justify-between items-center px-4 py-3 border-b border-gray-200"
+      class="flex justify-between items-center px-4 py-3 border-b border-gray-200 flex-shrink-0"
     >
       <h2
         class="text-lg font-medium text-gray-800"
@@ -128,7 +128,7 @@ exports[`Column > matches snapshot when adding card 1`] = `
       </div>
     </div>
     <form
-      class="p-3 border-t border-gray-200"
+      class="p-3 border-t border-gray-200 flex-shrink-0"
       data-testid="add-card-form"
     >
       <textarea
@@ -162,10 +162,10 @@ exports[`Column > matches snapshot when adding card 1`] = `
 exports[`Column > matches snapshot when sorted by votes 1`] = `
 <div>
   <div
-    class="w-full bg-white flex flex-col h-full overflow-hidden"
+    class="w-full h-full bg-white flex flex-col overflow-hidden"
   >
     <div
-      class="flex justify-between items-center px-4 py-3 border-b border-gray-200"
+      class="flex justify-between items-center px-4 py-3 border-b border-gray-200 flex-shrink-0"
     >
       <h2
         class="text-lg font-medium text-gray-800"
@@ -222,7 +222,7 @@ exports[`Column > matches snapshot when sorted by votes 1`] = `
       </div>
     </div>
     <div
-      class="p-3 border-t border-gray-200"
+      class="p-3 border-t border-gray-200 flex-shrink-0"
     >
       <button
         class="w-full p-2 text-sm text-blue-600 bg-gray-50 hover:bg-gray-100 rounded flex items-center justify-center cursor-pointer"

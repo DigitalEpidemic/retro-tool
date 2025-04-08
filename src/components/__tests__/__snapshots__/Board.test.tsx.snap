@@ -135,248 +135,253 @@ exports[`Board > creates a snapshot of the component 1`] = `
       data-testid="drag-drop-context"
     >
       <div
-        class="grid grid-cols-3 gap-6 px-6 py-4 flex-1 overflow-hidden"
+        class="flex-1 px-6 py-4 overflow-hidden"
       >
         <div
-          class="border-r border-l border-gray-200 bg-white rounded shadow-sm h-full flex flex-col overflow-hidden"
-          data-testid="column-col1"
-          data-title="What went well"
+          class="grid h-full gap-6"
+          style="grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-flow: column dense;"
         >
           <div
-            class="w-full bg-white flex flex-col h-full overflow-hidden"
+            class="border-r border-l border-gray-200 bg-white rounded shadow-sm h-full flex flex-col overflow-hidden"
+            data-testid="column-col1"
+            data-title="What went well"
           >
             <div
-              class="flex justify-between items-center px-4 py-3 border-b border-gray-200"
+              class="w-full h-full bg-white flex flex-col overflow-hidden"
             >
-              <h2
-                class="text-lg font-medium text-gray-800"
-              >
-                What went well
-              </h2>
               <div
-                class="flex items-center space-x-2"
+                class="flex justify-between items-center px-4 py-3 border-b border-gray-200 flex-shrink-0"
               >
-                <button
-                  class="flex items-center text-blue-600 hover:text-blue-700 cursor-pointer"
-                  data-testid="sort-toggle-col1"
+                <h2
+                  class="text-lg font-medium text-gray-800"
                 >
-                  <span
-                    data-testid="arrowupdown-icon"
-                  >
-                    ArrowUpDown
-                  </span>
-                  <span
-                    class="sr-only"
-                  >
-                    Sort
-                  </span>
-                </button>
+                  What went well
+                </h2>
                 <div
-                  class="relative"
+                  class="flex items-center space-x-2"
                 >
                   <button
-                    class="text-blue-600 hover:text-blue-700 cursor-pointer"
-                    data-testid="column-menu-col1"
+                    class="flex items-center text-blue-600 hover:text-blue-700 cursor-pointer"
+                    data-testid="sort-toggle-col1"
                   >
                     <span
-                      data-testid="morevertical-icon"
+                      data-testid="arrowupdown-icon"
                     >
-                      MoreVertical
+                      ArrowUpDown
                     </span>
                     <span
                       class="sr-only"
                     >
-                      More options
+                      Sort
                     </span>
                   </button>
+                  <div
+                    class="relative"
+                  >
+                    <button
+                      class="text-blue-600 hover:text-blue-700 cursor-pointer"
+                      data-testid="column-menu-col1"
+                    >
+                      <span
+                        data-testid="morevertical-icon"
+                      >
+                        MoreVertical
+                      </span>
+                      <span
+                        class="sr-only"
+                      >
+                        More options
+                      </span>
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div
-              class="flex-grow overflow-y-auto p-3 space-y-3"
-            >
               <div
-                class="h-full overflow-y-scroll scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400"
-                data-testid="droppable-col1"
+                class="flex-grow overflow-y-auto p-3 space-y-3"
               >
                 <div
-                  data-card-data="{"id":"card1","boardId":"test-board-id","columnId":"col1","content":"Test Card 1","authorId":"test-user-id","authorName":"Test User","createdAt":{},"votes":3,"position":0}"
-                  data-testid="draggable-card1"
+                  class="h-full overflow-y-scroll scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400"
+                  data-testid="droppable-col1"
                 >
-                  Test Card 1
+                  <div
+                    data-card-data="{"id":"card1","boardId":"test-board-id","columnId":"col1","content":"Test Card 1","authorId":"test-user-id","authorName":"Test User","createdAt":{},"votes":3,"position":0}"
+                    data-testid="draggable-card1"
+                  >
+                    Test Card 1
+                  </div>
                 </div>
               </div>
-            </div>
-            <div
-              class="p-3 border-t border-gray-200"
-            >
-              <button
-                class="w-full p-2 text-sm text-blue-600 bg-gray-50 hover:bg-gray-100 rounded flex items-center justify-center cursor-pointer"
+              <div
+                class="p-3 border-t border-gray-200 flex-shrink-0"
               >
-                + Add a card
-              </button>
+                <button
+                  class="w-full p-2 text-sm text-blue-600 bg-gray-50 hover:bg-gray-100 rounded flex items-center justify-center cursor-pointer"
+                >
+                  + Add a card
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-        <div
-          class="border-r border-l border-gray-200 bg-white rounded shadow-sm h-full flex flex-col overflow-hidden"
-          data-testid="column-col2"
-          data-title="What can be improved"
-        >
           <div
-            class="w-full bg-white flex flex-col h-full overflow-hidden"
+            class="border-r border-l border-gray-200 bg-white rounded shadow-sm h-full flex flex-col overflow-hidden"
+            data-testid="column-col2"
+            data-title="What can be improved"
           >
             <div
-              class="flex justify-between items-center px-4 py-3 border-b border-gray-200"
+              class="w-full h-full bg-white flex flex-col overflow-hidden"
             >
-              <h2
-                class="text-lg font-medium text-gray-800"
-              >
-                What can be improved
-              </h2>
               <div
-                class="flex items-center space-x-2"
+                class="flex justify-between items-center px-4 py-3 border-b border-gray-200 flex-shrink-0"
               >
-                <button
-                  class="flex items-center text-blue-600 hover:text-blue-700 cursor-pointer"
-                  data-testid="sort-toggle-col2"
+                <h2
+                  class="text-lg font-medium text-gray-800"
                 >
-                  <span
-                    data-testid="arrowupdown-icon"
-                  >
-                    ArrowUpDown
-                  </span>
-                  <span
-                    class="sr-only"
-                  >
-                    Sort
-                  </span>
-                </button>
+                  What can be improved
+                </h2>
                 <div
-                  class="relative"
+                  class="flex items-center space-x-2"
                 >
                   <button
-                    class="text-blue-600 hover:text-blue-700 cursor-pointer"
-                    data-testid="column-menu-col2"
+                    class="flex items-center text-blue-600 hover:text-blue-700 cursor-pointer"
+                    data-testid="sort-toggle-col2"
                   >
                     <span
-                      data-testid="morevertical-icon"
+                      data-testid="arrowupdown-icon"
                     >
-                      MoreVertical
+                      ArrowUpDown
                     </span>
                     <span
                       class="sr-only"
                     >
-                      More options
+                      Sort
                     </span>
                   </button>
+                  <div
+                    class="relative"
+                  >
+                    <button
+                      class="text-blue-600 hover:text-blue-700 cursor-pointer"
+                      data-testid="column-menu-col2"
+                    >
+                      <span
+                        data-testid="morevertical-icon"
+                      >
+                        MoreVertical
+                      </span>
+                      <span
+                        class="sr-only"
+                      >
+                        More options
+                      </span>
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div
-              class="flex-grow overflow-y-auto p-3 space-y-3"
-            >
               <div
-                class="h-full overflow-y-scroll scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400"
-                data-testid="droppable-col2"
+                class="flex-grow overflow-y-auto p-3 space-y-3"
               >
                 <div
-                  data-card-data="{"id":"card2","boardId":"test-board-id","columnId":"col2","content":"Test Card 2","authorId":"other-user-id","authorName":"Other User","createdAt":{},"votes":1,"position":0}"
-                  data-testid="draggable-card2"
+                  class="h-full overflow-y-scroll scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400"
+                  data-testid="droppable-col2"
                 >
-                  Test Card 2
+                  <div
+                    data-card-data="{"id":"card2","boardId":"test-board-id","columnId":"col2","content":"Test Card 2","authorId":"other-user-id","authorName":"Other User","createdAt":{},"votes":1,"position":0}"
+                    data-testid="draggable-card2"
+                  >
+                    Test Card 2
+                  </div>
                 </div>
               </div>
-            </div>
-            <div
-              class="p-3 border-t border-gray-200"
-            >
-              <button
-                class="w-full p-2 text-sm text-blue-600 bg-gray-50 hover:bg-gray-100 rounded flex items-center justify-center cursor-pointer"
+              <div
+                class="p-3 border-t border-gray-200 flex-shrink-0"
               >
-                + Add a card
-              </button>
+                <button
+                  class="w-full p-2 text-sm text-blue-600 bg-gray-50 hover:bg-gray-100 rounded flex items-center justify-center cursor-pointer"
+                >
+                  + Add a card
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-        <div
-          class="border-r border-l border-gray-200 bg-white rounded shadow-sm h-full flex flex-col overflow-hidden"
-          data-testid="column-col3"
-          data-title="Action items"
-        >
           <div
-            class="w-full bg-white flex flex-col h-full overflow-hidden"
+            class="border-r border-l border-gray-200 bg-white rounded shadow-sm h-full flex flex-col overflow-hidden"
+            data-testid="column-col3"
+            data-title="Action items"
           >
             <div
-              class="flex justify-between items-center px-4 py-3 border-b border-gray-200"
+              class="w-full h-full bg-white flex flex-col overflow-hidden"
             >
-              <h2
-                class="text-lg font-medium text-gray-800"
-              >
-                Action items
-              </h2>
               <div
-                class="flex items-center space-x-2"
+                class="flex justify-between items-center px-4 py-3 border-b border-gray-200 flex-shrink-0"
               >
-                <button
-                  class="flex items-center text-blue-600 hover:text-blue-700 cursor-pointer"
-                  data-testid="sort-toggle-col3"
+                <h2
+                  class="text-lg font-medium text-gray-800"
                 >
-                  <span
-                    data-testid="arrowupdown-icon"
-                  >
-                    ArrowUpDown
-                  </span>
-                  <span
-                    class="sr-only"
-                  >
-                    Sort
-                  </span>
-                </button>
+                  Action items
+                </h2>
                 <div
-                  class="relative"
+                  class="flex items-center space-x-2"
                 >
                   <button
-                    class="text-blue-600 hover:text-blue-700 cursor-pointer"
-                    data-testid="column-menu-col3"
+                    class="flex items-center text-blue-600 hover:text-blue-700 cursor-pointer"
+                    data-testid="sort-toggle-col3"
                   >
                     <span
-                      data-testid="morevertical-icon"
+                      data-testid="arrowupdown-icon"
                     >
-                      MoreVertical
+                      ArrowUpDown
                     </span>
                     <span
                       class="sr-only"
                     >
-                      More options
+                      Sort
                     </span>
                   </button>
+                  <div
+                    class="relative"
+                  >
+                    <button
+                      class="text-blue-600 hover:text-blue-700 cursor-pointer"
+                      data-testid="column-menu-col3"
+                    >
+                      <span
+                        data-testid="morevertical-icon"
+                      >
+                        MoreVertical
+                      </span>
+                      <span
+                        class="sr-only"
+                      >
+                        More options
+                      </span>
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div
-              class="flex-grow overflow-y-auto p-3 space-y-3"
-            >
               <div
-                class="h-full overflow-y-scroll scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400"
-                data-testid="droppable-col3"
+                class="flex-grow overflow-y-auto p-3 space-y-3"
               >
                 <div
-                  data-card-data="{"id":"card3","boardId":"test-board-id","columnId":"col3","content":"Test Card 3","authorId":"test-user-id","authorName":"Test User","createdAt":{},"votes":0,"position":0}"
-                  data-testid="draggable-card3"
+                  class="h-full overflow-y-scroll scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400"
+                  data-testid="droppable-col3"
                 >
-                  Test Card 3
+                  <div
+                    data-card-data="{"id":"card3","boardId":"test-board-id","columnId":"col3","content":"Test Card 3","authorId":"test-user-id","authorName":"Test User","createdAt":{},"votes":0,"position":0}"
+                    data-testid="draggable-card3"
+                  >
+                    Test Card 3
+                  </div>
                 </div>
               </div>
-            </div>
-            <div
-              class="p-3 border-t border-gray-200"
-            >
-              <button
-                class="w-full p-2 text-sm text-blue-600 bg-gray-50 hover:bg-gray-100 rounded flex items-center justify-center cursor-pointer"
+              <div
+                class="p-3 border-t border-gray-200 flex-shrink-0"
               >
-                + Add a card
-              </button>
+                <button
+                  class="w-full p-2 text-sm text-blue-600 bg-gray-50 hover:bg-gray-100 rounded flex items-center justify-center cursor-pointer"
+                >
+                  + Add a card
+                </button>
+              </div>
             </div>
           </div>
         </div>

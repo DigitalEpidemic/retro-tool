@@ -151,6 +151,14 @@ export default function Column({
             className="w-full rounded-none border-none bg-gray-100 text-sm p-3 mb-2 resize-none focus:ring-0"
             required
             autoFocus
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if (newCardContent.trim() && user) {
+                  handleAddCard(e);
+                }
+              }
+            }}
           />
           <div className="flex justify-end space-x-2">
             <button
