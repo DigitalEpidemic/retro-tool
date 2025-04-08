@@ -2,7 +2,6 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { User as FirebaseUser } from "firebase/auth";
 import { Timestamp, updateDoc } from "firebase/firestore";
-import React from "react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as FirebaseContext from "../../contexts/FirebaseContext";
@@ -83,133 +82,6 @@ vi.mock("@hello-pangea/dnd", () => {
   };
 });
 
-vi.mock("lucide-react", () => {
-  const mockIcon = (name: string) =>
-    function MockIcon() {
-      return <span data-testid={`${name.toLowerCase()}-icon`}>{name}</span>;
-    };
-
-  return {
-    Users: mockIcon("Users"),
-    TrendingUp: mockIcon("TrendingUp"),
-    Share2: mockIcon("Share2"),
-    Settings: mockIcon("Settings"),
-    Play: mockIcon("Play"),
-    Pause: mockIcon("Pause"),
-    RotateCcw: mockIcon("RotateCcw"),
-    Download: mockIcon("Download"),
-    X: mockIcon("X"),
-    Edit2: mockIcon("Edit2"),
-    Check: mockIcon("Check"),
-    Plus: mockIcon("Plus"),
-    ArrowUpDown: mockIcon("ArrowUpDown"),
-    EllipsisVertical: mockIcon("EllipsisVertical"),
-    MoreVertical: mockIcon("MoreVertical"),
-    Trash2: mockIcon("Trash2"),
-    AlertCircle: mockIcon("AlertCircle"),
-    Eye: mockIcon("Eye"),
-    EyeOff: mockIcon("EyeOff"),
-  };
-});
-
-vi.mock("../ParticipantsPanel", () => ({
-  default: vi
-    .fn()
-    .mockImplementation(({ isOpen }) =>
-      isOpen ? (
-        <div data-testid="participants-panel">Participants Panel</div>
-      ) : null
-    ),
-}));
-
-vi.mock("../ActionPointsPanel", () => {
-  const mockComponent = vi.fn(({ isOpen }) =>
-    isOpen ? (
-      <div data-testid="action-points-panel">Action Points Panel</div>
-    ) : null
-  );
-  return {
-    __esModule: true,
-    default: mockComponent,
-    ActionPoint: { id: "string", text: "string", completed: false },
-  };
-});
-
-vi.mock("../ExportModal", () => ({
-  default: vi
-    .fn()
-    .mockImplementation(({ isOpen }) =>
-      isOpen ? <div data-testid="export-modal">Export Modal</div> : null
-    ),
-}));
-
-vi.mock("../OptionsPanel", () => ({
-  default: vi
-    .fn()
-    .mockImplementation(
-      ({
-        isOpen,
-        onDeleteBoard,
-        isBoardCreator,
-        showAddColumnPlaceholder = true,
-        onToggleAddColumnPlaceholder = () => {},
-      }) => {
-        // Using useState within the mock to track deletion confirmation state
-        const [isConfirmingDelete, setIsConfirmingDelete] =
-          React.useState(false);
-
-        if (!isOpen) return null;
-
-        return (
-          <div data-testid="options-panel">
-            <div>Options Panel</div>
-
-            {isConfirmingDelete ? (
-              <div>
-                <p>Are you sure you want to delete this board?</p>
-                <button
-                  data-testid="cancel-delete"
-                  onClick={() => setIsConfirmingDelete(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  data-testid="confirm-delete"
-                  onClick={() => onDeleteBoard()}
-                >
-                  Yes, Delete Board
-                </button>
-              </div>
-            ) : (
-              <button
-                data-testid="delete-board-button"
-                disabled={!isBoardCreator}
-                onClick={() => isBoardCreator && setIsConfirmingDelete(true)}
-              >
-                Delete Board
-              </button>
-            )}
-
-            {!isBoardCreator && (
-              <div>Only the board creator can delete this board</div>
-            )}
-          </div>
-        );
-      }
-    ),
-}));
-
-vi.mock("../AddColumnPlaceholder", () => ({
-  default: vi.fn().mockImplementation(() => (
-    <div data-testid="add-column-placeholder">
-      <h3 className="text-lg font-medium text-gray-800 mb-2">
-        Create New Column
-      </h3>
-      <button>Create Column</button>
-    </div>
-  )),
-}));
-
 vi.mock("../../services/boardService", () => {
   return {
     subscribeToBoard: vi.fn(() => vi.fn()),
@@ -217,21 +89,7 @@ vi.mock("../../services/boardService", () => {
     startTimer: vi.fn(() => Promise.resolve()),
     pauseTimer: vi.fn(() => Promise.resolve()),
     resetTimer: vi.fn(() => Promise.resolve()),
-    updateColumnSortState: vi.fn(() => Promise.resolve()),
-    subscribeToParticipants: vi.fn(() => vi.fn()),
-    updateParticipantNameFirestore: vi.fn(() => Promise.resolve()),
-    updateParticipantNameRTDB: vi.fn(() => Promise.resolve()),
     joinBoard: vi.fn(() => Promise.resolve()),
-    deleteBoard: vi.fn((boardId, userId) => Promise.resolve(true)),
-    testFirestoreWrite: vi.fn(() => Promise.resolve()),
-    cleanupInactiveUsers: vi.fn(() => Promise.resolve()),
-    updateShowAddColumnPlaceholder: vi.fn(() =>
-      Promise.resolve({ success: true })
-    ),
-    addColumn: vi.fn().mockResolvedValue({
-      success: true,
-      columnId: "new-column-id",
-    }),
   };
 });
 
@@ -280,34 +138,6 @@ vi.mock("firebase/firestore", () => {
   };
 });
 
-vi.mock("../Card", () => ({
-  default: ({ card, provided }: any) => (
-    <div
-      data-testid={`card-${card.id}`}
-      data-card-data={JSON.stringify(card)}
-      {...provided?.draggableProps}
-    >
-      {card.content}
-    </div>
-  ),
-}));
-
-const mockUser = {
-  uid: "test-user-id",
-  displayName: "Test User",
-  emailVerified: false,
-  isAnonymous: true,
-  metadata: {},
-  providerData: [],
-  refreshToken: "",
-  tenantId: null,
-  delete: vi.fn(),
-  getIdToken: vi.fn(),
-  getIdTokenResult: vi.fn(),
-  reload: vi.fn(),
-  toJSON: vi.fn(),
-} as unknown as FirebaseUser;
-
 const mockBoard: BoardType = {
   id: "test-board-id",
   name: "Test Board",
@@ -336,42 +166,6 @@ const mockBoard: BoardType = {
   facilitatorId: "test-user-id",
 };
 
-const mockCards = [
-  {
-    id: "card1",
-    boardId: "test-board-id",
-    columnId: "col1",
-    content: "Test Card 1",
-    authorId: "test-user-id",
-    authorName: "Test User",
-    createdAt: Timestamp.now(),
-    votes: 3,
-    position: 0,
-  },
-  {
-    id: "card2",
-    boardId: "test-board-id",
-    columnId: "col2",
-    content: "Test Card 2",
-    authorId: "other-user-id",
-    authorName: "Other User",
-    createdAt: Timestamp.now(),
-    votes: 1,
-    position: 0,
-  },
-  {
-    id: "card3",
-    boardId: "test-board-id",
-    columnId: "col3",
-    content: "Test Card 3",
-    authorId: "test-user-id",
-    authorName: "Test User",
-    createdAt: Timestamp.now(),
-    votes: 0,
-    position: 0,
-  },
-];
-
 vi.mock("../../services/presenceService", () => ({
   setupPresence: vi.fn().mockReturnValue(() => {}),
   subscribeToParticipants: vi.fn((boardId, callback) => {
@@ -391,21 +185,7 @@ vi.mock("../../services/presenceService", () => ({
   updateParticipantName: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock("../../services/actionPointsService", () => ({
-  addActionPoint: vi.fn().mockResolvedValue({
-    id: "test-ap-id",
-    text: "Test Action Point",
-    completed: false,
-  }),
-  deleteActionPoint: vi.fn().mockResolvedValue({}),
-  toggleActionPoint: vi.fn().mockResolvedValue({}),
-  getActionPoints: vi.fn().mockResolvedValue([]),
-}));
-
-// Mock for navigate function
 const mockNavigate = vi.fn();
-
-// Mock react-router-dom
 vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual("react-router-dom");
   return {
@@ -422,7 +202,7 @@ describe("Timer Functionality", () => {
     mockDocData = { name: "Test Board" };
 
     vi.mocked(FirebaseContext.useFirebase).mockReturnValue({
-      user: mockUser,
+      user: {} as FirebaseUser,
       loading: false,
       error: null,
     });
@@ -439,7 +219,7 @@ describe("Timer Functionality", () => {
     vi.mocked(boardService.subscribeToCards).mockImplementation(
       (boardId, callback) => {
         act(() => {
-          callback(mockCards);
+          callback([]);
         });
         return vi.fn();
       }
