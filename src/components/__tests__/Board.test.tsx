@@ -1,7 +1,6 @@
 import type { DropResult } from "@hello-pangea/dnd";
 import {
   act,
-  cleanup,
   fireEvent,
   render,
   screen,
@@ -11,6 +10,7 @@ import userEvent from "@testing-library/user-event";
 import type { User as FirebaseUser } from "firebase/auth";
 import * as firestore from "firebase/firestore";
 import { Timestamp, updateDoc } from "firebase/firestore";
+import React from "react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as FirebaseContext from "../../contexts/FirebaseContext";
@@ -18,7 +18,6 @@ import * as boardService from "../../services/boardService";
 import type { Board as BoardType } from "../../services/firebase";
 import * as presenceService from "../../services/presenceService";
 import Board from "../Board";
-import React from "react";
 
 const createMockDocSnap = (
   exists = true,
@@ -162,65 +161,68 @@ vi.mock("../ExportModal", () => ({
 vi.mock("../OptionsPanel", () => ({
   default: vi
     .fn()
-    .mockImplementation(({ 
-      isOpen, 
-      onDeleteBoard,
-      isBoardCreator,
-      showAddColumnPlaceholder = true,
-      onToggleAddColumnPlaceholder = () => {} 
-    }) => {
-      // Using useState within the mock to track deletion confirmation state
-      const [isConfirmingDelete, setIsConfirmingDelete] = React.useState(false);
-      
-      if (!isOpen) return null;
-      
-      return (
-        <div data-testid="options-panel">
-          <div>Options Panel</div>
-          
-          {isConfirmingDelete ? (
-            <div>
-              <p>Are you sure you want to delete this board?</p>
-              <button 
-                data-testid="cancel-delete"
-                onClick={() => setIsConfirmingDelete(false)}
+    .mockImplementation(
+      ({
+        isOpen,
+        onDeleteBoard,
+        isBoardCreator,
+        showAddColumnPlaceholder = true,
+        onToggleAddColumnPlaceholder = () => {},
+      }) => {
+        // Using useState within the mock to track deletion confirmation state
+        const [isConfirmingDelete, setIsConfirmingDelete] =
+          React.useState(false);
+
+        if (!isOpen) return null;
+
+        return (
+          <div data-testid="options-panel">
+            <div>Options Panel</div>
+
+            {isConfirmingDelete ? (
+              <div>
+                <p>Are you sure you want to delete this board?</p>
+                <button
+                  data-testid="cancel-delete"
+                  onClick={() => setIsConfirmingDelete(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  data-testid="confirm-delete"
+                  onClick={() => onDeleteBoard()}
+                >
+                  Yes, Delete Board
+                </button>
+              </div>
+            ) : (
+              <button
+                data-testid="delete-board-button"
+                disabled={!isBoardCreator}
+                onClick={() => isBoardCreator && setIsConfirmingDelete(true)}
               >
-                Cancel
+                Delete Board
               </button>
-              <button 
-                data-testid="confirm-delete"
-                onClick={() => onDeleteBoard()}
-              >
-                Yes, Delete Board
-              </button>
-            </div>
-          ) : (
-            <button 
-              data-testid="delete-board-button"
-              disabled={!isBoardCreator}
-              onClick={() => isBoardCreator && setIsConfirmingDelete(true)}
-            >
-              Delete Board
-            </button>
-          )}
-          
-          {!isBoardCreator && (
-            <div>Only the board creator can delete this board</div>
-          )}
-        </div>
-      );
-    }),
+            )}
+
+            {!isBoardCreator && (
+              <div>Only the board creator can delete this board</div>
+            )}
+          </div>
+        );
+      }
+    ),
 }));
 
 vi.mock("../AddColumnPlaceholder", () => ({
-  default: vi
-    .fn()
-    .mockImplementation(() => (
-      <div data-testid="add-column-placeholder">
-        <h3 className="text-lg font-medium text-gray-800 mb-2">Create New Column</h3>
-        <button>Create Column</button>
-      </div>
-    )),
+  default: vi.fn().mockImplementation(() => (
+    <div data-testid="add-column-placeholder">
+      <h3 className="text-lg font-medium text-gray-800 mb-2">
+        Create New Column
+      </h3>
+      <button>Create Column</button>
+    </div>
+  )),
 }));
 
 vi.mock("../../services/boardService", () => {
@@ -331,7 +333,9 @@ vi.mock("../../services/boardService", () => {
     deleteBoard: vi.fn((boardId, userId) => Promise.resolve(true)),
     testFirestoreWrite: vi.fn(() => Promise.resolve()),
     cleanupInactiveUsers: vi.fn(() => Promise.resolve()),
-    updateShowAddColumnPlaceholder: vi.fn(() => Promise.resolve({ success: true })),
+    updateShowAddColumnPlaceholder: vi.fn(() =>
+      Promise.resolve({ success: true })
+    ),
     addColumn: vi.fn().mockResolvedValue({
       success: true,
       columnId: "new-column-id",
@@ -2156,10 +2160,10 @@ describe("Board", () => {
 
       // Instead of relying on the options panel, we'll directly test deleteBoard functionality
       // This simulates what would happen after clicking through the options panel
-      const handleDeleteBoardMock = vi.spyOn(boardService, 'deleteBoard');
-      
+      const handleDeleteBoardMock = vi.spyOn(boardService, "deleteBoard");
+
       // Simulate the Board component's handleDeleteBoard function by calling deleteBoard directly
-      await boardService.deleteBoard('test-board-id', 'test-creator-id');
+      await boardService.deleteBoard("test-board-id", "test-creator-id");
 
       // Verify deleteBoard was called with the correct parameters
       expect(handleDeleteBoardMock).toHaveBeenCalledWith(
@@ -2274,7 +2278,9 @@ describe("Board", () => {
       vi.spyOn(boardService, "deleteBoard").mockRejectedValue(deleteError);
 
       // Capture console.error calls
-      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const consoleErrorSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
 
       // Render the board component
       render(
@@ -2429,25 +2435,27 @@ describe("Board", () => {
 
       // Mock board subscription to return a board with a matching facilitatorId and showAddColumnPlaceholder enabled
       const mockUnsubscribe = vi.fn();
-      
-      vi.spyOn(boardService, "subscribeToBoard").mockImplementation((boardId, callback) => {
-        setTimeout(() => {
-          callback({
-            id: "test-board-id",
-            name: "Test Board",
-            createdAt: createMockTimestamp(),
-            isActive: true,
-            columns: {
-              col1: { id: "col1", title: "What went well", order: 0 },
-            },
-            facilitatorId: "test-creator-id", // Set creator ID to match the user
-            showAddColumnPlaceholder: true,    // Enable placeholder
-            timerIsRunning: false,
-            timerDurationSeconds: 300,
-          });
-        }, 0);
-        return mockUnsubscribe;
-      });
+
+      vi.spyOn(boardService, "subscribeToBoard").mockImplementation(
+        (boardId, callback) => {
+          setTimeout(() => {
+            callback({
+              id: "test-board-id",
+              name: "Test Board",
+              createdAt: createMockTimestamp(),
+              isActive: true,
+              columns: {
+                col1: { id: "col1", title: "What went well", order: 0 },
+              },
+              facilitatorId: "test-creator-id", // Set creator ID to match the user
+              showAddColumnPlaceholder: true, // Enable placeholder
+              timerIsRunning: false,
+              timerDurationSeconds: 300,
+            });
+          }, 0);
+          return mockUnsubscribe;
+        }
+      );
 
       // Render the component
       render(
@@ -2467,15 +2475,15 @@ describe("Board", () => {
       // 1. Check the mocked user ID matches the board creator ID
       const user = vi.mocked(FirebaseContext.useFirebase)().user;
       expect(user?.uid).toBe("test-creator-id");
-      
+
       // 2. Confirm the board data has showAddColumnPlaceholder set to true
       const mockBoardData = {
         id: "test-board-id",
         name: "Test Board",
         facilitatorId: "test-creator-id",
-        showAddColumnPlaceholder: true
+        showAddColumnPlaceholder: true,
       };
-      
+
       // With these conditions satisfied, the AddColumnPlaceholder should be rendered in the Board component
       expect(mockBoardData.facilitatorId).toBe(user?.uid);
       expect(mockBoardData.showAddColumnPlaceholder).toBe(true);
