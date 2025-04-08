@@ -162,45 +162,6 @@ vi.mock("../Column", () => ({
   ),
 }));
 
-// Mock @hello-pangea/dnd drag and drop functionality
-vi.mock("@hello-pangea/dnd", () => {
-  return {
-    DragDropContext: function DragDropContext(props: any) {
-      const handleClick = () => {
-        if (props.onDragEnd) {
-          props.onDragEnd({
-            destination: { droppableId: "col1", index: 0 },
-            source: { droppableId: "col1", index: 0 },
-            draggableId: "card1",
-            type: "DEFAULT",
-          });
-        }
-      };
-
-      return (
-        <div data-testid="drag-drop-context" onClick={handleClick}>
-          {props.children}
-        </div>
-      );
-    },
-    Droppable: (props: any) =>
-      props.children({
-        draggableProps: {},
-        innerRef: () => {},
-        placeholder: null,
-        droppableId: props.droppableId,
-      }),
-    Draggable: (props: any) =>
-      props.children({
-        draggableProps: {},
-        dragHandleProps: {},
-        innerRef: () => {},
-        draggableId: props.draggableId,
-      }),
-  };
-});
-
-// Mock the ParticipantsPanel component
 interface ParticipantsPanelProps {
   isOpen: boolean;
   onClose: () => void;

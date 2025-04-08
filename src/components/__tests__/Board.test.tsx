@@ -66,31 +66,6 @@ vi.mock("../../services/firebase", () => {
   };
 });
 
-vi.mock("@hello-pangea/dnd", () => {
-  return {
-    DragDropContext: ({ children, onDragEnd }: any) => {
-      window.capturedOnDragEnd = onDragEnd;
-      return <div data-testid="drag-drop-context">{children}</div>;
-    },
-    Droppable: ({ children, droppableId }: any) => {
-      const provided = {
-        innerRef: vi.fn(),
-        droppableProps: { "data-testid": `droppable-${droppableId}` },
-        placeholder: null,
-      };
-      return children(provided);
-    },
-    Draggable: ({ children, draggableId }: any) => {
-      const provided = {
-        innerRef: vi.fn(),
-        draggableProps: { "data-testid": `draggable-${draggableId}` },
-        dragHandleProps: {},
-      };
-      return children(provided);
-    },
-  };
-});
-
 vi.mock("lucide-react", () => {
   const mockIcon = (name: string) =>
     function MockIcon() {
@@ -502,10 +477,7 @@ vi.mock("../../services/actionPointsService", () => ({
   getActionPoints: vi.fn().mockResolvedValue([]),
 }));
 
-// Mock for navigate function
 const mockNavigate = vi.fn();
-
-// Mock react-router-dom
 vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual("react-router-dom");
   return {

@@ -53,6 +53,17 @@ Object.defineProperty(window, "matchMedia", {
   })),
 });
 
+// Set up the global mock for @hello-pangea/dnd
+// This tells Vitest to use our mock implementation for all tests
+vi.mock("@hello-pangea/dnd", async () => {
+  // Import the mock implementation
+  const actual = await import("./test/mocks/@hello-pangea/dnd");
+  return actual;
+});
+
+// Disable DnD development warnings
+window['__react-beautiful-dnd-disable-dev-warnings'] = true;
+
 // Suppress console errors during tests
 const originalConsoleError = console.error;
 console.error = (...args: any[]) => {
@@ -60,6 +71,9 @@ console.error = (...args: any[]) => {
   const ignoredErrors = [
     "Error: Not implemented: navigation",
     "Warning: ReactDOM.render is no longer supported",
+    // Add DnD related warnings here if needed
+    "Unable to find draggable with id",
+    "Invariant failed: Draggable"
   ];
 
   if (
@@ -75,5 +89,6 @@ console.error = (...args: any[]) => {
 declare global {
   interface Window {
     capturedOnDragEnd: ((result: DropResult) => void) | null;
+    '__react-beautiful-dnd-disable-dev-warnings': boolean;
   }
 }

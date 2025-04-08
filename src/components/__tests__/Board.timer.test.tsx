@@ -57,31 +57,6 @@ vi.mock("../../services/firebase", () => {
   };
 });
 
-vi.mock("@hello-pangea/dnd", () => {
-  return {
-    DragDropContext: ({ children, onDragEnd }: any) => {
-      window.capturedOnDragEnd = onDragEnd;
-      return <div data-testid="drag-drop-context">{children}</div>;
-    },
-    Droppable: ({ children, droppableId }: any) => {
-      const provided = {
-        innerRef: vi.fn(),
-        droppableProps: { "data-testid": `droppable-${droppableId}` },
-        placeholder: null,
-      };
-      return children(provided);
-    },
-    Draggable: ({ children, draggableId }: any) => {
-      const provided = {
-        innerRef: vi.fn(),
-        draggableProps: { "data-testid": `draggable-${draggableId}` },
-        dragHandleProps: {},
-      };
-      return children(provided);
-    },
-  };
-});
-
 vi.mock("../../services/boardService", () => {
   return {
     subscribeToBoard: vi.fn(() => vi.fn()),
