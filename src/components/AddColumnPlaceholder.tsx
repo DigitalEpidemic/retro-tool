@@ -1,5 +1,5 @@
-import React, { useState } from "react";
 import { Plus } from "lucide-react";
+import React, { useState } from "react";
 import { addColumn } from "../services/boardService";
 
 interface AddColumnPlaceholderProps {
@@ -7,7 +7,10 @@ interface AddColumnPlaceholderProps {
   onColumnAdded?: () => void;
 }
 
-export default function AddColumnPlaceholder({ boardId, onColumnAdded }: AddColumnPlaceholderProps) {
+export default function AddColumnPlaceholder({
+  boardId,
+  onColumnAdded,
+}: AddColumnPlaceholderProps) {
   const [isAddingColumn, setIsAddingColumn] = useState(false);
   const [columnTitle, setColumnTitle] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -22,7 +25,7 @@ export default function AddColumnPlaceholder({ boardId, onColumnAdded }: AddColu
 
     try {
       const result = await addColumn(boardId, columnTitle.trim());
-      
+
       if (result.success) {
         setColumnTitle("");
         setIsAddingColumn(false);
@@ -44,7 +47,7 @@ export default function AddColumnPlaceholder({ boardId, onColumnAdded }: AddColu
         <div className="flex justify-between items-center px-4 py-3 border-b border-gray-200 flex-shrink-0">
           <h2 className="text-lg font-medium text-gray-800">New Column</h2>
         </div>
-        
+
         <div className="flex-grow overflow-y-auto p-6 flex flex-col justify-center">
           <form onSubmit={handleAddColumn} className="space-y-4">
             {error && (
@@ -52,9 +55,12 @@ export default function AddColumnPlaceholder({ boardId, onColumnAdded }: AddColu
                 {error}
               </div>
             )}
-            
+
             <div>
-              <label htmlFor="columnTitle" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="columnTitle"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Column Title
               </label>
               <input
@@ -68,7 +74,7 @@ export default function AddColumnPlaceholder({ boardId, onColumnAdded }: AddColu
                 required
               />
             </div>
-            
+
             <div className="flex space-x-2 justify-end">
               <button
                 type="button"
@@ -98,7 +104,9 @@ export default function AddColumnPlaceholder({ boardId, onColumnAdded }: AddColu
         <div className="bg-blue-100 rounded-full p-3 mb-4">
           <Plus className="h-6 w-6 text-blue-600" />
         </div>
-        <h3 className="text-lg font-medium text-gray-800 mb-2">Create New Column</h3>
+        <h3 className="text-lg font-medium text-gray-800 mb-2">
+          Create New Column
+        </h3>
         <p className="text-sm text-gray-500 mb-4">
           Add a new column to collect feedback in different categories
         </p>
@@ -112,4 +120,4 @@ export default function AddColumnPlaceholder({ boardId, onColumnAdded }: AddColu
       </div>
     </div>
   );
-} 
+}

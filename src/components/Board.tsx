@@ -46,13 +46,13 @@ import {
 } from "../services/boardService";
 import { Board as BoardType, Card as CardType, db } from "../services/firebase";
 import ActionPointsPanel, { ActionPoint } from "./ActionPointsPanel"; // Import ActionPointsPanel
+import AddColumnPlaceholder from "./AddColumnPlaceholder"; // Import the AddColumnPlaceholder component
 import CardComponent from "./Card";
 import Column from "./Column";
 import ExportModal from "./ExportModal"; // Import the ExportModal component
 import OptionsPanel from "./OptionsPanel"; // Import the OptionsPanel component
 import ParticipantsPanel from "./ParticipantsPanel"; // Add ParticipantsPanel import
 import ShareModal from "./ShareModal"; // Import the ShareModal component
-import AddColumnPlaceholder from "./AddColumnPlaceholder"; // Import the AddColumnPlaceholder component
 
 // Import the new presence service
 import { OnlineUser } from "../services/firebase";
@@ -92,7 +92,8 @@ export default function Board() {
   const initialDurationSeconds = 300; // 5 minutes (default)
   const inputRef = useRef<HTMLInputElement>(null); // Ref for the input element
   const escapePressedRef = useRef(false); // Ref to track if blur was triggered by Escape
-  const [showAddColumnPlaceholder, setShowAddColumnPlaceholder] = useState<boolean>(true);
+  const [showAddColumnPlaceholder, setShowAddColumnPlaceholder] =
+    useState<boolean>(true);
 
   useEffect(() => {
     // Don't proceed if auth is still loading or if there's no boardId
@@ -166,9 +167,11 @@ export default function Board() {
           } else {
             setActionPoints([]);
           }
-          
+
           // Initialize showAddColumnPlaceholder from board data
-          setShowAddColumnPlaceholder(boardData.showAddColumnPlaceholder !== false);
+          setShowAddColumnPlaceholder(
+            boardData.showAddColumnPlaceholder !== false
+          );
 
           setLoading(false); // Set loading false once we get *any* snapshot
         });
@@ -822,18 +825,21 @@ export default function Board() {
   // Handle toggling the add column placeholder visibility
   const handleToggleAddColumnPlaceholder = async (show: boolean) => {
     if (!boardId) return;
-    
+
     try {
       // Update local state optimistically
       setShowAddColumnPlaceholder(show);
-      
+
       // Update in Firestore
       const result = await updateShowAddColumnPlaceholder(boardId, show);
-      
+
       if (!result.success) {
         // Revert state if the update failed
         setShowAddColumnPlaceholder(!show);
-        console.error("Failed to update column placeholder visibility:", result.error);
+        console.error(
+          "Failed to update column placeholder visibility:",
+          result.error
+        );
       }
     } catch (error) {
       // Revert state on error
@@ -1059,13 +1065,17 @@ export default function Board() {
 
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className="flex-1 px-6 py-4 overflow-hidden">
-          <div className="grid h-full gap-6" 
+          <div
+            className="grid h-full gap-6"
             style={{
-              gridTemplateColumns: `repeat(${board.facilitatorId === user?.uid && showAddColumnPlaceholder 
-                ? Math.min(Object.keys(board.columns).length + 1, 4) 
-                : Math.min(Object.keys(board.columns).length, 4)}, minmax(0, 1fr))`,
-              gridAutoFlow: "column dense"
-            }}>
+              gridTemplateColumns: `repeat(${
+                board.facilitatorId === user?.uid && showAddColumnPlaceholder
+                  ? Math.min(Object.keys(board.columns).length + 1, 4)
+                  : Math.min(Object.keys(board.columns).length, 4)
+              }, minmax(0, 1fr))`,
+              gridAutoFlow: "column dense",
+            }}
+          >
             {Object.values(board.columns)
               .sort((a: ColumnType, b: ColumnType) => a.order - b.order)
               .map((column: ColumnType) => (
@@ -1134,10 +1144,10 @@ export default function Board() {
                   </Column>
                 </div>
               ))}
-            
+
             {/* Add Column Placeholder - only visible to board owner and when showAddColumnPlaceholder is true */}
             {board.facilitatorId === user?.uid && showAddColumnPlaceholder && (
-              <AddColumnPlaceholder 
+              <AddColumnPlaceholder
                 boardId={boardId!}
                 onColumnAdded={() => {
                   // Optional callback when a new column is added

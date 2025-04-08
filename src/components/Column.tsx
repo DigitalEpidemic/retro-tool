@@ -74,7 +74,7 @@ export default function Column({
 
   const handleDeleteColumn = async () => {
     if (!isBoardOwner) return;
-    
+
     try {
       const result = await deleteColumn(boardId, id);
       if (!result.success) {
@@ -104,7 +104,7 @@ export default function Column({
             <span className="sr-only">Sort</span>
           </button>
           <div className="relative" ref={menuRef}>
-            <button 
+            <button
               className="text-blue-600 hover:text-blue-700 cursor-pointer"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               data-testid={`column-menu-${id}`}
@@ -112,13 +112,13 @@ export default function Column({
               <MoreVertical className="h-4 w-4" />
               <span className="sr-only">More options</span>
             </button>
-            
+
             {isMenuOpen && (
               <div className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
                 <button
                   className={`w-full text-left px-4 py-2 text-sm ${
-                    isBoardOwner 
-                      ? "text-red-600 hover:bg-gray-100 cursor-pointer" 
+                    isBoardOwner
+                      ? "text-red-600 hover:bg-gray-100 cursor-pointer"
                       : "text-gray-400 cursor-not-allowed"
                   }`}
                   onClick={handleDeleteColumn}
