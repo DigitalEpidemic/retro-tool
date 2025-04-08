@@ -114,7 +114,7 @@ export default function Column({
             </button>
             
             {isMenuOpen && (
-              <div className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg py-1 z-10 border border-gray-200">
+              <div className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
                 <button
                   className={`w-full text-left px-4 py-2 text-sm ${
                     isBoardOwner 
