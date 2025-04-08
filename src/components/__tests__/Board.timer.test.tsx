@@ -219,101 +219,8 @@ vi.mock("../AddColumnPlaceholder", () => ({
 
 vi.mock("../../services/boardService", () => {
   return {
-    subscribeToBoard: vi.fn((boardId, callback) => {
-      setTimeout(() => {
-        callback({
-          id: "test-board-id",
-          name: "Test Board",
-          createdAt: createMockTimestamp(),
-          isActive: true,
-          columns: {
-            col1: {
-              id: "col1",
-              title: "What went well",
-              order: 0,
-              sortByVotes: false,
-            },
-            col2: {
-              id: "col2",
-              title: "What can be improved",
-              order: 1,
-              sortByVotes: false,
-            },
-            col3: {
-              id: "col3",
-              title: "Action items",
-              order: 2,
-              sortByVotes: false,
-            },
-          },
-          facilitatorId: "test-user-id",
-          timerIsRunning: false,
-          timerDurationSeconds: 300,
-          timerPausedDurationSeconds: undefined,
-          timerOriginalDurationSeconds: 300,
-          timerStartTime: createMockTimestamp(),
-          actionPoints: [
-            { id: "ap1", text: "Test Action Point 1", completed: false },
-            { id: "ap2", text: "Test Action Point 2", completed: true },
-          ],
-          showAddColumnPlaceholder: true,
-        });
-      }, 0);
-
-      return vi.fn();
-    }),
-    subscribeToCards: vi.fn((boardId, callback) => {
-      setTimeout(() => {
-        callback([
-          {
-            id: "card1",
-            boardId: "test-board-id",
-            columnId: "col1",
-            content: "Test Card 1",
-            authorId: "test-user-id",
-            authorName: "Test User",
-            createdAt: {
-              toDate: () => new Date(),
-              toMillis: () => Date.now(),
-            },
-            votes: 0,
-            position: 0,
-          },
-          {
-            id: "card2",
-            boardId: "test-board-id",
-            columnId: "col2",
-            content: "Test Card 2",
-            authorId: "other-user-id",
-            authorName: "Other User",
-            createdAt: {
-              toDate: () => new Date(),
-              toMillis: () => Date.now(),
-            },
-            votes: 2,
-            position: 0,
-          },
-          {
-            id: "card3",
-            boardId: "test-board-id",
-            columnId: "col3",
-            content: "Test Card 3",
-            authorId: "test-user-id",
-            authorName: "Test User",
-            createdAt: {
-              toDate: () => new Date(),
-              toMillis: () => Date.now(),
-            },
-            votes: 1,
-            position: 0,
-          },
-        ]);
-      }, 0);
-
-      return vi.fn();
-    }),
-    createBoard: vi.fn(() => Promise.resolve("test-board-id")),
-    updateCardPosition: vi.fn(() => Promise.resolve()),
+    subscribeToBoard: vi.fn(() => vi.fn()),
+    subscribeToCards: vi.fn(() => vi.fn()),
     startTimer: vi.fn(() => Promise.resolve()),
     pauseTimer: vi.fn(() => Promise.resolve()),
     resetTimer: vi.fn(() => Promise.resolve()),
@@ -433,6 +340,7 @@ const mockBoard: BoardType = {
     { id: "ap2", text: "Test Action Point 2", completed: true },
   ],
   showAddColumnPlaceholder: true,
+  facilitatorId: "test-user-id",
 };
 
 const mockCards = [
@@ -540,28 +448,6 @@ describe("Timer Functionality", () => {
         act(() => {
           callback(mockCards);
         });
-        return vi.fn();
-      }
-    );
-
-    vi.mocked(boardService.createBoard).mockResolvedValue("test-board-id");
-
-    vi.mocked(boardService.subscribeToBoard).mockImplementation(
-      (boardId, callback) => {
-        if (boardId === "test-board-id") {
-          act(() => callback(mockBoard));
-          return vi.fn();
-        }
-        return vi.fn();
-      }
-    );
-
-    vi.mocked(boardService.subscribeToCards).mockImplementation(
-      (boardId, callback) => {
-        if (boardId === "test-board-id") {
-          act(() => callback(mockCards));
-          return vi.fn();
-        }
         return vi.fn();
       }
     );
