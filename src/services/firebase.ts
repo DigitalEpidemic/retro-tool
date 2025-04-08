@@ -48,6 +48,7 @@ export interface Board {
   timerPausedDurationSeconds?: number;
   timerOriginalDurationSeconds?: number;
   actionPoints?: ActionPoint[];
+  showAddColumnPlaceholder?: boolean;
 }
 
 // Type for a card (note card)

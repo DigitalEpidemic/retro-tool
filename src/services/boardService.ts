@@ -36,6 +36,7 @@ export const createBoard = async (
     isActive: true,
     columns,
     facilitatorId: creatorId || null, // Store creator if provided
+    showAddColumnPlaceholder: true, // Default to showing the add column placeholder
   };
 
   if (boardId) {
@@ -741,6 +742,23 @@ export const addColumn = async (boardId: string, title: string) => {
     };
   } catch (error) {
     console.error("Error adding column:", error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : "Unknown error" 
+    };
+  }
+};
+
+// Update the board's preference for showing the add column placeholder
+export const updateShowAddColumnPlaceholder = async (boardId: string, showPlaceholder: boolean) => {
+  try {
+    const boardRef = doc(db, "boards", boardId);
+    await updateDoc(boardRef, {
+      showAddColumnPlaceholder: showPlaceholder
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating add column placeholder visibility:", error);
     return { 
       success: false, 
       error: error instanceof Error ? error.message : "Unknown error" 

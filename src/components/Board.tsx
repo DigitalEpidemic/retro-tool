@@ -42,6 +42,7 @@ import {
   updateCardPosition,
   updateColumnSortState,
   updateParticipantName as updateParticipantNameFirestore,
+  updateShowAddColumnPlaceholder,
 } from "../services/boardService";
 import { Board as BoardType, Card as CardType, db } from "../services/firebase";
 import ActionPointsPanel, { ActionPoint } from "./ActionPointsPanel"; // Import ActionPointsPanel
@@ -91,6 +92,7 @@ export default function Board() {
   const initialDurationSeconds = 300; // 5 minutes (default)
   const inputRef = useRef<HTMLInputElement>(null); // Ref for the input element
   const escapePressedRef = useRef(false); // Ref to track if blur was triggered by Escape
+  const [showAddColumnPlaceholder, setShowAddColumnPlaceholder] = useState<boolean>(true);
 
   useEffect(() => {
     // Don't proceed if auth is still loading or if there's no boardId
@@ -164,6 +166,9 @@ export default function Board() {
           } else {
             setActionPoints([]);
           }
+          
+          // Initialize showAddColumnPlaceholder from board data
+          setShowAddColumnPlaceholder(boardData.showAddColumnPlaceholder !== false);
 
           setLoading(false); // Set loading false once we get *any* snapshot
         });
@@ -814,6 +819,29 @@ export default function Board() {
     }
   };
 
+  // Handle toggling the add column placeholder visibility
+  const handleToggleAddColumnPlaceholder = async (show: boolean) => {
+    if (!boardId) return;
+    
+    try {
+      // Update local state optimistically
+      setShowAddColumnPlaceholder(show);
+      
+      // Update in Firestore
+      const result = await updateShowAddColumnPlaceholder(boardId, show);
+      
+      if (!result.success) {
+        // Revert state if the update failed
+        setShowAddColumnPlaceholder(!show);
+        console.error("Failed to update column placeholder visibility:", result.error);
+      }
+    } catch (error) {
+      // Revert state on error
+      setShowAddColumnPlaceholder(!show);
+      console.error("Error toggling add column placeholder:", error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -1025,6 +1053,8 @@ export default function Board() {
         onClose={() => setIsOptionsPanelOpen(false)}
         onDeleteBoard={handleDeleteBoard}
         isBoardCreator={user?.uid === board.facilitatorId}
+        showAddColumnPlaceholder={showAddColumnPlaceholder}
+        onToggleAddColumnPlaceholder={handleToggleAddColumnPlaceholder}
       />
 
       <DragDropContext onDragEnd={handleDragEnd}>
@@ -1100,8 +1130,8 @@ export default function Board() {
               </div>
             ))}
             
-          {/* Add Column Placeholder - only visible to board owner */}
-          {board.facilitatorId === user?.uid && (
+          {/* Add Column Placeholder - only visible to board owner and when showAddColumnPlaceholder is true */}
+          {board.facilitatorId === user?.uid && showAddColumnPlaceholder && (
             <AddColumnPlaceholder 
               boardId={boardId!}
               onColumnAdded={() => {

@@ -9,6 +9,11 @@ vi.mock('../../services/boardService', () => ({
   addColumn: vi.fn()
 }));
 
+// Mock lucide-react icons
+vi.mock('lucide-react', () => ({
+  Plus: () => <div data-testid="plus-icon">Plus</div>
+}));
+
 describe('AddColumnPlaceholder', () => {
   const mockBoardId = 'test-board-id';
   const mockOnColumnAdded = vi.fn();

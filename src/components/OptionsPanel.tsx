@@ -1,4 +1,4 @@
-import { X, Trash2, AlertCircle } from "lucide-react";
+import { X, Trash2, AlertCircle, Plus, Eye, EyeOff } from "lucide-react";
 import { memo, useState } from "react";
 
 const OptionsPanel = memo(
@@ -7,11 +7,15 @@ const OptionsPanel = memo(
     onClose,
     onDeleteBoard,
     isBoardCreator,
+    showAddColumnPlaceholder,
+    onToggleAddColumnPlaceholder,
   }: {
     isOpen: boolean;
     onClose: () => void;
     onDeleteBoard: () => void;
     isBoardCreator: boolean;
+    showAddColumnPlaceholder: boolean;
+    onToggleAddColumnPlaceholder: (show: boolean) => void;
   }) => {
     const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
@@ -35,6 +39,45 @@ const OptionsPanel = memo(
         </div>
 
         <div className="p-4 space-y-6">
+          {/* Board Layout Options - Only visible to board owner */}
+          {isBoardCreator && (
+            <div className="border-b border-gray-200 pb-4">
+              <h3 className="text-sm font-semibold text-gray-600 mb-3">Board Layout</h3>
+              
+              <div className="space-y-3">
+                {/* Add Column Placeholder Toggle */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <Plus className="h-4 w-4 mr-2 text-gray-500" />
+                    <span className="text-sm text-gray-700">Add Column Placeholder</span>
+                  </div>
+                  
+                  <button
+                    onClick={() => onToggleAddColumnPlaceholder(!showAddColumnPlaceholder)}
+                    className={`flex items-center px-2 py-1 rounded text-xs font-medium ${
+                      showAddColumnPlaceholder 
+                        ? "bg-blue-100 text-blue-700" 
+                        : "bg-gray-100 text-gray-600"
+                    } cursor-pointer`}
+                    data-testid="toggle-add-column-placeholder"
+                  >
+                    {showAddColumnPlaceholder ? (
+                      <>
+                        <Eye className="h-3 w-3 mr-1" />
+                        Shown
+                      </>
+                    ) : (
+                      <>
+                        <EyeOff className="h-3 w-3 mr-1" />
+                        Hidden
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="border-t border-gray-200 pt-4">
             <h3 className="text-sm font-semibold text-gray-600 mb-2">Danger Zone</h3>
             
