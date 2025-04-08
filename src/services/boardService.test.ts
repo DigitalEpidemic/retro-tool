@@ -757,12 +757,28 @@ describe("boardService", () => {
       mockBoardSnap.exists.mockReturnValue(false);
       mockGetDoc.mockResolvedValueOnce(mockBoardSnap);
 
+      // Spy on console.error to suppress the error message
+      const consoleSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+
       await expect(
         boardService.deleteBoard("nonexistent-board", "test-user-id")
       ).rejects.toThrow("Board with ID nonexistent-board not found");
 
       // Board shouldn't be deleted if it doesn't exist
       expect(mockDeleteDoc).not.toHaveBeenCalled();
+
+      // Verify error was properly logged
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "Error deleting board:",
+        expect.objectContaining({
+          message: "Board with ID nonexistent-board not found",
+        })
+      );
+
+      // Restore the console spy
+      consoleSpy.mockRestore();
     });
 
     it("should throw an error when user is not the facilitator", async () => {
@@ -770,12 +786,28 @@ describe("boardService", () => {
       mockBoardData.facilitatorId = "different-user-id";
       mockGetDoc.mockResolvedValueOnce(mockBoardSnap);
 
+      // Spy on console.error to suppress the error message
+      const consoleSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+
       await expect(
         boardService.deleteBoard("board-id", "test-user-id")
       ).rejects.toThrow("Only the board creator can delete the board");
 
       // Board shouldn't be deleted if user is not the facilitator
       expect(mockDeleteDoc).not.toHaveBeenCalled();
+
+      // Verify error was properly logged
+      expect(consoleSpy).toHaveBeenCalledWith(
+        "Error deleting board:",
+        expect.objectContaining({
+          message: "Only the board creator can delete the board",
+        })
+      );
+
+      // Restore the console spy
+      consoleSpy.mockRestore();
     });
 
     it("should handle errors during deletion", async () => {
@@ -783,24 +815,23 @@ describe("boardService", () => {
       mockGetDoc.mockResolvedValueOnce(mockBoardSnap);
 
       // But make deleteDoc fail
-      mockDeleteDoc.mockRejectedValueOnce(new Error("Database error"));
+      const dbError = new Error("Database error");
+      mockDeleteDoc.mockRejectedValueOnce(dbError);
 
-      await expect(
-        boardService.deleteBoard("board-id", "test-user-id")
-      ).rejects.toThrow("Database error");
-
-      // Check that error was logged
+      // Spy on console.error to verify and suppress the error message
       const consoleSpy = vi
         .spyOn(console, "error")
         .mockImplementation(() => {});
 
-      try {
-        await boardService.deleteBoard("board-id", "test-user-id");
-      } catch (e) {
-        // Expected to throw
-      }
+      // First check that it throws the correct error
+      await expect(
+        boardService.deleteBoard("board-id", "test-user-id")
+      ).rejects.toThrow("Database error");
 
-      expect(consoleSpy).toHaveBeenCalled();
+      // Then verify the error message was logged properly
+      expect(consoleSpy).toHaveBeenCalledWith("Error deleting board:", dbError);
+
+      // Restore the original console.error
       consoleSpy.mockRestore();
     });
   });
