@@ -353,7 +353,12 @@ vi.mock("../../services/boardService", () => ({
 
 // Mock the presence service
 vi.mock("../../services/presenceService", () => ({
-  setupPresence: vi.fn(() => () => {}),
+  setupPresence: vi.fn(() => {
+    // Return a valid cleanup function
+    return function cleanupPresence() {
+      // Cleanup implementation
+    };
+  }),
   subscribeToParticipants: vi.fn((boardId, callback) => {
     callback([
       {

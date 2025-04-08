@@ -450,7 +450,13 @@ const mockCards = [
 ];
 
 vi.mock("../../services/presenceService", () => ({
-  setupPresence: vi.fn().mockReturnValue(() => {}),
+  setupPresence: vi.fn(() => {
+    // Return a valid cleanup function
+    return function cleanupPresence() {
+      // Cleanup implementation
+    };
+  }),
+
   subscribeToParticipants: vi.fn((boardId, callback) => {
     setTimeout(() => {
       callback([
