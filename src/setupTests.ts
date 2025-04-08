@@ -1,8 +1,13 @@
+import type { DropResult } from "@hello-pangea/dnd";
 import "@testing-library/jest-dom";
 import * as matchers from "@testing-library/jest-dom/matchers";
-import { cleanup } from "@testing-library/react";
+import { cleanup, configure } from "@testing-library/react";
 import { afterEach, expect, vi } from "vitest";
-import type { DropResult } from "@hello-pangea/dnd";
+
+// Configure React Testing Library
+configure({
+  asyncUtilTimeout: 5000, // Increase timeout for async operations
+});
 
 // Extend Vitest's expect method with methods from react-testing-library
 expect.extend(matchers);
@@ -62,7 +67,7 @@ vi.mock("@hello-pangea/dnd", async () => {
 });
 
 // Disable DnD development warnings
-window['__react-beautiful-dnd-disable-dev-warnings'] = true;
+window["__react-beautiful-dnd-disable-dev-warnings"] = true;
 
 // Suppress console errors during tests
 const originalConsoleError = console.error;
@@ -73,7 +78,7 @@ console.error = (...args: any[]) => {
     "Warning: ReactDOM.render is no longer supported",
     // Add DnD related warnings here if needed
     "Unable to find draggable with id",
-    "Invariant failed: Draggable"
+    "Invariant failed: Draggable",
   ];
 
   if (
@@ -89,6 +94,6 @@ console.error = (...args: any[]) => {
 declare global {
   interface Window {
     capturedOnDragEnd: ((result: DropResult) => void) | null;
-    '__react-beautiful-dnd-disable-dev-warnings': boolean;
+    "__react-beautiful-dnd-disable-dev-warnings": boolean;
   }
 }

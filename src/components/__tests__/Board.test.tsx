@@ -947,36 +947,36 @@ describe("Board", () => {
   });
 
   it("displays error if startTimer fails", async () => {
-    const user = userEvent.setup();
+    // Setup: Mock the startTimer function to reject with an error
     const mockTimerError = new Error("Timer start failed");
-    vi.mocked(boardService.startTimer).mockRejectedValue(mockTimerError);
+    vi.mocked(boardService.startTimer).mockRejectedValueOnce(mockTimerError);
 
-    await act(async () => {
-      render(
-        <MemoryRouter initialEntries={["/boards/test-board-id"]}>
-          <Routes>
-            <Route path="/boards/:boardId" element={<Board />} />
-          </Routes>
-        </MemoryRouter>
-      );
-    });
+    // Render the component
+    await renderBoard();
 
+    // Find the play button
     const playButton = screen.getByRole("button", { name: /start timer/i });
 
-    await act(async () => {
-      await user.click(playButton);
-    });
+    // Setup the user event
+    const user = userEvent.setup();
 
-    expect(
-      screen.getByText("Error: Failed to start/resume timer.")
-    ).toBeInTheDocument();
+    // Click the button (without wrapping in act)
+    await user.click(playButton);
+
+    // Allow any pending promises to resolve
+    await vi.waitFor(() => {
+      expect(
+        screen.getByText("Error: Failed to start/resume timer.")
+      ).toBeInTheDocument();
+    });
   });
 
   it("displays error if pauseTimer fails", async () => {
-    const user = userEvent.setup();
+    // Setup: Mock the pauseTimer function to reject with an error
     const mockTimerError = new Error("Timer pause failed");
-    vi.mocked(boardService.pauseTimer).mockRejectedValue(mockTimerError);
+    vi.mocked(boardService.pauseTimer).mockRejectedValueOnce(mockTimerError);
 
+    // Setup: Mock a running board
     const runningBoard = {
       ...mockBoard,
       timerIsRunning: true,
@@ -989,58 +989,57 @@ describe("Board", () => {
       }
     );
 
-    await act(async () => {
-      render(
-        <MemoryRouter initialEntries={["/boards/test-board-id"]}>
-          <Routes>
-            <Route path="/boards/:boardId" element={<Board />} />
-          </Routes>
-        </MemoryRouter>
-      );
-    });
+    // Render the component
+    await renderBoard();
 
+    // Find the pause button
     const pauseButton = screen.getByRole("button", { name: /pause timer/i });
 
-    await act(async () => {
-      await user.click(pauseButton);
-    });
+    // Setup the user event
+    const user = userEvent.setup();
 
-    expect(
-      screen.getByText("Error: Failed to pause timer.")
-    ).toBeInTheDocument();
+    // Click the button
+    await user.click(pauseButton);
+
+    // Wait for the error message to appear
+    await vi.waitFor(() => {
+      expect(
+        screen.getByText("Error: Failed to pause timer.")
+      ).toBeInTheDocument();
+    });
   });
 
   it("displays error if resetTimer fails", async () => {
-    const user = userEvent.setup();
+    // Setup: Mock the resetTimer function to reject with an error
     const mockTimerError = new Error("Timer reset failed");
-    vi.mocked(boardService.resetTimer).mockRejectedValue(mockTimerError);
+    vi.mocked(boardService.resetTimer).mockRejectedValueOnce(mockTimerError);
 
-    await act(async () => {
-      render(
-        <MemoryRouter initialEntries={["/boards/test-board-id"]}>
-          <Routes>
-            <Route path="/boards/:boardId" element={<Board />} />
-          </Routes>
-        </MemoryRouter>
-      );
-    });
+    // Render the component
+    await renderBoard();
 
+    // Find the reset button
     const resetButton = screen.getByRole("button", { name: /reset timer/i });
 
-    await act(async () => {
-      await user.click(resetButton);
-    });
+    // Setup the user event
+    const user = userEvent.setup();
 
-    expect(
-      screen.getByText("Error: Failed to reset timer.")
-    ).toBeInTheDocument();
+    // Click the button
+    await user.click(resetButton);
+
+    // Wait for the error message to appear
+    await vi.waitFor(() => {
+      expect(
+        screen.getByText("Error: Failed to reset timer.")
+      ).toBeInTheDocument();
+    });
   });
 
   it("displays error if updating timer duration fails", async () => {
-    const user = userEvent.setup();
+    // Setup: Mock updateDoc to reject with an error
     const mockUpdateError = new Error("Firestore update failed");
-    vi.mocked(updateDoc).mockRejectedValue(mockUpdateError);
+    vi.mocked(updateDoc).mockRejectedValueOnce(mockUpdateError);
 
+    // Setup: Mock a paused board
     const pausedBoard = {
       ...mockBoard,
       timerIsRunning: false,
@@ -1053,26 +1052,28 @@ describe("Board", () => {
       }
     );
 
-    await act(async () => {
-      render(
-        <MemoryRouter initialEntries={["/boards/test-board-id"]}>
-          <Routes>
-            <Route path="/boards/:boardId" element={<Board />} />
-          </Routes>
-        </MemoryRouter>
-      );
-    });
+    // Render the component
+    await renderBoard();
 
+    // Find the timer input
     const timerInput = screen.getByDisplayValue("2:00");
+
+    // Setup the user event
+    const user = userEvent.setup();
+
+    // Clear and type in the input
     await user.clear(timerInput);
     await user.type(timerInput, "3:30");
-    await act(async () => {
-      fireEvent.keyDown(timerInput, { key: "Enter" });
-    });
 
-    expect(
-      screen.getByText("Error: Failed to update timer duration.")
-    ).toBeInTheDocument();
+    // Press Enter to submit
+    await user.keyboard("{Enter}");
+
+    // Wait for the error message to appear
+    await vi.waitFor(() => {
+      expect(
+        screen.getByText("Error: Failed to update timer duration.")
+      ).toBeInTheDocument();
+    });
   });
 
   it("displays error if updateColumnSortState fails", async () => {
