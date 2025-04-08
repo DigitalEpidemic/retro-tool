@@ -143,6 +143,11 @@ describe("FirebaseProvider", () => {
     const mockError = new Error("Firebase sign-in failed");
     vi.mocked(signInAnonymously).mockRejectedValueOnce(mockError);
 
+    // Spy on console.error to verify and suppress the error message
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+
     render(
       <FirebaseProvider>
         <TestConsumer />
@@ -164,10 +169,26 @@ describe("FirebaseProvider", () => {
         screen.getByText(`Error: ${mockError.message}`)
       ).toBeInTheDocument();
     });
+
+    // Verify the error log shows the anonymous sign-in failure
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "Anonymous sign-in failed:",
+      expect.objectContaining({
+        message: "Firebase sign-in failed",
+      })
+    );
+
+    // Restore the original console.error
+    consoleErrorSpy.mockRestore();
   });
 
   it("should set user to null when auth state changes to null", async () => {
     const mockUser = { uid: "test-user-123", displayName: null } as User;
+
+    // Spy on console.error to verify and suppress the error message
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
 
     render(
       <FirebaseProvider>
@@ -202,6 +223,17 @@ describe("FirebaseProvider", () => {
       // The user should be null and we should see an error
       expect(screen.getByText(/Error: Sign-in failed/)).toBeInTheDocument();
     });
+
+    // Verify the error was properly logged
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "Anonymous sign-in failed:",
+      expect.objectContaining({
+        message: "Sign-in failed",
+      })
+    );
+
+    // Restore console.error
+    consoleErrorSpy.mockRestore();
   });
 
   it("useFirebase hook should throw error when used outside of Provider", () => {
