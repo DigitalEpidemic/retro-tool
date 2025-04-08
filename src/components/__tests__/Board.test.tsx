@@ -297,7 +297,9 @@ vi.mock("../../services/boardService", () => {
     subscribeToParticipants: vi.fn(() => vi.fn()),
     updateParticipantNameFirestore: vi.fn(() => Promise.resolve()),
     updateParticipantNameRTDB: vi.fn(() => Promise.resolve()),
-    joinBoard: vi.fn(() => Promise.resolve()),
+    joinBoard: vi.fn(() =>
+      Promise.resolve({ success: true, name: "Test User" })
+    ),
     deleteBoard: vi.fn((boardId, userId) => Promise.resolve(true)),
     testFirestoreWrite: vi.fn(() => Promise.resolve()),
     cleanupInactiveUsers: vi.fn(() => Promise.resolve()),
