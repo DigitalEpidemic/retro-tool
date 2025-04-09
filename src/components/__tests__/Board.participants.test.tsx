@@ -352,34 +352,37 @@ vi.mock("../../services/boardService", () => ({
 }));
 
 // Mock the presence service
-vi.mock("../../services/presenceService", () => ({
-  setupPresence: vi.fn().mockResolvedValue(() => {
-    // Return a valid cleanup function
-    return function cleanupPresence() {
-      // Cleanup implementation
-    };
-  }),
-  subscribeToParticipants: vi.fn((boardId, callback) => {
-    callback([
-      {
-        id: "user1",
-        name: "User One",
-        color: "#ff0000",
-        boardId: "test-board-id",
-        lastOnline: Date.now(),
-      },
-      {
-        id: "current-user-id",
-        name: "Current User",
-        color: "#0000ff",
-        boardId: "test-board-id",
-        lastOnline: Date.now(),
-      },
-    ]);
-    return vi.fn(); // Return unsubscribe function
-  }),
-  updateParticipantName: vi.fn().mockResolvedValue(true),
-}));
+vi.mock("../../services/presenceService", () => {
+  const cleanupFn = function cleanupPresence() {
+    // Cleanup implementation
+  };
+
+  return {
+    setupPresence: vi.fn(() => {
+      return cleanupFn; // Just return the function directly
+    }),
+    subscribeToParticipants: vi.fn((boardId, callback) => {
+      callback([
+        {
+          id: "user1",
+          name: "User One",
+          color: "#ff0000",
+          boardId: "test-board-id",
+          lastOnline: Date.now(),
+        },
+        {
+          id: "current-user-id",
+          name: "Current User",
+          color: "#0000ff",
+          boardId: "test-board-id",
+          lastOnline: Date.now(),
+        },
+      ]);
+      return vi.fn(); // Return unsubscribe function
+    }),
+    updateParticipantName: vi.fn().mockResolvedValue(true),
+  };
+});
 
 // Mock the db object
 vi.mock("../../services/firebase", () => {

@@ -449,30 +449,33 @@ const mockCards = [
   },
 ];
 
-vi.mock("../../services/presenceService", () => ({
-  setupPresence: vi.fn().mockResolvedValue(() => {
-    // Return a valid cleanup function
-    return function cleanupPresence() {
-      // Cleanup implementation
-    };
-  }),
+vi.mock("../../services/presenceService", () => {
+  const cleanupFn = function cleanupPresence() {
+    // Cleanup implementation
+  };
 
-  subscribeToParticipants: vi.fn((boardId, callback) => {
-    setTimeout(() => {
-      callback([
-        {
-          id: "test-user-id",
-          name: "Test User",
-          color: "#FF5733",
-          boardId: "test-board-id",
-          lastOnline: Date.now(),
-        },
-      ]);
-    }, 0);
-    return vi.fn();
-  }),
-  updateParticipantName: vi.fn().mockResolvedValue(undefined),
-}));
+  return {
+    setupPresence: vi.fn(() => {
+      return cleanupFn; // Just return the function directly
+    }),
+
+    subscribeToParticipants: vi.fn((boardId, callback) => {
+      setTimeout(() => {
+        callback([
+          {
+            id: "test-user-id",
+            name: "Test User",
+            color: "#FF5733",
+            boardId: "test-board-id",
+            lastOnline: Date.now(),
+          },
+        ]);
+      }, 0);
+      return vi.fn();
+    }),
+    updateParticipantName: vi.fn().mockResolvedValue(undefined),
+  };
+});
 
 vi.mock("../../services/actionPointsService", () => ({
   addActionPoint: vi.fn().mockResolvedValue({

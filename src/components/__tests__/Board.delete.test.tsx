@@ -184,16 +184,19 @@ vi.mock("../Card", () => ({
   ),
 }));
 
-vi.mock("../../services/presenceService", () => ({
-  setupPresence: vi.fn().mockResolvedValue(() => {
-    // Return a valid cleanup function that can be called
-    return function cleanupPresence() {
-      // Cleanup implementation
-    };
-  }),
-  subscribeToParticipants: vi.fn(() => vi.fn()),
-  updateParticipantName: vi.fn().mockResolvedValue(undefined),
-}));
+vi.mock("../../services/presenceService", () => {
+  const cleanupFn = function cleanupPresence() {
+    // Cleanup implementation
+  };
+
+  return {
+    setupPresence: vi.fn(() => {
+      return cleanupFn; // Just return the function directly
+    }),
+    subscribeToParticipants: vi.fn(() => vi.fn()),
+    updateParticipantName: vi.fn().mockResolvedValue(undefined),
+  };
+});
 
 vi.mock("../../services/actionPointsService", () => ({
   addActionPoint: vi.fn().mockResolvedValue({

@@ -143,29 +143,32 @@ const mockBoard: BoardType = {
   facilitatorId: "test-user-id",
 };
 
-vi.mock("../../services/presenceService", () => ({
-  setupPresence: vi.fn(() => {
-    // Return a valid cleanup function
-    return function cleanupPresence() {
-      // Cleanup implementation
-    };
-  }),
-  subscribeToParticipants: vi.fn((boardId, callback) => {
-    act(() => {
-      callback([
-        {
-          id: "test-user-id",
-          name: "Test User",
-          color: "#FF5733",
-          boardId: "test-board-id",
-          lastOnline: Date.now(),
-        },
-      ]);
-    });
-    return vi.fn();
-  }),
-  updateParticipantName: vi.fn().mockResolvedValue(undefined),
-}));
+vi.mock("../../services/presenceService", () => {
+  const cleanupFn = function cleanupPresence() {
+    // Cleanup implementation
+  };
+
+  return {
+    setupPresence: vi.fn(() => {
+      return cleanupFn; // Just return the function directly
+    }),
+    subscribeToParticipants: vi.fn((boardId, callback) => {
+      act(() => {
+        callback([
+          {
+            id: "test-user-id",
+            name: "Test User",
+            color: "#FF5733",
+            boardId: "test-board-id",
+            lastOnline: Date.now(),
+          },
+        ]);
+      });
+      return vi.fn();
+    }),
+    updateParticipantName: vi.fn().mockResolvedValue(undefined),
+  };
+});
 
 const mockNavigate = vi.fn();
 vi.mock("react-router-dom", async () => {
