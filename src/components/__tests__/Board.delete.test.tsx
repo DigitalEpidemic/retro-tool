@@ -100,7 +100,7 @@ vi.mock('firebase/firestore', () => {
 
 // Mock the Card component
 vi.mock('../Card', () => ({
-  default: ({ card, provided }: any) => (
+  default: ({ card, provided }: { card: { id: string; content: string }; provided?: { draggableProps: unknown } }) => (
     <div
       data-testid={`card-${card.id}`}
       data-card-data={JSON.stringify(card)}

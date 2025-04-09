@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useFirebase } from '../../contexts/useFirebase'; // Adjust the import path
 import { addCard } from '../../services/boardService'; // Adjust the import path
 import Column from '../Column'; // This is the real component
+import { DocumentSnapshot } from 'firebase/firestore';
 
 // Mock dependencies
 vi.mock('../../contexts/useFirebase', () => ({
@@ -375,7 +376,7 @@ describe('Column', () => {
         color: mockUserColor,
         name: 'Test User',
       }),
-    } as any);
+    } as unknown as DocumentSnapshot<unknown>);
 
     // Mock a user with a displayName
     const userWithName = {

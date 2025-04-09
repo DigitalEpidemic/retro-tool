@@ -3,7 +3,6 @@ import userEvent from '@testing-library/user-event';
 import React from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import * as FirebaseContext from '../../contexts/FirebaseContext';
 import { useFirebase } from '../../contexts/useFirebase';
 import * as boardService from '../../services/boardService';
 import * as presenceService from '../../services/presenceService';
@@ -223,7 +222,7 @@ const mockParticipantsPanel = (props: ParticipantsPanelProps) => {
 
 // Mock the Board component to insert our test components
 vi.mock('../Board', async importOriginal => {
-  const actual = await importOriginal();
+  await importOriginal();
 
   const MockedBoard = props => {
     const [isPanelOpen, setIsPanelOpen] = React.useState(false);
@@ -275,7 +274,6 @@ vi.mock('../Board', async importOriginal => {
 
     const handleUpdateColor = (userId, newColor) => {
       // Update in Firestore and RTDB
-      const userRef = { id: userId };
       presenceService.updateParticipantColor(userId, 'test-board-id', newColor);
     };
 

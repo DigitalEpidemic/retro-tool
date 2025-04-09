@@ -7,7 +7,6 @@ import { Timestamp, updateDoc } from 'firebase/firestore';
 import React from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import * as FirebaseContext from '../../contexts/FirebaseContext';
 import { useFirebase } from '../../contexts/useFirebase';
 import * as boardService from '../../services/boardService';
 import type { Board as BoardType } from '../../services/firebase';
@@ -121,8 +120,6 @@ vi.mock('../OptionsPanel', () => ({
         isOpen,
         onDeleteBoard,
         isBoardCreator,
-        showAddColumnPlaceholder = true,
-        onToggleAddColumnPlaceholder = () => {},
       }) => {
         // Using useState within the mock to track deletion confirmation state
         const [isConfirmingDelete, setIsConfirmingDelete] = React.useState(false);
@@ -274,7 +271,7 @@ vi.mock('../../services/boardService', () => {
     updateParticipantNameFirestore: vi.fn(() => Promise.resolve()),
     updateParticipantNameRTDB: vi.fn(() => Promise.resolve()),
     joinBoard: vi.fn(() => Promise.resolve({ success: true, name: 'Test User' })),
-    deleteBoard: vi.fn((boardId, userId) => Promise.resolve(true)),
+    deleteBoard: vi.fn(() => Promise.resolve(true)),
     testFirestoreWrite: vi.fn(() => Promise.resolve()),
     cleanupInactiveUsers: vi.fn(() => Promise.resolve()),
     updateShowAddColumnPlaceholder: vi.fn(() => Promise.resolve({ success: true })),
@@ -324,15 +321,21 @@ vi.mock('firebase/firestore', () => {
 });
 
 vi.mock('../Card', () => ({
-  default: ({ card, provided }: any) => (
-    <div
-      data-testid={`card-${card.id}`}
-      data-card-data={JSON.stringify(card)}
-      {...provided?.draggableProps}
-    >
-      {card.content}
-    </div>
-  ),
+  default: ({ card, provided }: { card: unknown; provided: unknown }) => {
+    const cardId = (card as { id: string }).id;
+    const cardContent = (card as { content: string }).content;
+    const draggableProps = (provided as { draggableProps?: Record<string, unknown> })?.draggableProps || {};
+    
+    return (
+      <div
+        data-testid={`card-${cardId}`}
+        data-card-data={JSON.stringify(card)}
+        {...draggableProps}
+      >
+        {cardContent}
+      </div>
+    );
+  },
 }));
 
 const mockUser = {
@@ -610,7 +613,7 @@ describe('Board', () => {
 
   it('displays error when board is not found and creation fails', async () => {
     // Mock getDoc to simulate a non-existent board
-    vi.spyOn(firestore, 'getDoc').mockResolvedValueOnce(createMockDocSnap(false) as any);
+    vi.spyOn(firestore, 'getDoc').mockResolvedValueOnce(createMockDocSnap(false) as unknown as ReturnType<typeof firestore.getDoc>);
 
     // Mock createBoard to simulate a failure
     vi.spyOn(boardService, 'createBoard').mockRejectedValueOnce(

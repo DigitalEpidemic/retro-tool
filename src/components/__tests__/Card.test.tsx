@@ -94,12 +94,12 @@ describe('Card', () => {
     // Ideally, CardType would have authorName?: string
     const cardWithoutAuthorName = {
       ...mockCard,
-      authorName: undefined as any, // Cast to bypass TS error for this specific test case
+      authorName: undefined as unknown as string, // Use unknown as string instead of any
     };
     render(
       <Card
         provided={provided}
-        card={cardWithoutAuthorName as CardType} // Cast needed because of the 'any' above
+        card={cardWithoutAuthorName as CardType} // Cast needed because of the type above
         isOwner={true}
       />
     );
