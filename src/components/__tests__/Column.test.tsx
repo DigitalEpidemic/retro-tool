@@ -390,6 +390,121 @@ describe("Column", () => {
     expect(container).toMatchSnapshot();
   });
 
+  // Test for Enter key functionality
+  it("adds a card when pressing Enter in the textarea", async () => {
+    renderColumn();
+    fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+
+    const textarea = screen.getByPlaceholderText(
+      "Type here... Press Enter to save."
+    );
+
+    // Enter content
+    fireEvent.change(textarea, { target: { value: "New card via Enter key" } });
+
+    // Press Enter key
+    fireEvent.keyDown(textarea, { key: "Enter", code: "Enter" });
+
+    // Check if addCard was called correctly
+    await waitFor(() => {
+      expect(addCard).toHaveBeenCalledTimes(1);
+      expect(vi.mocked(addCard)).toHaveBeenCalledWith(
+        mockBoardId,
+        mockColumnId,
+        "New card via Enter key",
+        mockUser.uid,
+        mockUser.displayName || "Anonymous User"
+      );
+    });
+
+    // Form should be hidden after submission
+    expect(
+      screen.queryByPlaceholderText("Type here... Press Enter to save.")
+    ).not.toBeInTheDocument();
+  });
+
+  it("does not add a card when pressing Enter with Shift key", async () => {
+    renderColumn();
+    fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+
+    const textarea = screen.getByPlaceholderText(
+      "Type here... Press Enter to save."
+    );
+
+    // Enter content
+    fireEvent.change(textarea, {
+      target: { value: "Content with line break" },
+    });
+
+    // Press Enter with Shift key (should add a new line instead of submitting)
+    fireEvent.keyDown(textarea, {
+      key: "Enter",
+      code: "Enter",
+      shiftKey: true,
+    });
+
+    // Check that addCard was not called
+    expect(addCard).not.toHaveBeenCalled();
+
+    // Form should still be visible
+    expect(
+      screen.getByPlaceholderText("Type here... Press Enter to save.")
+    ).toBeInTheDocument();
+  });
+
+  it("does not add a card when pressing Enter with empty content", async () => {
+    renderColumn();
+    fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+
+    const textarea = screen.getByPlaceholderText(
+      "Type here... Press Enter to save."
+    );
+
+    // Leave content empty
+    fireEvent.change(textarea, { target: { value: "" } });
+
+    // Press Enter key
+    fireEvent.keyDown(textarea, { key: "Enter", code: "Enter" });
+
+    // Check that addCard was not called
+    expect(addCard).not.toHaveBeenCalled();
+
+    // Form should still be visible
+    expect(
+      screen.getByPlaceholderText("Type here... Press Enter to save.")
+    ).toBeInTheDocument();
+  });
+
+  it("cancels adding a card when pressing Escape key", () => {
+    renderColumn();
+    fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+
+    const textarea = screen.getByPlaceholderText(
+      "Type here... Press Enter to save."
+    );
+
+    // Enter some content
+    fireEvent.change(textarea, {
+      target: { value: "Content that will be discarded" },
+    });
+
+    // Press Escape key
+    fireEvent.keyDown(textarea, { key: "Escape", code: "Escape" });
+
+    // Form should be hidden after Escape
+    expect(
+      screen.queryByPlaceholderText("Type here... Press Enter to save.")
+    ).not.toBeInTheDocument();
+
+    // "Add a card" button should be visible again
+    expect(
+      screen.getByRole("button", { name: "+ Add a card" })
+    ).toBeInTheDocument();
+
+    // addCard should not have been called
+    expect(addCard).not.toHaveBeenCalled();
+  });
+
   // Add tests for column menu
   describe("Column menu functionality", () => {
     it("opens the dropdown menu when clicking the MoreVertical icon", () => {
@@ -512,120 +627,5 @@ describe("Column", () => {
       // Now the dropdown should be hidden
       expect(screen.queryByText("Delete column")).not.toBeInTheDocument();
     });
-  });
-
-  // Test for Enter key functionality
-  it("adds a card when pressing Enter in the textarea", async () => {
-    renderColumn();
-    fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
-
-    const textarea = screen.getByPlaceholderText(
-      "Type here... Press Enter to save."
-    );
-
-    // Enter content
-    fireEvent.change(textarea, { target: { value: "New card via Enter key" } });
-
-    // Press Enter key
-    fireEvent.keyDown(textarea, { key: "Enter", code: "Enter" });
-
-    // Check if addCard was called correctly
-    await waitFor(() => {
-      expect(addCard).toHaveBeenCalledTimes(1);
-      expect(vi.mocked(addCard)).toHaveBeenCalledWith(
-        mockBoardId,
-        mockColumnId,
-        "New card via Enter key",
-        mockUser.uid,
-        mockUser.displayName || "Anonymous User"
-      );
-    });
-
-    // Form should be hidden after submission
-    expect(
-      screen.queryByPlaceholderText("Type here... Press Enter to save.")
-    ).not.toBeInTheDocument();
-  });
-
-  it("does not add a card when pressing Enter with Shift key", async () => {
-    renderColumn();
-    fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
-
-    const textarea = screen.getByPlaceholderText(
-      "Type here... Press Enter to save."
-    );
-
-    // Enter content
-    fireEvent.change(textarea, {
-      target: { value: "Content with line break" },
-    });
-
-    // Press Enter with Shift key (should add a new line instead of submitting)
-    fireEvent.keyDown(textarea, {
-      key: "Enter",
-      code: "Enter",
-      shiftKey: true,
-    });
-
-    // Check that addCard was not called
-    expect(addCard).not.toHaveBeenCalled();
-
-    // Form should still be visible
-    expect(
-      screen.getByPlaceholderText("Type here... Press Enter to save.")
-    ).toBeInTheDocument();
-  });
-
-  it("does not add a card when pressing Enter with empty content", async () => {
-    renderColumn();
-    fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
-
-    const textarea = screen.getByPlaceholderText(
-      "Type here... Press Enter to save."
-    );
-
-    // Leave content empty
-    fireEvent.change(textarea, { target: { value: "" } });
-
-    // Press Enter key
-    fireEvent.keyDown(textarea, { key: "Enter", code: "Enter" });
-
-    // Check that addCard was not called
-    expect(addCard).not.toHaveBeenCalled();
-
-    // Form should still be visible
-    expect(
-      screen.getByPlaceholderText("Type here... Press Enter to save.")
-    ).toBeInTheDocument();
-  });
-
-  it("cancels adding a card when pressing Escape key", () => {
-    renderColumn();
-    fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
-
-    const textarea = screen.getByPlaceholderText(
-      "Type here... Press Enter to save."
-    );
-
-    // Enter some content
-    fireEvent.change(textarea, {
-      target: { value: "Content that will be discarded" },
-    });
-
-    // Press Escape key
-    fireEvent.keyDown(textarea, { key: "Escape", code: "Escape" });
-
-    // Form should be hidden after Escape
-    expect(
-      screen.queryByPlaceholderText("Type here... Press Enter to save.")
-    ).not.toBeInTheDocument();
-
-    // "Add a card" button should be visible again
-    expect(
-      screen.getByRole("button", { name: "+ Add a card" })
-    ).toBeInTheDocument();
-
-    // addCard should not have been called
-    expect(addCard).not.toHaveBeenCalled();
   });
 });
