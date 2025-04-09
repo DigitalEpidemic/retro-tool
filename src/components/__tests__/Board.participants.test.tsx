@@ -1,20 +1,20 @@
-import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import React from "react";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import * as FirebaseContext from "../../contexts/FirebaseContext";
-import * as boardService from "../../services/boardService";
-import * as presenceService from "../../services/presenceService";
-import Board from "../Board";
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import React from 'react';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import * as FirebaseContext from '../../contexts/FirebaseContext';
+import * as boardService from '../../services/boardService';
+import * as presenceService from '../../services/presenceService';
+import Board from '../Board';
 
 // Mock Firebase context
-vi.mock("../../contexts/FirebaseContext", () => ({
+vi.mock('../../contexts/FirebaseContext', () => ({
   useFirebase: vi.fn(),
 }));
 
 // Mock firebase/firestore
-vi.mock("firebase/firestore", () => {
+vi.mock('firebase/firestore', () => {
   const mockData: {
     id: string;
     name: string;
@@ -27,16 +27,16 @@ vi.mock("firebase/firestore", () => {
     timerStartTime: null;
     timerPausedDurationSeconds: number;
   } = {
-    id: "test-board-id",
-    name: "Test Board",
+    id: 'test-board-id',
+    name: 'Test Board',
     createdAt: { toDate: () => new Date() },
     isActive: true,
     columns: {
-      col1: { id: "col1", title: "Column 1", order: 0 },
-      col2: { id: "col2", title: "Column 2", order: 1 },
-      col3: { id: "col3", title: "Column 3", order: 2 },
+      col1: { id: 'col1', title: 'Column 1', order: 0 },
+      col2: { id: 'col2', title: 'Column 2', order: 1 },
+      col3: { id: 'col3', title: 'Column 3', order: 2 },
     },
-    createdBy: "current-user-id",
+    createdBy: 'current-user-id',
     timerDurationSeconds: 300,
     timerIsRunning: false,
     timerStartTime: null,
@@ -62,7 +62,7 @@ vi.mock("firebase/firestore", () => {
       });
       return vi.fn(); // Return unsubscribe function
     }),
-    addDoc: vi.fn().mockResolvedValue({ id: "new-doc-id" }),
+    addDoc: vi.fn().mockResolvedValue({ id: 'new-doc-id' }),
     deleteDoc: vi.fn().mockResolvedValue({}),
     Timestamp: {
       fromDate: () => ({ toMillis: () => Date.now() }),
@@ -76,23 +76,23 @@ vi.mock("firebase/firestore", () => {
 });
 
 // Mock firebase/database
-vi.mock("firebase/database", () => ({
+vi.mock('firebase/database', () => ({
   getDatabase: vi.fn(() => ({})),
   ref: vi.fn(() => ({})),
   onValue: vi.fn((ref, callback) => {
     callback({
       val: () => ({
         boards: {
-          "test-board-id": {
+          'test-board-id': {
             participants: {
-              "current-user-id": {
-                name: "Current User",
-                color: "#0000ff",
+              'current-user-id': {
+                name: 'Current User',
+                color: '#0000ff',
                 lastOnline: Date.now(),
               },
               user1: {
-                name: "User One",
-                color: "#ff0000",
+                name: 'User One',
+                color: '#ff0000',
                 lastOnline: Date.now(),
               },
             },
@@ -104,7 +104,7 @@ vi.mock("firebase/database", () => ({
   }),
   onDisconnect: vi.fn(() => ({ set: vi.fn().mockResolvedValue({}) })),
   set: vi.fn().mockResolvedValue({}),
-  serverTimestamp: vi.fn(() => ({ ".sv": "timestamp" })),
+  serverTimestamp: vi.fn(() => ({ '.sv': 'timestamp' })),
   get: vi.fn().mockResolvedValue({
     exists: () => true,
     val: () => ({}),
@@ -112,50 +112,46 @@ vi.mock("firebase/database", () => ({
 }));
 
 // Mock firebase/auth
-vi.mock("firebase/auth", () => ({
+vi.mock('firebase/auth', () => ({
   getAuth: vi.fn(() => ({})),
   onAuthStateChanged: vi.fn(),
   signInAnonymously: vi.fn(),
 }));
 
 // Mock all the lucide-react icons to avoid issues with them
-vi.mock("lucide-react", () => {
+vi.mock('lucide-react', () => {
   const mockIcon = (name: string) =>
     function MockIcon() {
       return <span data-testid={`${name.toLowerCase()}-icon`}>{name}</span>;
     };
 
   return {
-    Users: mockIcon("Users"),
-    TrendingUp: mockIcon("TrendingUp"),
-    Share2: mockIcon("Share2"),
-    Settings: mockIcon("Settings"),
-    Play: mockIcon("Play"),
-    Pause: mockIcon("Pause"),
-    RotateCcw: mockIcon("RotateCcw"),
-    Download: mockIcon("Download"),
-    X: mockIcon("X"),
-    Edit2: mockIcon("Edit2"),
-    Check: mockIcon("Check"),
+    Users: mockIcon('Users'),
+    TrendingUp: mockIcon('TrendingUp'),
+    Share2: mockIcon('Share2'),
+    Settings: mockIcon('Settings'),
+    Play: mockIcon('Play'),
+    Pause: mockIcon('Pause'),
+    RotateCcw: mockIcon('RotateCcw'),
+    Download: mockIcon('Download'),
+    X: mockIcon('X'),
+    Edit2: mockIcon('Edit2'),
+    Check: mockIcon('Check'),
   };
 });
 
 // Mock the Card component
-vi.mock("../Card", () => ({
-  default: (props) => (
-    <div data-testid={`card-${props.card.id}`}>{props.card.content}</div>
-  ),
+vi.mock('../Card', () => ({
+  default: props => <div data-testid={`card-${props.card.id}`}>{props.card.content}</div>,
 }));
 
 // Mock the Column component
-vi.mock("../Column", () => ({
-  default: (props) => (
+vi.mock('../Column', () => ({
+  default: props => (
     <div data-testid={`column-${props.id}`} data-title={props.title}>
       <div>Column: {props.title}</div>
       <div>Cards: {props.cards?.length || 0}</div>
-      <button
-        onClick={() => props.onCardAdd && props.onCardAdd(props.id, "New Card")}
-      >
+      <button onClick={() => props.onCardAdd && props.onCardAdd(props.id, 'New Card')}>
         Add Card
       </button>
     </div>
@@ -190,17 +186,17 @@ const mockParticipantsPanel = (props: ParticipantsPanelProps) => {
         <p>No participants yet</p>
       ) : (
         <ul>
-          {props.participants.map((p) => (
+          {props.participants.map(p => (
             <li key={p.id} data-testid={`participant-${p.id}`}>
-              {p.name} {p.id === props.currentUserId ? "(You)" : ""}
+              {p.name} {p.id === props.currentUserId ? '(You)' : ''}
               {p.id === props.currentUserId && (
                 <>
                   <button
                     onClick={() => {
                       // In our test, we just directly call the update functions
                       // to simplify testing
-                      props.onUpdateName(p.id, "New Username");
-                      props.onUpdateColor(p.id, "bg-green-200");
+                      props.onUpdateName(p.id, 'New Username');
+                      props.onUpdateColor(p.id, 'bg-green-200');
                     }}
                     aria-label="edit your name"
                     data-testid="edit-name-button"
@@ -208,7 +204,7 @@ const mockParticipantsPanel = (props: ParticipantsPanelProps) => {
                     Edit
                   </button>
                   <button
-                    onClick={() => props.onUpdateColor(p.id, "bg-red-200")}
+                    onClick={() => props.onUpdateColor(p.id, 'bg-red-200')}
                     aria-label="change color"
                     data-testid="change-color-button"
                   >
@@ -225,24 +221,24 @@ const mockParticipantsPanel = (props: ParticipantsPanelProps) => {
 };
 
 // Mock the Board component to insert our test components
-vi.mock("../Board", async (importOriginal) => {
+vi.mock('../Board', async importOriginal => {
   const actual = await importOriginal();
 
-  const MockedBoard = (props) => {
+  const MockedBoard = props => {
     const [isPanelOpen, setIsPanelOpen] = React.useState(false);
     const [participants, setParticipants] = React.useState([
       {
-        id: "user1",
-        name: "User One",
-        color: "bg-red-200",
-        boardId: "test-board-id",
+        id: 'user1',
+        name: 'User One',
+        color: 'bg-red-200',
+        boardId: 'test-board-id',
         lastOnline: Date.now(),
       },
       {
-        id: "current-user-id",
-        name: "Current User",
-        color: "bg-blue-200",
-        boardId: "test-board-id",
+        id: 'current-user-id',
+        name: 'Current User',
+        color: 'bg-blue-200',
+        boardId: 'test-board-id',
         lastOnline: Date.now(),
       },
     ]);
@@ -253,16 +249,13 @@ vi.mock("../Board", async (importOriginal) => {
     React.useEffect(() => {
       // Mock the behavior in the component useEffect
       presenceService.setupPresence(
-        props.match?.params?.boardId || "test-board-id",
-        "Current User"
+        props.match?.params?.boardId || 'test-board-id',
+        'Current User'
       );
 
-      const unsubscribe = presenceService.subscribeToParticipants(
-        "test-board-id",
-        (data) => {
-          setParticipants(data);
-        }
-      );
+      const unsubscribe = presenceService.subscribeToParticipants('test-board-id', data => {
+        setParticipants(data);
+      });
 
       return () => unsubscribe();
     }, [props.match?.params?.boardId]);
@@ -271,10 +264,10 @@ vi.mock("../Board", async (importOriginal) => {
 
     const handleUpdateName = (userId, newName) => {
       boardService.updateParticipantName(userId, newName);
-      presenceService.updateParticipantName(userId, "test-board-id", newName);
+      presenceService.updateParticipantName(userId, 'test-board-id', newName);
 
       // Call the context method when updating current user's name
-      if (userId === "current-user-id") {
+      if (userId === 'current-user-id') {
         updateUserDisplayName(newName);
       }
     };
@@ -282,7 +275,7 @@ vi.mock("../Board", async (importOriginal) => {
     const handleUpdateColor = (userId, newColor) => {
       // Update in Firestore and RTDB
       const userRef = { id: userId };
-      presenceService.updateParticipantColor(userId, "test-board-id", newColor);
+      presenceService.updateParticipantColor(userId, 'test-board-id', newColor);
     };
 
     return (
@@ -308,7 +301,7 @@ vi.mock("../Board", async (importOriginal) => {
           isOpen: isPanelOpen,
           onClose: () => setIsPanelOpen(false),
           participants: participants,
-          currentUserId: "current-user-id",
+          currentUserId: 'current-user-id',
           onUpdateName: handleUpdateName,
           onUpdateColor: handleUpdateColor,
         })}
@@ -322,19 +315,19 @@ vi.mock("../Board", async (importOriginal) => {
 });
 
 // Mock the board service
-vi.mock("../../services/boardService", () => ({
+vi.mock('../../services/boardService', () => ({
   subscribeToBoard: vi.fn((boardId, callback) => {
     callback({
-      id: "test-board-id",
-      name: "Test Board",
+      id: 'test-board-id',
+      name: 'Test Board',
       createdAt: { toDate: () => new Date() },
       isActive: true,
       columns: {
-        col1: { id: "col1", title: "Column 1", order: 0 },
-        col2: { id: "col2", title: "Column 2", order: 1 },
-        col3: { id: "col3", title: "Column 3", order: 2 },
+        col1: { id: 'col1', title: 'Column 1', order: 0 },
+        col2: { id: 'col2', title: 'Column 2', order: 1 },
+        col3: { id: 'col3', title: 'Column 3', order: 2 },
       },
-      createdBy: "current-user-id",
+      createdBy: 'current-user-id',
       timerDurationSeconds: 300,
       timerIsRunning: false,
       timerStartTime: null,
@@ -345,12 +338,12 @@ vi.mock("../../services/boardService", () => ({
   subscribeToCards: vi.fn((boardId, callback) => {
     callback([
       {
-        id: "card1",
-        boardId: "test-board-id",
-        columnId: "col1",
-        content: "Card 1 content",
-        authorId: "user1",
-        authorName: "User 1",
+        id: 'card1',
+        boardId: 'test-board-id',
+        columnId: 'col1',
+        content: 'Card 1 content',
+        authorId: 'user1',
+        authorName: 'User 1',
         createdAt: { toDate: () => new Date() },
         votes: 0,
         position: 0,
@@ -368,13 +361,13 @@ vi.mock("../../services/boardService", () => ({
   resetTimer: vi.fn().mockResolvedValue(true),
   updateColumnSortState: vi.fn().mockResolvedValue(true),
   testFirestoreWrite: vi.fn().mockResolvedValue(true),
-  createCard: vi.fn().mockResolvedValue({ id: "new-card-id" }),
+  createCard: vi.fn().mockResolvedValue({ id: 'new-card-id' }),
   deleteCard: vi.fn().mockResolvedValue(true),
   voteCard: vi.fn().mockResolvedValue(true),
 }));
 
 // Mock the presence service
-vi.mock("../../services/presenceService", () => {
+vi.mock('../../services/presenceService', () => {
   const cleanupFn = function cleanupPresence() {
     // Cleanup implementation
   };
@@ -386,17 +379,17 @@ vi.mock("../../services/presenceService", () => {
     subscribeToParticipants: vi.fn((boardId, callback) => {
       callback([
         {
-          id: "user1",
-          name: "User One",
-          color: "bg-red-200",
-          boardId: "test-board-id",
+          id: 'user1',
+          name: 'User One',
+          color: 'bg-red-200',
+          boardId: 'test-board-id',
           lastOnline: Date.now(),
         },
         {
-          id: "current-user-id",
-          name: "Current User",
-          color: "bg-blue-200",
-          boardId: "test-board-id",
+          id: 'current-user-id',
+          name: 'Current User',
+          color: 'bg-blue-200',
+          boardId: 'test-board-id',
           lastOnline: Date.now(),
         },
       ]);
@@ -408,7 +401,7 @@ vi.mock("../../services/presenceService", () => {
 });
 
 // Mock the db object
-vi.mock("../../services/firebase", () => {
+vi.mock('../../services/firebase', () => {
   function OnlineUser(id, name, color, boardId) {
     this.id = id;
     this.name = name;
@@ -423,11 +416,11 @@ vi.mock("../../services/firebase", () => {
   };
 });
 
-describe("Board Component - Participants Integration", () => {
-  const mockBoardId = "test-board-id";
+describe('Board Component - Participants Integration', () => {
+  const mockBoardId = 'test-board-id';
   const mockUser = {
-    uid: "current-user-id",
-    displayName: "Current User",
+    uid: 'current-user-id',
+    displayName: 'Current User',
     isAnonymous: true,
   };
 
@@ -459,23 +452,23 @@ describe("Board Component - Participants Integration", () => {
     );
   };
 
-  it("renders the participants count in the button", async () => {
+  it('renders the participants count in the button', async () => {
     renderBoard();
 
     // Find the participants button by test ID
-    const participantsButton = screen.getByTestId("participants-button");
+    const participantsButton = screen.getByTestId('participants-button');
     expect(participantsButton).toBeInTheDocument();
 
     // The badge value should be 2
-    expect(participantsButton).toHaveTextContent("2");
+    expect(participantsButton).toHaveTextContent('2');
   });
 
-  it("opens the participants panel when the button is clicked", async () => {
+  it('opens the participants panel when the button is clicked', async () => {
     const user = userEvent.setup();
     renderBoard();
 
     // Find the participants button by test ID
-    const participantsButton = screen.getByTestId("participants-button");
+    const participantsButton = screen.getByTestId('participants-button');
     expect(participantsButton).toBeInTheDocument();
 
     // Click the button
@@ -483,7 +476,7 @@ describe("Board Component - Participants Integration", () => {
 
     // Wait for the panel to appear
     await waitFor(() => {
-      expect(screen.getByTestId("participants-panel")).toBeInTheDocument();
+      expect(screen.getByTestId('participants-panel')).toBeInTheDocument();
     });
 
     // Verify participant names are shown
@@ -491,77 +484,72 @@ describe("Board Component - Participants Integration", () => {
     expect(screen.getByText(/Current User \(You\)/)).toBeInTheDocument();
   });
 
-  it("closes the participants panel when the close button is clicked", async () => {
+  it('closes the participants panel when the close button is clicked', async () => {
     const user = userEvent.setup();
     renderBoard();
 
     // Find and click the participants button
-    const participantsButton = screen.getByTestId("participants-button");
+    const participantsButton = screen.getByTestId('participants-button');
     await user.click(participantsButton);
 
     // Wait for panel to open
     await waitFor(() => {
-      expect(screen.getByTestId("participants-panel")).toBeInTheDocument();
+      expect(screen.getByTestId('participants-panel')).toBeInTheDocument();
     });
 
     // Find the close button in the panel
-    const closeButton = screen.getByRole("button", { name: /close panel/i });
+    const closeButton = screen.getByRole('button', { name: /close panel/i });
     await user.click(closeButton);
 
     // Panel should be closed/removed
     await waitFor(() => {
-      expect(
-        screen.queryByTestId("participants-panel")
-      ).not.toBeInTheDocument();
+      expect(screen.queryByTestId('participants-panel')).not.toBeInTheDocument();
     });
   });
 
-  it("allows the current user to edit their name", async () => {
+  it('allows the current user to edit their name', async () => {
     const user = userEvent.setup();
     renderBoard();
 
     // Open the panel
-    const participantsButton = screen.getByTestId("participants-button");
+    const participantsButton = screen.getByTestId('participants-button');
     await user.click(participantsButton);
 
     // Wait for panel to open
     await waitFor(() => {
-      expect(screen.getByTestId("participants-panel")).toBeInTheDocument();
+      expect(screen.getByTestId('participants-panel')).toBeInTheDocument();
     });
 
     // Find the edit button and click it
-    const editButton = screen.getByTestId("edit-name-button");
+    const editButton = screen.getByTestId('edit-name-button');
     await user.click(editButton);
 
     // Verify the update functions were called
     expect(boardService.updateParticipantName).toHaveBeenCalledWith(
-      "current-user-id",
-      "New Username"
+      'current-user-id',
+      'New Username'
     );
     expect(presenceService.updateParticipantName).toHaveBeenCalledWith(
-      "current-user-id",
+      'current-user-id',
       mockBoardId,
-      "New Username"
+      'New Username'
     );
   });
 
-  it("sets up presence when the board loads", async () => {
+  it('sets up presence when the board loads', async () => {
     renderBoard();
 
     // Verify presence setup was called with the correct parameters
-    expect(presenceService.setupPresence).toHaveBeenCalledWith(
-      mockBoardId,
-      "Current User"
-    );
+    expect(presenceService.setupPresence).toHaveBeenCalledWith(mockBoardId, 'Current User');
 
     // Verify participant subscription was set up
     expect(presenceService.subscribeToParticipants).toHaveBeenCalledWith(
-      "test-board-id",
+      'test-board-id',
       expect.any(Function)
     );
   });
 
-  it("shows empty state when there are no participants", async () => {
+  it('shows empty state when there are no participants', async () => {
     // Mock subscribeToParticipants to return empty array
     vi.mocked(presenceService.subscribeToParticipants).mockImplementationOnce(
       (boardId, callback) => {
@@ -574,7 +562,7 @@ describe("Board Component - Participants Integration", () => {
     renderBoard();
 
     // Open the panel
-    const participantsButton = screen.getByTestId("participants-button");
+    const participantsButton = screen.getByTestId('participants-button');
     await user.click(participantsButton);
 
     // Wait for panel to open and verify empty state message is shown
@@ -583,7 +571,7 @@ describe("Board Component - Participants Integration", () => {
     });
   });
 
-  it("updates context when the current user changes their name", async () => {
+  it('updates context when the current user changes their name', async () => {
     const updateUserDisplayNameMock = vi.fn().mockResolvedValue(true);
     vi.mocked(FirebaseContext.useFirebase).mockReturnValue({
       user: mockUser,
@@ -596,20 +584,20 @@ describe("Board Component - Participants Integration", () => {
     renderBoard();
 
     // Open the panel
-    const participantsButton = screen.getByTestId("participants-button");
+    const participantsButton = screen.getByTestId('participants-button');
     await user.click(participantsButton);
 
     // Wait for panel to open
     await waitFor(() => {
-      expect(screen.getByTestId("participants-panel")).toBeInTheDocument();
+      expect(screen.getByTestId('participants-panel')).toBeInTheDocument();
     });
 
     // Find and click the edit button
-    const editButton = screen.getByTestId("edit-name-button");
+    const editButton = screen.getByTestId('edit-name-button');
     await user.click(editButton);
 
     // Verify updateUserDisplayName was called with the new name
-    expect(updateUserDisplayNameMock).toHaveBeenCalledWith("New Username");
+    expect(updateUserDisplayNameMock).toHaveBeenCalledWith('New Username');
   });
 
   it("allows updating a participant's color", async () => {
@@ -617,23 +605,23 @@ describe("Board Component - Participants Integration", () => {
     renderBoard();
 
     // Open the panel
-    const participantsButton = screen.getByTestId("participants-button");
+    const participantsButton = screen.getByTestId('participants-button');
     await user.click(participantsButton);
 
     // Wait for panel to open
     await waitFor(() => {
-      expect(screen.getByTestId("participants-panel")).toBeInTheDocument();
+      expect(screen.getByTestId('participants-panel')).toBeInTheDocument();
     });
 
     // Find and click the change color button
-    const colorButton = screen.getByTestId("change-color-button");
+    const colorButton = screen.getByTestId('change-color-button');
     await user.click(colorButton);
 
     // Verify updateParticipantColor was called
     expect(presenceService.updateParticipantColor).toHaveBeenCalledWith(
-      "current-user-id",
-      "test-board-id",
-      "bg-red-200"
+      'current-user-id',
+      'test-board-id',
+      'bg-red-200'
     );
   });
 });

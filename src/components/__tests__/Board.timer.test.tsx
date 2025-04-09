@@ -1,21 +1,18 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import type { User as FirebaseUser } from "firebase/auth";
-import { Timestamp, updateDoc } from "firebase/firestore";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import * as FirebaseContext from "../../contexts/FirebaseContext";
-import * as boardService from "../../services/boardService";
-import type { Board as BoardType } from "../../services/firebase";
-import Board from "../Board";
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import type { User as FirebaseUser } from 'firebase/auth';
+import { Timestamp, updateDoc } from 'firebase/firestore';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import * as FirebaseContext from '../../contexts/FirebaseContext';
+import * as boardService from '../../services/boardService';
+import type { Board as BoardType } from '../../services/firebase';
+import Board from '../Board';
 
-const createMockDocSnap = (
-  exists = true,
-  data: Record<string, unknown> = {}
-) => ({
+const createMockDocSnap = (exists = true, data: Record<string, unknown> = {}) => ({
   exists: () => exists,
   data: () => data,
-  id: "test-doc-id",
+  id: 'test-doc-id',
 });
 
 const createMockTimestamp = (milliseconds?: number) => {
@@ -30,18 +27,17 @@ const createMockTimestamp = (milliseconds?: number) => {
       seconds: Math.floor(timestamp / 1000),
       nanoseconds: (timestamp % 1000) * 1000000,
     }),
-    valueOf: () =>
-      `${Math.floor(timestamp / 1000)}.${(timestamp % 1000) * 1000000}`,
+    valueOf: () => `${Math.floor(timestamp / 1000)}.${(timestamp % 1000) * 1000000}`,
   };
 };
 
-vi.mock("../../services/firebase", () => {
+vi.mock('../../services/firebase', () => {
   return {
     db: {
       collection: vi.fn(() => ({ doc: vi.fn() })),
     },
     auth: {
-      currentUser: { uid: "test-user-id" },
+      currentUser: { uid: 'test-user-id' },
     },
     rtdb: {},
     signInAnonymousUser: vi.fn(),
@@ -57,22 +53,20 @@ vi.mock("../../services/firebase", () => {
   };
 });
 
-vi.mock("../../services/boardService", () => {
+vi.mock('../../services/boardService', () => {
   return {
     subscribeToBoard: vi.fn(() => vi.fn()),
     subscribeToCards: vi.fn(() => vi.fn()),
     startTimer: vi.fn(() => Promise.resolve()),
     pauseTimer: vi.fn(() => Promise.resolve()),
     resetTimer: vi.fn(() => Promise.resolve()),
-    joinBoard: vi.fn(() =>
-      Promise.resolve({ success: true, name: "Test User" })
-    ),
+    joinBoard: vi.fn(() => Promise.resolve({ success: true, name: 'Test User' })),
   };
 });
 
-vi.mock("../../contexts/FirebaseContext", () => ({
+vi.mock('../../contexts/FirebaseContext', () => ({
   useFirebase: vi.fn(() => ({
-    user: { uid: "test-user-id", displayName: "Test User" },
+    user: { uid: 'test-user-id', displayName: 'Test User' },
     loading: false,
     error: null,
     updateUserDisplayName: vi.fn(),
@@ -80,16 +74,14 @@ vi.mock("../../contexts/FirebaseContext", () => ({
 }));
 
 let mockDocExists = true;
-let mockDocData: Record<string, unknown> = { name: "Test Board" };
+let mockDocData: Record<string, unknown> = { name: 'Test Board' };
 
-vi.mock("firebase/firestore", () => {
-  const docRef = { id: "test-doc-id" };
+vi.mock('firebase/firestore', () => {
+  const docRef = { id: 'test-doc-id' };
 
   return {
     doc: vi.fn(() => docRef),
-    getDoc: vi.fn(() =>
-      Promise.resolve(createMockDocSnap(mockDocExists, mockDocData))
-    ),
+    getDoc: vi.fn(() => Promise.resolve(createMockDocSnap(mockDocExists, mockDocData))),
     updateDoc: vi.fn(() => Promise.resolve()),
     collection: vi.fn(() => ({ doc: vi.fn(() => docRef) })),
     query: vi.fn(),
@@ -100,7 +92,7 @@ vi.mock("firebase/firestore", () => {
         toMillis: () => Date.now(),
         toDate: () => new Date(),
       })),
-      fromMillis: vi.fn((ms) => ({
+      fromMillis: vi.fn(ms => ({
         toMillis: () => ms,
         toDate: () => new Date(ms),
       })),
@@ -110,23 +102,23 @@ vi.mock("firebase/firestore", () => {
       update: vi.fn(),
       commit: vi.fn(() => Promise.resolve()),
     })),
-    increment: vi.fn((num) => num),
+    increment: vi.fn(num => num),
     setDoc: vi.fn(() => Promise.resolve()),
   };
 });
 
 const mockBoard: BoardType = {
-  id: "test-board-id",
-  name: "Test Board",
+  id: 'test-board-id',
+  name: 'Test Board',
   columns: {
-    col1: { id: "col1", title: "What went well", order: 0, sortByVotes: false },
+    col1: { id: 'col1', title: 'What went well', order: 0, sortByVotes: false },
     col2: {
-      id: "col2",
-      title: "What can be improved",
+      id: 'col2',
+      title: 'What can be improved',
       order: 1,
       sortByVotes: false,
     },
-    col3: { id: "col3", title: "Action items", order: 2, sortByVotes: false },
+    col3: { id: 'col3', title: 'Action items', order: 2, sortByVotes: false },
   },
   createdAt: Timestamp.now(),
   isActive: true,
@@ -136,14 +128,14 @@ const mockBoard: BoardType = {
   timerIsRunning: false,
   timerStartTime: undefined,
   actionPoints: [
-    { id: "ap1", text: "Test Action Point 1", completed: false },
-    { id: "ap2", text: "Test Action Point 2", completed: true },
+    { id: 'ap1', text: 'Test Action Point 1', completed: false },
+    { id: 'ap2', text: 'Test Action Point 2', completed: true },
   ],
   showAddColumnPlaceholder: true,
-  facilitatorId: "test-user-id",
+  facilitatorId: 'test-user-id',
 };
 
-vi.mock("../../services/presenceService", () => {
+vi.mock('../../services/presenceService', () => {
   const cleanupFn = function cleanupPresence() {
     // Cleanup implementation
   };
@@ -156,10 +148,10 @@ vi.mock("../../services/presenceService", () => {
       act(() => {
         callback([
           {
-            id: "test-user-id",
-            name: "Test User",
-            color: "#FF5733",
-            boardId: "test-board-id",
+            id: 'test-user-id',
+            name: 'Test User',
+            color: '#FF5733',
+            boardId: 'test-board-id',
             lastOnline: Date.now(),
           },
         ]);
@@ -171,24 +163,24 @@ vi.mock("../../services/presenceService", () => {
 });
 
 const mockNavigate = vi.fn();
-vi.mock("react-router-dom", async () => {
-  const actual = await vi.importActual("react-router-dom");
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
   return {
     ...actual,
     useNavigate: () => mockNavigate,
   };
 });
 
-describe("Timer Functionality", () => {
+describe('Timer Functionality', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
     mockDocExists = true;
-    mockDocData = { name: "Test Board" };
+    mockDocData = { name: 'Test Board' };
 
     // Mock console methods to prevent cluttering test output
-    vi.spyOn(console, "error").mockImplementation(() => {});
-    vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     vi.mocked(FirebaseContext.useFirebase).mockReturnValue({
       user: {} as FirebaseUser,
@@ -196,23 +188,19 @@ describe("Timer Functionality", () => {
       error: null,
     });
 
-    vi.mocked(boardService.subscribeToBoard).mockImplementation(
-      (boardId, callback) => {
-        act(() => {
-          callback(mockBoard);
-        });
-        return vi.fn();
-      }
-    );
+    vi.mocked(boardService.subscribeToBoard).mockImplementation((boardId, callback) => {
+      act(() => {
+        callback(mockBoard);
+      });
+      return vi.fn();
+    });
 
-    vi.mocked(boardService.subscribeToCards).mockImplementation(
-      (boardId, callback) => {
-        act(() => {
-          callback([]);
-        });
-        return vi.fn();
-      }
-    );
+    vi.mocked(boardService.subscribeToCards).mockImplementation((boardId, callback) => {
+      act(() => {
+        callback([]);
+      });
+      return vi.fn();
+    });
   });
 
   afterEach(() => {
@@ -220,20 +208,18 @@ describe("Timer Functionality", () => {
     vi.restoreAllMocks(); // Restore console mocks
   });
 
-  it("handles timer controls correctly (start, pause, reset)", async () => {
+  it('handles timer controls correctly (start, pause, reset)', async () => {
     const user = userEvent.setup();
     let boardCallback: (board: BoardType | null) => void = () => {};
-    vi.mocked(boardService.subscribeToBoard).mockImplementation(
-      (_, callback) => {
-        boardCallback = callback;
-        act(() => callback(mockBoard));
-        return vi.fn();
-      }
-    );
+    vi.mocked(boardService.subscribeToBoard).mockImplementation((_, callback) => {
+      boardCallback = callback;
+      act(() => callback(mockBoard));
+      return vi.fn();
+    });
 
     await act(async () => {
       render(
-        <MemoryRouter initialEntries={["/boards/test-board-id"]}>
+        <MemoryRouter initialEntries={['/boards/test-board-id']}>
           <Routes>
             <Route path="/boards/:boardId" element={<Board />} />
           </Routes>
@@ -241,12 +227,9 @@ describe("Timer Functionality", () => {
       );
     });
 
-    const playButton = screen.getByRole("button", { name: /start timer/i });
+    const playButton = screen.getByRole('button', { name: /start timer/i });
     await user.click(playButton);
-    expect(boardService.startTimer).toHaveBeenCalledWith(
-      "test-board-id",
-      mockBoard
-    );
+    expect(boardService.startTimer).toHaveBeenCalledWith('test-board-id', mockBoard);
 
     const runningBoard = {
       ...mockBoard,
@@ -255,12 +238,9 @@ describe("Timer Functionality", () => {
     };
     act(() => boardCallback(runningBoard));
 
-    const pauseButton = screen.getByRole("button", { name: /pause timer/i });
+    const pauseButton = screen.getByRole('button', { name: /pause timer/i });
     await user.click(pauseButton);
-    expect(boardService.pauseTimer).toHaveBeenCalledWith(
-      "test-board-id",
-      runningBoard
-    );
+    expect(boardService.pauseTimer).toHaveBeenCalledWith('test-board-id', runningBoard);
 
     const pausedBoard = {
       ...runningBoard,
@@ -269,14 +249,14 @@ describe("Timer Functionality", () => {
     };
     act(() => boardCallback(pausedBoard));
 
-    const resetButton = screen.getByRole("button", { name: /reset timer/i });
+    const resetButton = screen.getByRole('button', { name: /reset timer/i });
     await user.click(resetButton);
-    expect(boardService.resetTimer).toHaveBeenCalledWith("test-board-id", 300);
+    expect(boardService.resetTimer).toHaveBeenCalledWith('test-board-id', 300);
 
     act(() => boardCallback(mockBoard));
   });
 
-  it("displays the correct time when timer is running", async () => {
+  it('displays the correct time when timer is running', async () => {
     vi.useFakeTimers();
     const startTime = Date.now();
     const runningBoard = {
@@ -286,16 +266,14 @@ describe("Timer Functionality", () => {
       timerDurationSeconds: 5,
     };
 
-    vi.mocked(boardService.subscribeToBoard).mockImplementation(
-      (_, callback) => {
-        act(() => callback(runningBoard));
-        return vi.fn();
-      }
-    );
+    vi.mocked(boardService.subscribeToBoard).mockImplementation((_, callback) => {
+      act(() => callback(runningBoard));
+      return vi.fn();
+    });
 
     await act(async () => {
       render(
-        <MemoryRouter initialEntries={["/boards/test-board-id"]}>
+        <MemoryRouter initialEntries={['/boards/test-board-id']}>
           <Routes>
             <Route path="/boards/:boardId" element={<Board />} />
           </Routes>
@@ -303,22 +281,22 @@ describe("Timer Functionality", () => {
       );
     });
 
-    expect(screen.getByText("0:05")).toBeInTheDocument();
+    expect(screen.getByText('0:05')).toBeInTheDocument();
 
     await act(async () => {
       vi.advanceTimersByTime(2000);
     });
-    expect(screen.getByText("0:03")).toBeInTheDocument();
+    expect(screen.getByText('0:03')).toBeInTheDocument();
 
     await act(async () => {
       vi.advanceTimersByTime(2000);
     });
-    expect(screen.getByText("0:01")).toBeInTheDocument();
+    expect(screen.getByText('0:01')).toBeInTheDocument();
 
     vi.useRealTimers();
   });
 
-  it("automatically resets the timer when it expires", async () => {
+  it('automatically resets the timer when it expires', async () => {
     vi.useFakeTimers();
     let boardCallback: (board: BoardType | null) => void = () => {};
     const startTime = Date.now();
@@ -331,18 +309,16 @@ describe("Timer Functionality", () => {
       timerPausedDurationSeconds: undefined,
     };
 
-    vi.mocked(boardService.subscribeToBoard).mockImplementation(
-      (_, callback) => {
-        boardCallback = callback;
-        act(() => callback(runningBoard));
-        return vi.fn();
-      }
-    );
+    vi.mocked(boardService.subscribeToBoard).mockImplementation((_, callback) => {
+      boardCallback = callback;
+      act(() => callback(runningBoard));
+      return vi.fn();
+    });
     vi.mocked(boardService.resetTimer).mockResolvedValue();
 
     await act(async () => {
       render(
-        <MemoryRouter initialEntries={["/boards/test-board-id"]}>
+        <MemoryRouter initialEntries={['/boards/test-board-id']}>
           <Routes>
             <Route path="/boards/:boardId" element={<Board />} />
           </Routes>
@@ -350,16 +326,13 @@ describe("Timer Functionality", () => {
       );
     });
 
-    expect(screen.getByText("0:02")).toBeInTheDocument();
+    expect(screen.getByText('0:02')).toBeInTheDocument();
 
     await act(async () => {
       vi.advanceTimersByTime(3500);
     });
 
-    expect(boardService.resetTimer).toHaveBeenCalledWith(
-      "test-board-id",
-      shortDuration
-    );
+    expect(boardService.resetTimer).toHaveBeenCalledWith('test-board-id', shortDuration);
 
     const resetBoard = {
       ...mockBoard,
@@ -370,12 +343,12 @@ describe("Timer Functionality", () => {
     };
     act(() => boardCallback(resetBoard));
 
-    expect(screen.getByDisplayValue("0:02")).toBeInTheDocument();
+    expect(screen.getByDisplayValue('0:02')).toBeInTheDocument();
 
     vi.useRealTimers();
   });
 
-  it("handles error during automatic timer reset", async () => {
+  it('handles error during automatic timer reset', async () => {
     vi.useFakeTimers();
     const startTime = Date.now();
     const shortDuration = 1;
@@ -385,19 +358,17 @@ describe("Timer Functionality", () => {
       timerStartTime: Timestamp.fromMillis(startTime),
       timerDurationSeconds: shortDuration,
     };
-    const resetError = new Error("Failed to auto-reset");
+    const resetError = new Error('Failed to auto-reset');
     vi.mocked(boardService.resetTimer).mockRejectedValue(resetError);
 
-    vi.mocked(boardService.subscribeToBoard).mockImplementation(
-      (_, callback) => {
-        act(() => callback(runningBoard));
-        return vi.fn();
-      }
-    );
+    vi.mocked(boardService.subscribeToBoard).mockImplementation((_, callback) => {
+      act(() => callback(runningBoard));
+      return vi.fn();
+    });
 
     await act(async () => {
       render(
-        <MemoryRouter initialEntries={["/boards/test-board-id"]}>
+        <MemoryRouter initialEntries={['/boards/test-board-id']}>
           <Routes>
             <Route path="/boards/:boardId" element={<Board />} />
           </Routes>
@@ -409,21 +380,18 @@ describe("Timer Functionality", () => {
       vi.advanceTimersByTime(2500);
     });
 
-    expect(boardService.resetTimer).toHaveBeenCalledWith(
-      "test-board-id",
-      shortDuration
-    );
+    expect(boardService.resetTimer).toHaveBeenCalledWith('test-board-id', shortDuration);
     expect(vi.mocked(console.error)).toHaveBeenCalledWith(
-      "Error auto-resetting timer:",
+      'Error auto-resetting timer:',
       resetError
     );
 
-    expect(screen.getByText("0:00")).toBeInTheDocument();
+    expect(screen.getByText('0:00')).toBeInTheDocument();
 
     vi.useRealTimers();
   });
 
-  it("handles resetting timer after running", async () => {
+  it('handles resetting timer after running', async () => {
     const user = userEvent.setup();
 
     const resetTimerMock = vi.fn().mockResolvedValue(undefined);
@@ -431,21 +399,19 @@ describe("Timer Functionality", () => {
 
     const testBoard = {
       ...mockBoard,
-      id: "test-board-id",
+      id: 'test-board-id',
       timerDurationSeconds: 300,
       timerIsRunning: false,
     };
 
-    vi.mocked(boardService.subscribeToBoard).mockImplementation(
-      (_, callback) => {
-        act(() => callback(testBoard));
-        return vi.fn();
-      }
-    );
+    vi.mocked(boardService.subscribeToBoard).mockImplementation((_, callback) => {
+      act(() => callback(testBoard));
+      return vi.fn();
+    });
 
     await act(async () => {
       render(
-        <MemoryRouter initialEntries={["/boards/test-board-id"]}>
+        <MemoryRouter initialEntries={['/boards/test-board-id']}>
           <Routes>
             <Route path="/boards/:boardId" element={<Board />} />
           </Routes>
@@ -453,17 +419,17 @@ describe("Timer Functionality", () => {
       );
     });
 
-    const resetButton = screen.getByRole("button", { name: /reset timer/i });
+    const resetButton = screen.getByRole('button', { name: /reset timer/i });
     expect(resetButton).toBeInTheDocument();
 
     await act(async () => {
       await user.click(resetButton);
     });
 
-    expect(resetTimerMock).toHaveBeenCalledWith("test-board-id", 300);
+    expect(resetTimerMock).toHaveBeenCalledWith('test-board-id', 300);
   });
 
-  it("handles editing timer duration when paused", async () => {
+  it('handles editing timer duration when paused', async () => {
     const user = userEvent.setup();
     let boardCallback: (board: BoardType | null) => void;
 
@@ -477,19 +443,17 @@ describe("Timer Functionality", () => {
       timerOriginalDurationSeconds: 120,
     };
 
-    vi.mocked(boardService.subscribeToBoard).mockImplementation(
-      (_, callback) => {
-        boardCallback = callback;
-        act(() => {
-          callback(pausedBoard);
-        });
-        return vi.fn();
-      }
-    );
+    vi.mocked(boardService.subscribeToBoard).mockImplementation((_, callback) => {
+      boardCallback = callback;
+      act(() => {
+        callback(pausedBoard);
+      });
+      return vi.fn();
+    });
 
     await act(async () => {
       render(
-        <MemoryRouter initialEntries={["/boards/test-board-id"]}>
+        <MemoryRouter initialEntries={['/boards/test-board-id']}>
           <Routes>
             <Route path="/boards/:boardId" element={<Board />} />
           </Routes>
@@ -497,15 +461,15 @@ describe("Timer Functionality", () => {
       );
     });
 
-    const timerInput = screen.getByDisplayValue("2:00");
+    const timerInput = screen.getByDisplayValue('2:00');
     expect(timerInput).toBeInTheDocument();
 
     await user.clear(timerInput);
-    await user.type(timerInput, "3:30");
+    await user.type(timerInput, '3:30');
 
     vi.mocked(updateDoc).mockResolvedValue();
     await act(async () => {
-      fireEvent.keyDown(timerInput, { key: "Enter" });
+      fireEvent.keyDown(timerInput, { key: 'Enter' });
     });
 
     expect(vi.mocked(updateDoc)).toHaveBeenCalledWith(
@@ -526,15 +490,15 @@ describe("Timer Functionality", () => {
     };
     act(() => boardCallback(updatedBoard));
 
-    const resetButton = screen.getByRole("button", { name: /reset timer/i });
+    const resetButton = screen.getByRole('button', { name: /reset timer/i });
     expect(resetButton).toBeInTheDocument();
 
     await user.click(resetButton);
 
-    expect(boardService.resetTimer).toHaveBeenCalledWith("test-board-id", 210);
+    expect(boardService.resetTimer).toHaveBeenCalledWith('test-board-id', 210);
   });
 
-  it("prevents saving edited time when timer is running", async () => {
+  it('prevents saving edited time when timer is running', async () => {
     const runningBoard = {
       ...mockBoard,
       timerIsRunning: true,
@@ -547,7 +511,7 @@ describe("Timer Functionality", () => {
 
     await act(async () => {
       render(
-        <MemoryRouter initialEntries={["/boards/test-board-id"]}>
+        <MemoryRouter initialEntries={['/boards/test-board-id']}>
           <Routes>
             <Route path="/boards/:boardId" element={<Board />} />
           </Routes>
@@ -555,13 +519,13 @@ describe("Timer Functionality", () => {
       );
     });
 
-    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
-    expect(screen.getByText("5:00")).toBeInTheDocument();
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    expect(screen.getByText('5:00')).toBeInTheDocument();
 
     expect(vi.mocked(updateDoc)).not.toHaveBeenCalled();
   });
 
-  it("reverts timer input to last valid time on invalid entry (Enter)", async () => {
+  it('reverts timer input to last valid time on invalid entry (Enter)', async () => {
     const user = userEvent.setup();
     const pausedBoard = { ...mockBoard, timerPausedDurationSeconds: 120 };
     vi.mocked(boardService.subscribeToBoard).mockImplementation((_, cb) => {
@@ -571,7 +535,7 @@ describe("Timer Functionality", () => {
 
     await act(async () => {
       render(
-        <MemoryRouter initialEntries={["/boards/test-board-id"]}>
+        <MemoryRouter initialEntries={['/boards/test-board-id']}>
           <Routes>
             <Route path="/boards/:boardId" element={<Board />} />
           </Routes>
@@ -579,20 +543,17 @@ describe("Timer Functionality", () => {
       );
     });
 
-    const timerInput = screen.getByDisplayValue("2:00");
+    const timerInput = screen.getByDisplayValue('2:00');
     await user.clear(timerInput);
-    await user.type(timerInput, "abc");
-    fireEvent.keyDown(timerInput, { key: "Enter" });
+    await user.type(timerInput, 'abc');
+    fireEvent.keyDown(timerInput, { key: 'Enter' });
 
-    expect(timerInput).toHaveValue("2:00");
+    expect(timerInput).toHaveValue('2:00');
     expect(vi.mocked(updateDoc)).not.toHaveBeenCalled();
-    expect(vi.mocked(console.warn)).toHaveBeenCalledWith(
-      "Invalid time format entered:",
-      "abc"
-    );
+    expect(vi.mocked(console.warn)).toHaveBeenCalledWith('Invalid time format entered:', 'abc');
   });
 
-  it("reverts timer input to last valid time on invalid entry (Blur)", async () => {
+  it('reverts timer input to last valid time on invalid entry (Blur)', async () => {
     const user = userEvent.setup();
     const pausedBoard = { ...mockBoard, timerPausedDurationSeconds: 120 };
     vi.mocked(boardService.subscribeToBoard).mockImplementation((_, cb) => {
@@ -602,7 +563,7 @@ describe("Timer Functionality", () => {
 
     await act(async () => {
       render(
-        <MemoryRouter initialEntries={["/boards/test-board-id"]}>
+        <MemoryRouter initialEntries={['/boards/test-board-id']}>
           <Routes>
             <Route path="/boards/:boardId" element={<Board />} />
           </Routes>
@@ -610,22 +571,19 @@ describe("Timer Functionality", () => {
       );
     });
 
-    const timerInput = screen.getByDisplayValue("2:00");
+    const timerInput = screen.getByDisplayValue('2:00');
     await user.clear(timerInput);
-    await user.type(timerInput, "5:60");
+    await user.type(timerInput, '5:60');
     await act(async () => {
       fireEvent.blur(timerInput);
     });
 
-    expect(timerInput).toHaveValue("2:00");
+    expect(timerInput).toHaveValue('2:00');
     expect(vi.mocked(updateDoc)).not.toHaveBeenCalled();
-    expect(vi.mocked(console.warn)).toHaveBeenCalledWith(
-      "Invalid time format entered:",
-      "5:60"
-    );
+    expect(vi.mocked(console.warn)).toHaveBeenCalledWith('Invalid time format entered:', '5:60');
   });
 
-  it("reverts timer input on Escape key press", async () => {
+  it('reverts timer input on Escape key press', async () => {
     const user = userEvent.setup();
     const pausedBoard = { ...mockBoard, timerPausedDurationSeconds: 120 };
     vi.mocked(boardService.subscribeToBoard).mockImplementation((_, cb) => {
@@ -635,7 +593,7 @@ describe("Timer Functionality", () => {
 
     await act(async () => {
       render(
-        <MemoryRouter initialEntries={["/boards/test-board-id"]}>
+        <MemoryRouter initialEntries={['/boards/test-board-id']}>
           <Routes>
             <Route path="/boards/:boardId" element={<Board />} />
           </Routes>
@@ -643,17 +601,17 @@ describe("Timer Functionality", () => {
       );
     });
 
-    const timerInput = screen.getByDisplayValue("2:00");
+    const timerInput = screen.getByDisplayValue('2:00');
     await user.clear(timerInput);
-    await user.type(timerInput, "3:30");
-    expect(timerInput).toHaveValue("3:30");
+    await user.type(timerInput, '3:30');
+    expect(timerInput).toHaveValue('3:30');
 
-    fireEvent.keyDown(timerInput, { key: "Escape" });
+    fireEvent.keyDown(timerInput, { key: 'Escape' });
 
-    expect(timerInput).toHaveValue("2:00");
+    expect(timerInput).toHaveValue('2:00');
   });
 
-  it("does not save timer on blur if focus moves to a timer control button", async () => {
+  it('does not save timer on blur if focus moves to a timer control button', async () => {
     const user = userEvent.setup();
     const pausedBoard = { ...mockBoard, timerPausedDurationSeconds: 120 };
     vi.mocked(boardService.subscribeToBoard).mockImplementation((_, cb) => {
@@ -663,7 +621,7 @@ describe("Timer Functionality", () => {
 
     await act(async () => {
       render(
-        <MemoryRouter initialEntries={["/boards/test-board-id"]}>
+        <MemoryRouter initialEntries={['/boards/test-board-id']}>
           <Routes>
             <Route path="/boards/:boardId" element={<Board />} />
           </Routes>
@@ -671,11 +629,11 @@ describe("Timer Functionality", () => {
       );
     });
 
-    const timerInput = screen.getByDisplayValue("2:00");
-    const playButton = screen.getByRole("button", { name: /start timer/i });
+    const timerInput = screen.getByDisplayValue('2:00');
+    const playButton = screen.getByRole('button', { name: /start timer/i });
 
     await user.clear(timerInput);
-    await user.type(timerInput, "4:00");
+    await user.type(timerInput, '4:00');
 
     await act(async () => {
       playButton.focus();
@@ -683,10 +641,10 @@ describe("Timer Functionality", () => {
     });
 
     expect(vi.mocked(updateDoc)).not.toHaveBeenCalled();
-    expect(timerInput).toHaveValue("4:00");
+    expect(timerInput).toHaveValue('4:00');
   });
 
-  it("resets timer to the last saved duration", async () => {
+  it('resets timer to the last saved duration', async () => {
     const user = userEvent.setup();
     let boardCallback: (board: BoardType | null) => void = () => {};
 
@@ -702,17 +660,15 @@ describe("Timer Functionality", () => {
       timerOriginalDurationSeconds: 300,
     };
 
-    vi.mocked(boardService.subscribeToBoard).mockImplementation(
-      (_, callback) => {
-        boardCallback = callback;
-        act(() => callback(initialPausedBoard));
-        return vi.fn();
-      }
-    );
+    vi.mocked(boardService.subscribeToBoard).mockImplementation((_, callback) => {
+      boardCallback = callback;
+      act(() => callback(initialPausedBoard));
+      return vi.fn();
+    });
 
     await act(async () => {
       render(
-        <MemoryRouter initialEntries={["/boards/test-board-id"]}>
+        <MemoryRouter initialEntries={['/boards/test-board-id']}>
           <Routes>
             <Route path="/boards/:boardId" element={<Board />} />
           </Routes>
@@ -720,13 +676,13 @@ describe("Timer Functionality", () => {
       );
     });
 
-    const timerInput = screen.getByDisplayValue("5:00");
+    const timerInput = screen.getByDisplayValue('5:00');
     await user.clear(timerInput);
-    await user.type(timerInput, "2:00");
+    await user.type(timerInput, '2:00');
 
     vi.mocked(updateDoc).mockResolvedValue();
     await act(async () => {
-      fireEvent.keyDown(timerInput, { key: "Enter" });
+      fireEvent.keyDown(timerInput, { key: 'Enter' });
     });
 
     expect(vi.mocked(updateDoc)).toHaveBeenCalledWith(
@@ -746,14 +702,11 @@ describe("Timer Functionality", () => {
     };
     act(() => boardCallback(savedBoardState));
 
-    expect(timerInput).toHaveValue("2:00");
+    expect(timerInput).toHaveValue('2:00');
 
-    const playButton = screen.getByRole("button", { name: /start timer/i });
+    const playButton = screen.getByRole('button', { name: /start timer/i });
     await user.click(playButton);
-    expect(boardService.startTimer).toHaveBeenCalledWith(
-      "test-board-id",
-      savedBoardState
-    );
+    expect(boardService.startTimer).toHaveBeenCalledWith('test-board-id', savedBoardState);
 
     const runningBoardState = {
       ...savedBoardState,
@@ -764,15 +717,12 @@ describe("Timer Functionality", () => {
     };
     act(() => boardCallback(runningBoardState));
 
-    expect(screen.getByText("2:00")).toBeInTheDocument();
-    expect(screen.queryByDisplayValue("2:00")).not.toBeInTheDocument();
+    expect(screen.getByText('2:00')).toBeInTheDocument();
+    expect(screen.queryByDisplayValue('2:00')).not.toBeInTheDocument();
 
-    const pauseButton = screen.getByRole("button", { name: /pause timer/i });
+    const pauseButton = screen.getByRole('button', { name: /pause timer/i });
     await user.click(pauseButton);
-    expect(boardService.pauseTimer).toHaveBeenCalledWith(
-      "test-board-id",
-      runningBoardState
-    );
+    expect(boardService.pauseTimer).toHaveBeenCalledWith('test-board-id', runningBoardState);
 
     const pausedBoardState = {
       ...runningBoardState,
@@ -784,15 +734,15 @@ describe("Timer Functionality", () => {
     };
     act(() => boardCallback(pausedBoardState));
 
-    const pausedTimerInput = screen.getByDisplayValue("1:40");
+    const pausedTimerInput = screen.getByDisplayValue('1:40');
     expect(pausedTimerInput).toBeInTheDocument();
 
-    const resetButton = screen.getByRole("button", { name: /reset timer/i });
+    const resetButton = screen.getByRole('button', { name: /reset timer/i });
     await act(async () => {
       await user.click(resetButton);
     });
 
-    expect(boardService.resetTimer).toHaveBeenCalledWith("test-board-id", 120);
+    expect(boardService.resetTimer).toHaveBeenCalledWith('test-board-id', 120);
 
     const resetBoardState = {
       ...pausedBoardState,
@@ -804,10 +754,10 @@ describe("Timer Functionality", () => {
     };
     act(() => boardCallback(resetBoardState));
 
-    expect(screen.getByDisplayValue("2:00")).toBeInTheDocument();
+    expect(screen.getByDisplayValue('2:00')).toBeInTheDocument();
   });
 
-  it("resets timer correctly when paused after running twice", async () => {
+  it('resets timer correctly when paused after running twice', async () => {
     const user = userEvent.setup();
     let boardCallback: (board: BoardType | null) => void = () => {};
 
@@ -825,17 +775,15 @@ describe("Timer Functionality", () => {
       timerOriginalDurationSeconds: 300,
     };
 
-    vi.mocked(boardService.subscribeToBoard).mockImplementation(
-      (_, callback) => {
-        boardCallback = callback;
-        act(() => callback(initialPausedBoard));
-        return vi.fn();
-      }
-    );
+    vi.mocked(boardService.subscribeToBoard).mockImplementation((_, callback) => {
+      boardCallback = callback;
+      act(() => callback(initialPausedBoard));
+      return vi.fn();
+    });
 
     await act(async () => {
       render(
-        <MemoryRouter initialEntries={["/boards/test-board-id"]}>
+        <MemoryRouter initialEntries={['/boards/test-board-id']}>
           <Routes>
             <Route path="/boards/:boardId" element={<Board />} />
           </Routes>
@@ -843,13 +791,13 @@ describe("Timer Functionality", () => {
       );
     });
 
-    const timerInput = screen.getByDisplayValue("5:00");
+    const timerInput = screen.getByDisplayValue('5:00');
     await user.clear(timerInput);
-    await user.type(timerInput, "2:00");
+    await user.type(timerInput, '2:00');
 
     vi.mocked(updateDoc).mockResolvedValue();
     await act(async () => {
-      fireEvent.keyDown(timerInput, { key: "Enter" });
+      fireEvent.keyDown(timerInput, { key: 'Enter' });
     });
 
     expect(vi.mocked(updateDoc)).toHaveBeenCalledWith(
@@ -869,14 +817,11 @@ describe("Timer Functionality", () => {
     };
     act(() => boardCallback(savedBoardState));
 
-    expect(timerInput).toHaveValue("2:00");
+    expect(timerInput).toHaveValue('2:00');
 
-    const playButton = screen.getByRole("button", { name: /start timer/i });
+    const playButton = screen.getByRole('button', { name: /start timer/i });
     await user.click(playButton);
-    expect(boardService.startTimer).toHaveBeenCalledWith(
-      "test-board-id",
-      savedBoardState
-    );
+    expect(boardService.startTimer).toHaveBeenCalledWith('test-board-id', savedBoardState);
 
     const runningBoardState = {
       ...savedBoardState,
@@ -888,12 +833,9 @@ describe("Timer Functionality", () => {
     };
     act(() => boardCallback(runningBoardState));
 
-    const pauseButton = screen.getByRole("button", { name: /pause timer/i });
+    const pauseButton = screen.getByRole('button', { name: /pause timer/i });
     await user.click(pauseButton);
-    expect(boardService.pauseTimer).toHaveBeenCalledWith(
-      "test-board-id",
-      runningBoardState
-    );
+    expect(boardService.pauseTimer).toHaveBeenCalledWith('test-board-id', runningBoardState);
 
     const firstPausedState = {
       ...runningBoardState,
@@ -905,13 +847,10 @@ describe("Timer Functionality", () => {
     };
     act(() => boardCallback(firstPausedState));
 
-    expect(screen.getByDisplayValue("1:58")).toBeInTheDocument();
+    expect(screen.getByDisplayValue('1:58')).toBeInTheDocument();
 
     await user.click(playButton);
-    expect(boardService.startTimer).toHaveBeenCalledWith(
-      "test-board-id",
-      firstPausedState
-    );
+    expect(boardService.startTimer).toHaveBeenCalledWith('test-board-id', firstPausedState);
 
     const secondRunningState = {
       ...firstPausedState,
@@ -924,10 +863,7 @@ describe("Timer Functionality", () => {
     act(() => boardCallback(secondRunningState));
 
     await user.click(pauseButton);
-    expect(boardService.pauseTimer).toHaveBeenCalledWith(
-      "test-board-id",
-      secondRunningState
-    );
+    expect(boardService.pauseTimer).toHaveBeenCalledWith('test-board-id', secondRunningState);
 
     const secondPausedState = {
       ...secondRunningState,
@@ -941,14 +877,14 @@ describe("Timer Functionality", () => {
 
     resetTimerMock.mockClear();
 
-    expect(screen.getByDisplayValue("1:53")).toBeInTheDocument();
+    expect(screen.getByDisplayValue('1:53')).toBeInTheDocument();
 
-    const resetButton = screen.getByRole("button", { name: /reset timer/i });
+    const resetButton = screen.getByRole('button', { name: /reset timer/i });
     await act(async () => {
       await user.click(resetButton);
     });
 
-    expect(resetTimerMock).toHaveBeenCalledWith("test-board-id", 120);
+    expect(resetTimerMock).toHaveBeenCalledWith('test-board-id', 120);
 
     const resetBoardState = {
       ...secondPausedState,
@@ -960,6 +896,6 @@ describe("Timer Functionality", () => {
     };
     act(() => boardCallback(resetBoardState));
 
-    expect(screen.getByDisplayValue("2:00")).toBeInTheDocument();
+    expect(screen.getByDisplayValue('2:00')).toBeInTheDocument();
   });
 });

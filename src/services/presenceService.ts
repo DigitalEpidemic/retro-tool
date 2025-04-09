@@ -6,35 +6,32 @@ import {
   ref,
   serverTimestamp as rtdbTimestamp,
   set,
-} from "firebase/database";
-import { doc, getDoc } from "firebase/firestore";
-import { auth, db, OnlineUser, rtdb } from "./firebase";
+} from 'firebase/database';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db, OnlineUser, rtdb } from './firebase';
 
 // Generate a consistent Tailwind color class for a user based on their ID
 const getColorForUser = (userId: string) => {
   // Available Tailwind color classes - exactly 14 distinct colors
   const tailwindColors = [
-    "bg-red-200",
-    "bg-orange-200",
-    "bg-amber-200",
-    "bg-yellow-200",
-    "bg-lime-200",
-    "bg-green-200",
-    "bg-teal-200",
-    "bg-cyan-200",
-    "bg-sky-200",
-    "bg-blue-200",
-    "bg-indigo-200",
-    "bg-violet-200",
-    "bg-fuchsia-200",
-    "bg-rose-200",
+    'bg-red-200',
+    'bg-orange-200',
+    'bg-amber-200',
+    'bg-yellow-200',
+    'bg-lime-200',
+    'bg-green-200',
+    'bg-teal-200',
+    'bg-cyan-200',
+    'bg-sky-200',
+    'bg-blue-200',
+    'bg-indigo-200',
+    'bg-violet-200',
+    'bg-fuchsia-200',
+    'bg-rose-200',
   ];
 
   // Use user ID to generate a consistent index
-  const hash = Array.from(userId).reduce(
-    (acc, char) => acc + char.charCodeAt(0),
-    0
-  );
+  const hash = Array.from(userId).reduce((acc, char) => acc + char.charCodeAt(0), 0);
 
   // Select a color based on the hash
   const colorIndex = hash % tailwindColors.length;
@@ -47,13 +44,10 @@ const getColorForUser = (userId: string) => {
  * @param displayName The user's display name
  * @returns A cleanup function to call when the component unmounts
  */
-export const setupPresence = async (
-  boardId: string,
-  displayName: string
-): Promise<() => void> => {
+export const setupPresence = async (boardId: string, displayName: string): Promise<() => void> => {
   // Don't proceed if there's no authenticated user
   if (!auth.currentUser) {
-    console.error("Cannot setup presence without an authenticated user");
+    console.error('Cannot setup presence without an authenticated user');
     return () => {}; // Return empty cleanup function
   }
 
@@ -65,7 +59,7 @@ export const setupPresence = async (
   let userColor;
 
   try {
-    const userRef = doc(db, "users", userId);
+    const userRef = doc(db, 'users', userId);
     const userSnap = await getDoc(userRef);
 
     if (userSnap.exists() && userSnap.data().color) {
@@ -76,7 +70,7 @@ export const setupPresence = async (
       userColor = getColorForUser(userId);
     }
   } catch (error) {
-    console.error("Error fetching user color for presence:", error);
+    console.error('Error fetching user color for presence:', error);
     // Fallback to generated color
     userColor = getColorForUser(userId);
   }
@@ -84,7 +78,7 @@ export const setupPresence = async (
   // User data to store
   const userData: OnlineUser = {
     id: userId,
-    name: displayName || "Anonymous",
+    name: displayName || 'Anonymous',
     color: userColor,
     boardId,
     lastOnline: Date.now(),
@@ -138,12 +132,12 @@ export const subscribeToParticipants = (
   const boardParticipantsRef = ref(rtdb, `boards/${boardId}/participants`);
 
   // Listen for changes to the participants in this board
-  onValue(boardParticipantsRef, (snapshot) => {
+  onValue(boardParticipantsRef, snapshot => {
     const participants: OnlineUser[] = [];
 
     if (snapshot.exists()) {
       // Convert the object to an array
-      snapshot.forEach((childSnapshot) => {
+      snapshot.forEach(childSnapshot => {
         participants.push(childSnapshot.val() as OnlineUser);
       });
 
@@ -172,7 +166,7 @@ export const updateParticipantName = async (
   newName: string
 ): Promise<void> => {
   // Don't update if the new name is empty or only whitespace
-  if (!newName || newName.trim() === "") {
+  if (!newName || newName.trim() === '') {
     return;
   }
 
@@ -190,7 +184,7 @@ export const updateParticipantName = async (
       });
     }
   } catch (error) {
-    console.error("Error updating participant name in RTDB:", error);
+    console.error('Error updating participant name in RTDB:', error);
     throw error;
   }
 };
@@ -215,7 +209,7 @@ export const updateParticipantColor = async (
       });
     }
   } catch (error) {
-    console.error("Error updating participant color in RTDB:", error);
+    console.error('Error updating participant color in RTDB:', error);
     throw error;
   }
 };

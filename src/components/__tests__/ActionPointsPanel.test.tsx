@@ -1,24 +1,24 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
-import ActionPointsPanel, { ActionPoint } from "../ActionPointsPanel";
+import { fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import ActionPointsPanel, { ActionPoint } from '../ActionPointsPanel';
 // Mock Lucide React icons
-vi.mock("lucide-react", () => {
+vi.mock('lucide-react', () => {
   const mockIcon = (name: string) =>
     function MockIcon() {
       return <span data-testid={`${name.toLowerCase()}-icon`}>{name}</span>;
     };
 
   return {
-    X: mockIcon("X"),
-    Plus: mockIcon("Plus"),
-    Check: mockIcon("Check"),
+    X: mockIcon('X'),
+    Plus: mockIcon('Plus'),
+    Check: mockIcon('Check'),
   };
 });
 
-describe("ActionPointsPanel", () => {
+describe('ActionPointsPanel', () => {
   const mockActionPoints: ActionPoint[] = [
-    { id: "1", text: "Test action point 1", completed: false },
-    { id: "2", text: "Test action point 2", completed: true },
+    { id: '1', text: 'Test action point 1', completed: false },
+    { id: '2', text: 'Test action point 2', completed: true },
   ];
 
   const mockOnClose = vi.fn();
@@ -30,7 +30,7 @@ describe("ActionPointsPanel", () => {
     vi.clearAllMocks();
   });
 
-  it("should not render when closed", () => {
+  it('should not render when closed', () => {
     render(
       <ActionPointsPanel
         isOpen={false}
@@ -42,10 +42,10 @@ describe("ActionPointsPanel", () => {
       />
     );
 
-    expect(screen.queryByText("Action Points")).not.toBeInTheDocument();
+    expect(screen.queryByText('Action Points')).not.toBeInTheDocument();
   });
 
-  it("should render when open", () => {
+  it('should render when open', () => {
     render(
       <ActionPointsPanel
         isOpen={true}
@@ -57,10 +57,10 @@ describe("ActionPointsPanel", () => {
       />
     );
 
-    expect(screen.getByText("Action Points")).toBeInTheDocument();
-    expect(screen.getByText("To do")).toBeInTheDocument();
-    expect(screen.getByText("Test action point 1")).toBeInTheDocument();
-    expect(screen.getByText("Test action point 2")).toBeInTheDocument();
+    expect(screen.getByText('Action Points')).toBeInTheDocument();
+    expect(screen.getByText('To do')).toBeInTheDocument();
+    expect(screen.getByText('Test action point 1')).toBeInTheDocument();
+    expect(screen.getByText('Test action point 2')).toBeInTheDocument();
   });
 
   it("should show 'no action points' message when there are no action points", () => {
@@ -75,10 +75,10 @@ describe("ActionPointsPanel", () => {
       />
     );
 
-    expect(screen.getByText("No action points yet")).toBeInTheDocument();
+    expect(screen.getByText('No action points yet')).toBeInTheDocument();
   });
 
-  it("should call onClose when close button is clicked", () => {
+  it('should call onClose when close button is clicked', () => {
     render(
       <ActionPointsPanel
         isOpen={true}
@@ -90,7 +90,7 @@ describe("ActionPointsPanel", () => {
       />
     );
 
-    fireEvent.click(screen.getByTestId("close-panel"));
+    fireEvent.click(screen.getByTestId('close-panel'));
     expect(mockOnClose).toHaveBeenCalledTimes(1);
   });
 
@@ -106,16 +106,14 @@ describe("ActionPointsPanel", () => {
       />
     );
 
-    fireEvent.click(screen.getByTestId("add-action-point-button"));
+    fireEvent.click(screen.getByTestId('add-action-point-button'));
 
-    expect(
-      screen.getByPlaceholderText("Enter action point...")
-    ).toBeInTheDocument();
-    expect(screen.getByText("Cancel")).toBeInTheDocument();
-    expect(screen.getByText("Add")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Enter action point...')).toBeInTheDocument();
+    expect(screen.getByText('Cancel')).toBeInTheDocument();
+    expect(screen.getByText('Add')).toBeInTheDocument();
   });
 
-  it("should call onAddActionPoint when new action point is added", () => {
+  it('should call onAddActionPoint when new action point is added', () => {
     render(
       <ActionPointsPanel
         isOpen={true}
@@ -127,17 +125,17 @@ describe("ActionPointsPanel", () => {
       />
     );
 
-    fireEvent.click(screen.getByTestId("add-action-point-button"));
+    fireEvent.click(screen.getByTestId('add-action-point-button'));
 
-    const input = screen.getByPlaceholderText("Enter action point...");
-    fireEvent.change(input, { target: { value: "New action point" } });
+    const input = screen.getByPlaceholderText('Enter action point...');
+    fireEvent.change(input, { target: { value: 'New action point' } });
 
-    fireEvent.click(screen.getByTestId("add-action-point"));
+    fireEvent.click(screen.getByTestId('add-action-point'));
 
-    expect(mockOnAddActionPoint).toHaveBeenCalledWith("New action point");
+    expect(mockOnAddActionPoint).toHaveBeenCalledWith('New action point');
   });
 
-  it("should call onToggleActionPoint when checkbox is clicked", () => {
+  it('should call onToggleActionPoint when checkbox is clicked', () => {
     render(
       <ActionPointsPanel
         isOpen={true}
@@ -149,13 +147,13 @@ describe("ActionPointsPanel", () => {
       />
     );
 
-    const checkboxes = screen.getAllByRole("checkbox");
+    const checkboxes = screen.getAllByRole('checkbox');
     fireEvent.click(checkboxes[0]);
 
-    expect(mockOnToggleActionPoint).toHaveBeenCalledWith("1");
+    expect(mockOnToggleActionPoint).toHaveBeenCalledWith('1');
   });
 
-  it("should call onDeleteActionPoint when delete button is clicked", () => {
+  it('should call onDeleteActionPoint when delete button is clicked', () => {
     render(
       <ActionPointsPanel
         isOpen={true}
@@ -167,9 +165,9 @@ describe("ActionPointsPanel", () => {
       />
     );
 
-    const deleteButtons = screen.getAllByLabelText("Delete action point");
+    const deleteButtons = screen.getAllByLabelText('Delete action point');
     fireEvent.click(deleteButtons[0]);
 
-    expect(mockOnDeleteActionPoint).toHaveBeenCalledWith("1");
+    expect(mockOnDeleteActionPoint).toHaveBeenCalledWith('1');
   });
 });

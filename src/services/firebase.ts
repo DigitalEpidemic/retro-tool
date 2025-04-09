@@ -1,8 +1,8 @@
-import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getDatabase } from "firebase/database";
-import { getFirestore, Timestamp } from "firebase/firestore";
-import { ActionPoint } from "../components/ActionPointsPanel";
+import { initializeApp } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
+import { getDatabase } from 'firebase/database';
+import { getFirestore, Timestamp } from 'firebase/firestore';
+import { ActionPoint } from '../components/ActionPointsPanel';
 
 // Your web app's Firebase configuration
 // In a real app, set this up as environment variables (.env file)
@@ -15,9 +15,7 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
   databaseURL:
     import.meta.env.VITE_FIREBASE_DATABASE_URL ||
-    `https://${
-      import.meta.env.VITE_FIREBASE_PROJECT_ID
-    }-default-rtdb.firebaseio.com`,
+    `https://${import.meta.env.VITE_FIREBASE_PROJECT_ID}-default-rtdb.firebaseio.com`,
 };
 
 // Initialize Firebase

@@ -1,6 +1,6 @@
-import { Edit2, X } from "lucide-react";
-import { KeyboardEvent, memo, useEffect, useRef, useState } from "react";
-import { OnlineUser } from "../services/firebase";
+import { Edit2, X } from 'lucide-react';
+import { KeyboardEvent, memo, useEffect, useRef, useState } from 'react';
+import { OnlineUser } from '../services/firebase';
 
 // Create a memoized version of the ParticipantsPanel
 const ParticipantsPanel = memo(
@@ -20,26 +20,26 @@ const ParticipantsPanel = memo(
     onUpdateColor: (userId: string, newColor: string) => void;
   }) => {
     const [editingUser, setEditingUser] = useState<string | null>(null);
-    const [newName, setNewName] = useState("");
-    const [newColor, setNewColor] = useState("");
+    const [newName, setNewName] = useState('');
+    const [newColor, setNewColor] = useState('');
     const inputRef = useRef<HTMLInputElement>(null);
 
     // Available Tailwind color classes
     const colorOptions = [
-      { value: "bg-red-200", name: "Red" },
-      { value: "bg-orange-200", name: "Orange" },
-      { value: "bg-amber-200", name: "Amber" },
-      { value: "bg-yellow-200", name: "Yellow" },
-      { value: "bg-lime-200", name: "Lime" },
-      { value: "bg-green-200", name: "Green" },
-      { value: "bg-teal-200", name: "Teal" },
-      { value: "bg-cyan-200", name: "Cyan" },
-      { value: "bg-sky-200", name: "Sky" },
-      { value: "bg-blue-200", name: "Blue" },
-      { value: "bg-indigo-200", name: "Indigo" },
-      { value: "bg-violet-200", name: "Violet" },
-      { value: "bg-fuchsia-200", name: "Fuchsia" },
-      { value: "bg-rose-200", name: "Rose" },
+      { value: 'bg-red-200', name: 'Red' },
+      { value: 'bg-orange-200', name: 'Orange' },
+      { value: 'bg-amber-200', name: 'Amber' },
+      { value: 'bg-yellow-200', name: 'Yellow' },
+      { value: 'bg-lime-200', name: 'Lime' },
+      { value: 'bg-green-200', name: 'Green' },
+      { value: 'bg-teal-200', name: 'Teal' },
+      { value: 'bg-cyan-200', name: 'Cyan' },
+      { value: 'bg-sky-200', name: 'Sky' },
+      { value: 'bg-blue-200', name: 'Blue' },
+      { value: 'bg-indigo-200', name: 'Indigo' },
+      { value: 'bg-violet-200', name: 'Violet' },
+      { value: 'bg-fuchsia-200', name: 'Fuchsia' },
+      { value: 'bg-rose-200', name: 'Rose' },
     ];
 
     // Focus input when editing starts
@@ -49,14 +49,10 @@ const ParticipantsPanel = memo(
       }
     }, [editingUser]);
 
-    const handleStartEdit = (
-      userId: string,
-      currentName: string,
-      currentColor: string
-    ) => {
+    const handleStartEdit = (userId: string, currentName: string, currentColor: string) => {
       setEditingUser(userId);
       setNewName(currentName);
-      setNewColor(currentColor || "bg-blue-200");
+      setNewColor(currentColor || 'bg-blue-200');
     };
 
     // Handle when the user selects a color (just updates local state, doesn't save yet)
@@ -73,7 +69,7 @@ const ParticipantsPanel = memo(
         }
 
         // Get the current user's participant data
-        const participant = participants.find((p) => p.id === editingUser);
+        const participant = participants.find(p => p.id === editingUser);
 
         // Save color if it's different from current color
         if (newColor && participant && newColor !== participant.color) {
@@ -86,9 +82,9 @@ const ParticipantsPanel = memo(
     };
 
     const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Enter") {
+      if (e.key === 'Enter') {
         handleSaveChanges();
-      } else if (e.key === "Escape") {
+      } else if (e.key === 'Escape') {
         setEditingUser(null);
       }
     };
@@ -96,7 +92,7 @@ const ParticipantsPanel = memo(
     if (!isOpen) return null;
 
     // Filter out any invalid participants (shouldn't happen, but just in case)
-    const validParticipants = participants.filter((p) => p && p.id && p.name);
+    const validParticipants = participants.filter(p => p && p.id && p.name);
 
     return (
       <div
@@ -120,7 +116,7 @@ const ParticipantsPanel = memo(
             {validParticipants.length === 0 ? (
               <li className="text-gray-500 italic">No participants yet</li>
             ) : (
-              validParticipants.map((participant) => (
+              validParticipants.map(participant => (
                 <li
                   key={participant.id}
                   className="flex items-center justify-between py-2 px-3 rounded-md hover:bg-gray-50"
@@ -132,7 +128,7 @@ const ParticipantsPanel = memo(
                         <div className="flex items-center w-full mb-2">
                           <div
                             className={`h-8 w-8 rounded-full mr-3 flex-shrink-0 flex items-center justify-center text-gray-700 ${
-                              participant.color || "bg-blue-200"
+                              participant.color || 'bg-blue-200'
                             }`}
                             data-testid={`participant-color-${participant.id}`}
                           >
@@ -142,7 +138,7 @@ const ParticipantsPanel = memo(
                             ref={inputRef}
                             type="text"
                             value={newName}
-                            onChange={(e) => setNewName(e.target.value)}
+                            onChange={e => setNewName(e.target.value)}
                             onKeyDown={handleKeyDown}
                             className="w-full border border-blue-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                             autoComplete="off"
@@ -150,13 +146,11 @@ const ParticipantsPanel = memo(
                           />
                         </div>
                         <div className="pl-11">
-                          {" "}
+                          {' '}
                           {/* Left padding to align with input field */}
-                          <p className="text-xs text-gray-600 mb-1 font-medium">
-                            Select a color:
-                          </p>
+                          <p className="text-xs text-gray-600 mb-1 font-medium">Select a color:</p>
                           <div className="flex flex-wrap gap-2">
-                            {colorOptions.map((color) => (
+                            {colorOptions.map(color => (
                               <button
                                 key={color.value}
                                 onClick={() => handleColorSelect(color.value)}
@@ -165,8 +159,8 @@ const ParticipantsPanel = memo(
                                 } w-7 h-7 rounded-full cursor-pointer shadow-sm transition-all 
                                   ${
                                     newColor === color.value
-                                      ? "ring-2 ring-blue-500 scale-110"
-                                      : "hover:scale-110 hover:ring-1 hover:ring-gray-400"
+                                      ? 'ring-2 ring-blue-500 scale-110'
+                                      : 'hover:scale-110 hover:ring-1 hover:ring-gray-400'
                                   }`}
                                 aria-label={`Select ${color.name} color`}
                                 title={color.name}
@@ -182,17 +176,11 @@ const ParticipantsPanel = memo(
                           </div>
                           <div className="flex items-center justify-between mt-1">
                             <p className="text-xs text-gray-500">
-                              Current:{" "}
-                              {participant.color
-                                .replace("bg-", "")
-                                .replace("-200", "")}
+                              Current: {participant.color.replace('bg-', '').replace('-200', '')}
                             </p>
                             {newColor !== participant.color && (
                               <p className="text-xs text-blue-600">
-                                New:{" "}
-                                {newColor
-                                  .replace("bg-", "")
-                                  .replace("-200", "")}
+                                New: {newColor.replace('bg-', '').replace('-200', '')}
                               </p>
                             )}
                           </div>
@@ -221,7 +209,7 @@ const ParticipantsPanel = memo(
                         <div className="flex items-center">
                           <div
                             className={`h-8 w-8 rounded-full mr-3 flex items-center justify-center text-gray-700 ${
-                              participant.color || "bg-blue-200"
+                              participant.color || 'bg-blue-200'
                             }`}
                             data-testid={`participant-color-${participant.id}`}
                           >
@@ -232,27 +220,20 @@ const ParticipantsPanel = memo(
                             data-testid={`participant-name-${participant.id}`}
                           >
                             {participant.name}
-                            {participant.id === currentUserId && " (You)"}
+                            {participant.id === currentUserId && ' (You)'}
                           </span>
                         </div>
 
                         {participant.id === currentUserId && (
                           <button
                             onClick={() =>
-                              handleStartEdit(
-                                participant.id,
-                                participant.name,
-                                participant.color
-                              )
+                              handleStartEdit(participant.id, participant.name, participant.color)
                             }
                             className="text-gray-400 hover:text-blue-500 cursor-pointer"
                             aria-label="Edit your name and color"
                             data-testid={`edit-name-${participant.id}`}
                           >
-                            <Edit2
-                              className="h-4 w-4"
-                              data-testid="edit-icon"
-                            />
+                            <Edit2 className="h-4 w-4" data-testid="edit-icon" />
                           </button>
                         )}
                       </div>

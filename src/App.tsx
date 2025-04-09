@@ -1,30 +1,28 @@
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
-import { ClipboardCheck, Shuffle } from "lucide-react";
-import { nanoid } from "nanoid";
-import { FormEvent, useEffect, useState } from "react";
-import { Route, Routes, useNavigate } from "react-router-dom";
-import "./App.css";
-import Board from "./components/Board";
-import { useFirebase } from "./contexts/FirebaseContext";
-import "./index.css";
-import { createBoard } from "./services/boardService";
-import { db } from "./services/firebase";
-import { updateParticipantColor } from "./services/presenceService";
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { ClipboardCheck, Shuffle } from 'lucide-react';
+import { nanoid } from 'nanoid';
+import { FormEvent, useEffect, useState } from 'react';
+import { Route, Routes, useNavigate } from 'react-router-dom';
+import './App.css';
+import Board from './components/Board';
+import { useFirebase } from './contexts/FirebaseContext';
+import './index.css';
+import { createBoard } from './services/boardService';
+import { db } from './services/firebase';
+import { updateParticipantColor } from './services/presenceService';
 
 // A simple component for the root path
 function Home() {
   const navigate = useNavigate();
   const { user, loading: authLoading, updateUserDisplayName } = useFirebase();
-  const [username, setUsername] = useState("");
-  const [boardName, setBoardName] = useState("");
-  const [userColor, setUserColor] = useState("bg-blue-200");
+  const [username, setUsername] = useState('');
+  const [boardName, setBoardName] = useState('');
+  const [userColor, setUserColor] = useState('bg-blue-200');
   const [isLoading, setIsLoading] = useState(false);
-  const [joinBoardId, setJoinBoardId] = useState("");
+  const [joinBoardId, setJoinBoardId] = useState('');
   const [showJoinInput, setShowJoinInput] = useState(false);
   const [isUpdatingColor, setIsUpdatingColor] = useState(false);
-  const [colorUpdateStatus, setColorUpdateStatus] = useState<string | null>(
-    null
-  );
+  const [colorUpdateStatus, setColorUpdateStatus] = useState<string | null>(null);
 
   // Set initial username from Firebase user when available
   useEffect(() => {
@@ -35,20 +33,20 @@ function Home() {
 
   // Array of 14 predefined distinct colors from Tailwind
   const colorOptions = [
-    { value: "bg-red-200", name: "Red" },
-    { value: "bg-orange-200", name: "Orange" },
-    { value: "bg-amber-200", name: "Amber" },
-    { value: "bg-yellow-200", name: "Yellow" },
-    { value: "bg-lime-200", name: "Lime" },
-    { value: "bg-green-200", name: "Green" },
-    { value: "bg-teal-200", name: "Teal" },
-    { value: "bg-cyan-200", name: "Cyan" },
-    { value: "bg-sky-200", name: "Sky" },
-    { value: "bg-blue-200", name: "Blue" },
-    { value: "bg-indigo-200", name: "Indigo" },
-    { value: "bg-violet-200", name: "Violet" },
-    { value: "bg-fuchsia-200", name: "Fuchsia" },
-    { value: "bg-rose-200", name: "Rose" },
+    { value: 'bg-red-200', name: 'Red' },
+    { value: 'bg-orange-200', name: 'Orange' },
+    { value: 'bg-amber-200', name: 'Amber' },
+    { value: 'bg-yellow-200', name: 'Yellow' },
+    { value: 'bg-lime-200', name: 'Lime' },
+    { value: 'bg-green-200', name: 'Green' },
+    { value: 'bg-teal-200', name: 'Teal' },
+    { value: 'bg-cyan-200', name: 'Cyan' },
+    { value: 'bg-sky-200', name: 'Sky' },
+    { value: 'bg-blue-200', name: 'Blue' },
+    { value: 'bg-indigo-200', name: 'Indigo' },
+    { value: 'bg-violet-200', name: 'Violet' },
+    { value: 'bg-fuchsia-200', name: 'Fuchsia' },
+    { value: 'bg-rose-200', name: 'Rose' },
   ];
 
   // Load user color from Firestore if available
@@ -57,14 +55,14 @@ function Home() {
 
     const loadUserColor = async () => {
       try {
-        const userRef = doc(db, "users", user.uid);
+        const userRef = doc(db, 'users', user.uid);
         const userSnap = await getDoc(userRef);
 
         if (userSnap.exists() && userSnap.data().color) {
           setUserColor(userSnap.data().color);
         }
       } catch (error) {
-        console.error("Error loading user color:", error);
+        console.error('Error loading user color:', error);
       }
     };
 
@@ -85,13 +83,13 @@ function Home() {
     if (isUpdatingColor || !user) return;
 
     setIsUpdatingColor(true);
-    setColorUpdateStatus("Updating color preference...");
+    setColorUpdateStatus('Updating color preference...');
 
     try {
       setUserColor(color);
 
       // Update in Firestore - this only updates the preference, not the cards
-      const userRef = doc(db, "users", user.uid);
+      const userRef = doc(db, 'users', user.uid);
       await updateDoc(userRef, { color });
 
       // Check if the user is in a board
@@ -106,26 +104,26 @@ function Home() {
           // when the user is confirmed to be in the participants list
           await updateParticipantColor(user.uid, currentBoardId, color);
           setColorUpdateStatus(
-            "Color preference saved. Your cards will update when you are active in a board."
+            'Color preference saved. Your cards will update when you are active in a board.'
           );
         } catch (rtdbError) {
-          console.error("Error updating realtime database color:", rtdbError);
+          console.error('Error updating realtime database color:', rtdbError);
           setColorUpdateStatus(
-            "Color preference saved. Your cards will update when you are active in a board."
+            'Color preference saved. Your cards will update when you are active in a board.'
           );
         }
       } else {
         // User is not in any board, just save the preference
         setColorUpdateStatus(
-          "Color preference saved. Your cards will update when you join boards."
+          'Color preference saved. Your cards will update when you join boards.'
         );
       }
 
       // Clear status after 3 seconds
       setTimeout(() => setColorUpdateStatus(null), 3000);
     } catch (error) {
-      console.error("Error updating color:", error);
-      setColorUpdateStatus("Error updating color preference.");
+      console.error('Error updating color:', error);
+      setColorUpdateStatus('Error updating color preference.');
       setTimeout(() => setColorUpdateStatus(null), 5000);
     } finally {
       setIsUpdatingColor(false);
@@ -148,7 +146,7 @@ function Home() {
       }
 
       // Check if user document exists first
-      const userRef = doc(db, "users", user.uid);
+      const userRef = doc(db, 'users', user.uid);
       const userSnap = await getDoc(userRef);
 
       if (userSnap.exists()) {
@@ -174,7 +172,7 @@ function Home() {
       // Navigate to the new board
       navigate(`/board/${newBoardId}`);
     } catch (error) {
-      console.error("Error creating board:", error);
+      console.error('Error creating board:', error);
       setIsLoading(false);
     }
   };
@@ -203,9 +201,7 @@ function Home() {
         <div className="p-8">
           <div className="flex items-center justify-center mb-6">
             <ClipboardCheck className="h-10 w-10 text-indigo-600" />
-            <h1 className="ml-2 text-2xl font-bold text-gray-800">
-              Retrospective Board
-            </h1>
+            <h1 className="ml-2 text-2xl font-bold text-gray-800">Retrospective Board</h1>
           </div>
 
           <p className="text-gray-600 mb-8 text-center">
@@ -214,10 +210,7 @@ function Home() {
 
           <form onSubmit={handleCreateBoard} className="space-y-6">
             <div>
-              <label
-                htmlFor="username"
-                className="block text-sm font-medium text-gray-700"
-              >
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
                 Your Name
               </label>
               <input
@@ -225,17 +218,14 @@ function Home() {
                 id="username"
                 required
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={e => setUsername(e.target.value)}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 placeholder="Enter your name"
               />
             </div>
 
             <div>
-              <label
-                htmlFor="boardName"
-                className="block text-sm font-medium text-gray-700"
-              >
+              <label htmlFor="boardName" className="block text-sm font-medium text-gray-700">
                 Board Name
               </label>
               <input
@@ -243,19 +233,16 @@ function Home() {
                 id="boardName"
                 required
                 value={boardName}
-                onChange={(e) => setBoardName(e.target.value)}
+                onChange={e => setBoardName(e.target.value)}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 placeholder="Sprint 42 Retrospective"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Your Card Color
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Your Card Color</label>
               <p className="text-xs text-gray-500 mb-2">
-                This color will be used for all cards you create across any
-                board.
+                This color will be used for all cards you create across any board.
               </p>
               {isUpdatingColor && (
                 <div className="mt-1 mb-2">
@@ -265,25 +252,19 @@ function Home() {
                 </div>
               )}
               {colorUpdateStatus && (
-                <p className="text-xs text-blue-600 mb-2">
-                  {colorUpdateStatus}
-                </p>
+                <p className="text-xs text-blue-600 mb-2">{colorUpdateStatus}</p>
               )}
               <div className="mt-2 flex items-center">
                 <div className="flex flex-wrap gap-2">
-                  {colorOptions.map((color) => (
+                  {colorOptions.map(color => (
                     <button
                       key={color.value}
                       type="button"
                       onClick={() => handleColorChange(color.value)}
                       disabled={isUpdatingColor}
                       className={`h-8 w-8 rounded-full cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
-                        userColor === color.value
-                          ? "ring-2 ring-offset-2 ring-indigo-500"
-                          : ""
-                      } ${
-                        isUpdatingColor ? "opacity-50 cursor-not-allowed" : ""
-                      } ${color.value}`}
+                        userColor === color.value ? 'ring-2 ring-offset-2 ring-indigo-500' : ''
+                      } ${isUpdatingColor ? 'opacity-50 cursor-not-allowed' : ''} ${color.value}`}
                       title={color.name}
                       aria-label={`Select ${color.name} color`}
                     ></button>
@@ -293,7 +274,7 @@ function Home() {
                     onClick={handleRandomColor}
                     disabled={isUpdatingColor}
                     className={`h-8 w-8 rounded-full bg-white border border-gray-300 flex items-center justify-center cursor-pointer ${
-                      isUpdatingColor ? "opacity-50 cursor-not-allowed" : ""
+                      isUpdatingColor ? 'opacity-50 cursor-not-allowed' : ''
                     }`}
                     title="Random color"
                   >
@@ -309,7 +290,7 @@ function Home() {
                 disabled={isLoading || authLoading}
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? "Creating..." : "Create Retro Board"}
+                {isLoading ? 'Creating...' : 'Create Retro Board'}
               </button>
             </div>
           </form>
@@ -322,7 +303,7 @@ function Home() {
                     <input
                       type="text"
                       value={joinBoardId}
-                      onChange={(e) => setJoinBoardId(e.target.value)}
+                      onChange={e => setJoinBoardId(e.target.value)}
                       placeholder="Enter board ID"
                       className="flex-1 rounded-l-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                     />
@@ -336,7 +317,7 @@ function Home() {
                 </form>
               ) : (
                 <>
-                  Already have a board?{" "}
+                  Already have a board?{' '}
                   <button
                     onClick={() => setShowJoinInput(true)}
                     className="text-indigo-600 hover:text-indigo-500 cursor-pointer"
@@ -352,8 +333,8 @@ function Home() {
 
       <div className="mt-8 max-w-md mx-auto text-center text-sm text-gray-500">
         <p>
-          A collaborative tool for team retrospectives. Share ideas, vote on
-          topics, and track action items.
+          A collaborative tool for team retrospectives. Share ideas, vote on topics, and track
+          action items.
         </p>
       </div>
     </div>
@@ -369,9 +350,7 @@ function App() {
           <Route path="/board/:boardId" element={<Board />} />
           <Route
             path="*"
-            element={
-              <div className="p-4 text-center text-red-500">Page Not Found</div>
-            }
+            element={<div className="p-4 text-center text-red-500">Page Not Found</div>}
           />
         </Routes>
       </main>

@@ -1,10 +1,10 @@
-import { Timestamp } from "firebase/firestore";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import * as boardService from "./boardService";
-import { Board } from "./firebase";
+import { Timestamp } from 'firebase/firestore';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import * as boardService from './boardService';
+import { Board } from './firebase';
 
 // Mock Firebase
-vi.mock("./firebase", () => ({
+vi.mock('./firebase', () => ({
   db: {},
   Board: class {},
   Card: class {},
@@ -13,20 +13,20 @@ vi.mock("./firebase", () => ({
 // Mock Firestore
 const mockDoc = vi.fn(() => ({}));
 const mockCollection = vi.fn(() => ({}));
-const mockAddDoc = vi.fn(() => Promise.resolve({ id: "mock-doc-id" }));
+const mockAddDoc = vi.fn(() => Promise.resolve({ id: 'mock-doc-id' }));
 const mockSetDoc = vi.fn(() => Promise.resolve());
 const mockUpdateDoc = vi.fn(() => Promise.resolve());
 const mockDeleteDoc = vi.fn(() => Promise.resolve());
 const mockQuery = vi.fn(() => ({}));
 const mockWhere = vi.fn(() => ({}));
 const mockServerTimestamp = vi.fn(() => ({ toMillis: () => Date.now() }));
-const mockIncrement = vi.fn((val) => ({ __increment: val }));
+const mockIncrement = vi.fn(val => ({ __increment: val }));
 const mockOnSnapshot = vi.fn();
 const mockGetDocs = vi.fn();
 const mockGetDoc = vi.fn();
 const mockWriteBatch = vi.fn();
 
-vi.mock("firebase/firestore", () => {
+vi.mock('firebase/firestore', () => {
   return {
     doc: (...args: any[]) => mockDoc(...args),
     collection: (...args: any[]) => mockCollection(...args),
@@ -57,7 +57,7 @@ vi.mock("firebase/firestore", () => {
   };
 });
 
-describe("boardService", () => {
+describe('boardService', () => {
   let onSnapshotCallback: Function;
   let batchUpdateMock: any;
 
@@ -84,67 +84,63 @@ describe("boardService", () => {
     vi.resetAllMocks();
   });
 
-  describe("createBoard", () => {
-    it("should create a board with auto-generated ID when no ID is provided", async () => {
-      const result = await boardService.createBoard("Test Board", "user1");
+  describe('createBoard', () => {
+    it('should create a board with auto-generated ID when no ID is provided', async () => {
+      const result = await boardService.createBoard('Test Board', 'user1');
 
       expect(mockAddDoc).toHaveBeenCalledTimes(1);
       expect(mockAddDoc).toHaveBeenCalledWith(
         {},
         expect.objectContaining({
-          name: "Test Board",
-          facilitatorId: "user1",
+          name: 'Test Board',
+          facilitatorId: 'user1',
           isActive: true,
           columns: expect.any(Object),
         })
       );
-      expect(result).toBe("mock-doc-id");
+      expect(result).toBe('mock-doc-id');
     });
 
-    it("should create a board with specific ID when provided", async () => {
-      const specificBoardId = "specific-board-id";
+    it('should create a board with specific ID when provided', async () => {
+      const specificBoardId = 'specific-board-id';
 
-      const result = await boardService.createBoard(
-        "Test Board",
-        "user1",
-        specificBoardId
-      );
+      const result = await boardService.createBoard('Test Board', 'user1', specificBoardId);
 
       expect(mockSetDoc).toHaveBeenCalledTimes(1);
-      expect(mockDoc).toHaveBeenCalledWith({}, "boards", specificBoardId);
+      expect(mockDoc).toHaveBeenCalledWith({}, 'boards', specificBoardId);
       expect(result).toBe(specificBoardId);
     });
 
-    it("should create a board with default columns", async () => {
-      await boardService.createBoard("Test Board");
+    it('should create a board with default columns', async () => {
+      await boardService.createBoard('Test Board');
 
       const boardData = mockAddDoc.mock.calls[0][1];
 
       expect(boardData.columns).toEqual({
-        col1: { id: "col1", title: "What went well", order: 0 },
-        col2: { id: "col2", title: "What can be improved", order: 1 },
-        col3: { id: "col3", title: "Action items", order: 2 },
+        col1: { id: 'col1', title: 'What went well', order: 0 },
+        col2: { id: 'col2', title: 'What can be improved', order: 1 },
+        col3: { id: 'col3', title: 'Action items', order: 2 },
       });
     });
   });
 
-  describe("subscribeToBoard", () => {
-    it("should set up a subscription to board updates", () => {
-      const boardId = "board-id";
+  describe('subscribeToBoard', () => {
+    it('should set up a subscription to board updates', () => {
+      const boardId = 'board-id';
       const callback = vi.fn();
 
       const unsubscribe = boardService.subscribeToBoard(boardId, callback);
 
-      expect(mockDoc).toHaveBeenCalledWith({}, "boards", boardId);
+      expect(mockDoc).toHaveBeenCalledWith({}, 'boards', boardId);
       expect(mockOnSnapshot).toHaveBeenCalledTimes(1);
-      expect(typeof unsubscribe).toBe("function");
+      expect(typeof unsubscribe).toBe('function');
     });
 
-    it("should call callback with board data when document exists", () => {
-      const boardId = "board-id";
+    it('should call callback with board data when document exists', () => {
+      const boardId = 'board-id';
       const callback = vi.fn();
       const boardData = {
-        name: "Test Board",
+        name: 'Test Board',
         createdAt: Timestamp.now(),
         isActive: true,
         columns: {},
@@ -165,8 +161,8 @@ describe("boardService", () => {
       });
     });
 
-    it("should call callback with null when document does not exist", () => {
-      const boardId = "nonexistent-board";
+    it('should call callback with null when document does not exist', () => {
+      const boardId = 'nonexistent-board';
       const callback = vi.fn();
 
       boardService.subscribeToBoard(boardId, callback);
@@ -180,22 +176,22 @@ describe("boardService", () => {
     });
   });
 
-  describe("subscribeToCards", () => {
-    it("should set up a subscription to cards for a specific board", () => {
-      const boardId = "board-id";
+  describe('subscribeToCards', () => {
+    it('should set up a subscription to cards for a specific board', () => {
+      const boardId = 'board-id';
       const callback = vi.fn();
 
       const unsubscribe = boardService.subscribeToCards(boardId, callback);
 
-      expect(mockCollection).toHaveBeenCalledWith({}, "cards");
-      expect(mockWhere).toHaveBeenCalledWith("boardId", "==", boardId);
+      expect(mockCollection).toHaveBeenCalledWith({}, 'cards');
+      expect(mockWhere).toHaveBeenCalledWith('boardId', '==', boardId);
       expect(mockQuery).toHaveBeenCalledTimes(1);
       expect(mockOnSnapshot).toHaveBeenCalledTimes(1);
-      expect(typeof unsubscribe).toBe("function");
+      expect(typeof unsubscribe).toBe('function');
     });
 
-    it("should call callback with cards data sorted by position", () => {
-      const boardId = "board-id";
+    it('should call callback with cards data sorted by position', () => {
+      const boardId = 'board-id';
       const callback = vi.fn();
 
       boardService.subscribeToCards(boardId, callback);
@@ -203,29 +199,29 @@ describe("boardService", () => {
       // Create unsorted cards data
       const cardsData = [
         {
-          id: "card3",
+          id: 'card3',
           data: () => ({
-            content: "Card 3",
+            content: 'Card 3',
             boardId,
-            columnId: "col1",
+            columnId: 'col1',
             position: 3000,
           }),
         },
         {
-          id: "card1",
+          id: 'card1',
           data: () => ({
-            content: "Card 1",
+            content: 'Card 1',
             boardId,
-            columnId: "col1",
+            columnId: 'col1',
             position: 1000,
           }),
         },
         {
-          id: "card2",
+          id: 'card2',
           data: () => ({
-            content: "Card 2",
+            content: 'Card 2',
             boardId,
-            columnId: "col1",
+            columnId: 'col1',
             position: 2000,
           }),
         },
@@ -241,29 +237,23 @@ describe("boardService", () => {
       // Check that cards are sorted by position
       const callbackCards = callback.mock.calls[0][0];
       expect(callbackCards).toHaveLength(3);
-      expect(callbackCards[0].id).toBe("card1");
-      expect(callbackCards[1].id).toBe("card2");
-      expect(callbackCards[2].id).toBe("card3");
+      expect(callbackCards[0].id).toBe('card1');
+      expect(callbackCards[1].id).toBe('card2');
+      expect(callbackCards[2].id).toBe('card3');
     });
   });
 
-  describe("addCard", () => {
-    it("should add a card to a column with correct data", async () => {
-      const boardId = "board-id";
-      const columnId = "col1";
-      const content = "Card content";
-      const authorId = "user1";
-      const authorName = "User One";
+  describe('addCard', () => {
+    it('should add a card to a column with correct data', async () => {
+      const boardId = 'board-id';
+      const columnId = 'col1';
+      const content = 'Card content';
+      const authorId = 'user1';
+      const authorName = 'User One';
 
-      await boardService.addCard(
-        boardId,
-        columnId,
-        content,
-        authorId,
-        authorName
-      );
+      await boardService.addCard(boardId, columnId, content, authorId, authorName);
 
-      expect(mockCollection).toHaveBeenCalledWith({}, "cards");
+      expect(mockCollection).toHaveBeenCalledWith({}, 'cards');
       expect(mockAddDoc).toHaveBeenCalledWith(
         {},
         expect.objectContaining({
@@ -278,40 +268,40 @@ describe("boardService", () => {
     });
 
     it('should use "Anonymous" as default author name if not provided', async () => {
-      const boardId = "board-id";
-      const columnId = "col1";
-      const content = "Card content";
-      const authorId = "user1";
+      const boardId = 'board-id';
+      const columnId = 'col1';
+      const content = 'Card content';
+      const authorId = 'user1';
 
       await boardService.addCard(boardId, columnId, content, authorId);
 
       expect(mockAddDoc).toHaveBeenCalledWith(
         {},
         expect.objectContaining({
-          authorName: "Anonymous",
+          authorName: 'Anonymous',
         })
       );
     });
   });
 
-  describe("updateCardPosition", () => {
-    it("should handle card movement within the same column", async () => {
-      const boardId = "board-id";
-      const cardId = "card-id";
-      const columnId = "col1";
+  describe('updateCardPosition', () => {
+    it('should handle card movement within the same column', async () => {
+      const boardId = 'board-id';
+      const cardId = 'card-id';
+      const columnId = 'col1';
       const newIndex = 2;
 
       // Mock cards in the column
       const cards = [
-        { id: "card1", columnId, position: 1000, boardId },
+        { id: 'card1', columnId, position: 1000, boardId },
         { id: cardId, columnId, position: 2000, boardId },
-        { id: "card3", columnId, position: 3000, boardId },
-        { id: "card4", columnId, position: 4000, boardId },
+        { id: 'card3', columnId, position: 3000, boardId },
+        { id: 'card4', columnId, position: 4000, boardId },
       ];
 
       mockGetDocs.mockResolvedValueOnce({
         forEach: (fn: (doc: any) => void) => {
-          cards.forEach((card) => {
+          cards.forEach(card => {
             fn({
               id: card.id,
               data: () => card,
@@ -320,17 +310,11 @@ describe("boardService", () => {
         },
       });
 
-      await boardService.updateCardPosition(
-        cardId,
-        columnId,
-        newIndex,
-        columnId,
-        boardId
-      );
+      await boardService.updateCardPosition(cardId, columnId, newIndex, columnId, boardId);
 
       // Should query for all cards in the board
       expect(mockQuery).toHaveBeenCalled();
-      expect(mockWhere).toHaveBeenCalledWith("boardId", "==", boardId);
+      expect(mockWhere).toHaveBeenCalledWith('boardId', '==', boardId);
       expect(mockGetDocs).toHaveBeenCalledTimes(1);
 
       // Should create a batch
@@ -341,25 +325,25 @@ describe("boardService", () => {
       expect(batchUpdateMock.commit).toHaveBeenCalledTimes(1);
     });
 
-    it("should handle card movement between different columns", async () => {
-      const boardId = "board-id";
-      const cardId = "card-id";
-      const sourceColumnId = "col1";
-      const destColumnId = "col2";
+    it('should handle card movement between different columns', async () => {
+      const boardId = 'board-id';
+      const cardId = 'card-id';
+      const sourceColumnId = 'col1';
+      const destColumnId = 'col2';
       const newIndex = 1;
 
       // Mock cards in both columns
       const cards = [
-        { id: "card1", columnId: sourceColumnId, position: 1000, boardId },
+        { id: 'card1', columnId: sourceColumnId, position: 1000, boardId },
         { id: cardId, columnId: sourceColumnId, position: 2000, boardId },
-        { id: "card3", columnId: sourceColumnId, position: 3000, boardId },
-        { id: "card4", columnId: destColumnId, position: 1000, boardId },
-        { id: "card5", columnId: destColumnId, position: 2000, boardId },
+        { id: 'card3', columnId: sourceColumnId, position: 3000, boardId },
+        { id: 'card4', columnId: destColumnId, position: 1000, boardId },
+        { id: 'card5', columnId: destColumnId, position: 2000, boardId },
       ];
 
       mockGetDocs.mockResolvedValueOnce({
         forEach: (fn: (doc: any) => void) => {
-          cards.forEach((card) => {
+          cards.forEach(card => {
             fn({
               id: card.id,
               data: () => card,
@@ -378,7 +362,7 @@ describe("boardService", () => {
 
       // Should query for all cards in the board
       expect(mockQuery).toHaveBeenCalled();
-      expect(mockWhere).toHaveBeenCalledWith("boardId", "==", boardId);
+      expect(mockWhere).toHaveBeenCalledWith('boardId', '==', boardId);
       expect(mockGetDocs).toHaveBeenCalledTimes(1);
 
       // Should update column ID for the moved card and positions
@@ -389,52 +373,41 @@ describe("boardService", () => {
       expect(batchUpdateMock.commit).toHaveBeenCalledTimes(1);
     });
 
-    it("should handle errors gracefully", async () => {
-      const boardId = "board-id";
-      const cardId = "card-id";
-      const columnId = "col1";
+    it('should handle errors gracefully', async () => {
+      const boardId = 'board-id';
+      const cardId = 'card-id';
+      const columnId = 'col1';
       const newIndex = 1;
 
       // Mock getDocs to throw an error
-      const error = new Error("Firestore error");
+      const error = new Error('Firestore error');
       mockGetDocs.mockRejectedValueOnce(error);
 
       // Spy on console.error
-      const consoleSpy = vi
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      await boardService.updateCardPosition(
-        cardId,
-        columnId,
-        newIndex,
-        columnId,
-        boardId
-      );
+      await boardService.updateCardPosition(cardId, columnId, newIndex, columnId, boardId);
 
       // Should log the error
-      expect(consoleSpy).toHaveBeenCalledWith(
-        "Error updating card positions:",
-        error
-      );
+      expect(consoleSpy).toHaveBeenCalledWith('Error updating card positions:', error);
       consoleSpy.mockRestore();
     });
 
-    it("should handle case where moved card is not found", async () => {
-      const boardId = "board-id";
-      const cardId = "nonexistent-card";
-      const columnId = "col1";
+    it('should handle case where moved card is not found', async () => {
+      const boardId = 'board-id';
+      const cardId = 'nonexistent-card';
+      const columnId = 'col1';
       const newIndex = 1;
 
       // Mock cards without the target card
       const cards = [
-        { id: "card1", columnId, position: 1000, boardId },
-        { id: "card2", columnId, position: 2000, boardId },
+        { id: 'card1', columnId, position: 1000, boardId },
+        { id: 'card2', columnId, position: 2000, boardId },
       ];
 
       mockGetDocs.mockResolvedValueOnce({
         forEach: (fn: (doc: any) => void) => {
-          cards.forEach((card) => {
+          cards.forEach(card => {
             fn({
               id: card.id,
               data: () => card,
@@ -444,87 +417,71 @@ describe("boardService", () => {
       });
 
       // Spy on console.error
-      const consoleSpy = vi
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      await boardService.updateCardPosition(
-        cardId,
-        columnId,
-        newIndex,
-        columnId,
-        boardId
-      );
+      await boardService.updateCardPosition(cardId, columnId, newIndex, columnId, boardId);
 
       // Should log the error about card not found
-      expect(consoleSpy).toHaveBeenCalledWith(
-        `Card with ID ${cardId} not found`
-      );
+      expect(consoleSpy).toHaveBeenCalledWith(`Card with ID ${cardId} not found`);
       consoleSpy.mockRestore();
     });
   });
 
-  describe("updateCard", () => {
-    it("should update a card with the specified changes", async () => {
-      const cardId = "card-id";
+  describe('updateCard', () => {
+    it('should update a card with the specified changes', async () => {
+      const cardId = 'card-id';
       const updates = {
-        content: "Updated content",
+        content: 'Updated content',
         votes: 5,
       };
 
       await boardService.updateCard(cardId, updates);
 
-      expect(mockDoc).toHaveBeenCalledWith({}, "cards", cardId);
+      expect(mockDoc).toHaveBeenCalledWith({}, 'cards', cardId);
       expect(mockUpdateDoc).toHaveBeenCalledWith({}, updates);
     });
   });
 
-  describe("deleteCard", () => {
-    it("should delete a card by ID", async () => {
-      const cardId = "card-id";
+  describe('deleteCard', () => {
+    it('should delete a card by ID', async () => {
+      const cardId = 'card-id';
 
       await boardService.deleteCard(cardId);
 
-      expect(mockDoc).toHaveBeenCalledWith({}, "cards", cardId);
+      expect(mockDoc).toHaveBeenCalledWith({}, 'cards', cardId);
       expect(mockDeleteDoc).toHaveBeenCalledTimes(1);
     });
   });
 
-  describe("voteForCard", () => {
-    it("should increment votes when voting up", async () => {
-      const cardId = "card-id";
+  describe('voteForCard', () => {
+    it('should increment votes when voting up', async () => {
+      const cardId = 'card-id';
 
-      await boardService.voteForCard(cardId, "up");
+      await boardService.voteForCard(cardId, 'up');
 
-      expect(mockDoc).toHaveBeenCalledWith({}, "cards", cardId);
+      expect(mockDoc).toHaveBeenCalledWith({}, 'cards', cardId);
       expect(mockIncrement).toHaveBeenCalledWith(1);
-      expect(mockUpdateDoc).toHaveBeenCalledWith(
-        {},
-        { votes: { __increment: 1 } }
-      );
+      expect(mockUpdateDoc).toHaveBeenCalledWith({}, { votes: { __increment: 1 } });
     });
 
-    it("should decrement votes when voting down", async () => {
-      const cardId = "card-id";
+    it('should decrement votes when voting down', async () => {
+      const cardId = 'card-id';
 
-      await boardService.voteForCard(cardId, "down");
+      await boardService.voteForCard(cardId, 'down');
 
-      expect(mockDoc).toHaveBeenCalledWith({}, "cards", cardId);
+      expect(mockDoc).toHaveBeenCalledWith({}, 'cards', cardId);
       expect(mockIncrement).toHaveBeenCalledWith(-1);
-      expect(mockUpdateDoc).toHaveBeenCalledWith(
-        {},
-        { votes: { __increment: -1 } }
-      );
+      expect(mockUpdateDoc).toHaveBeenCalledWith({}, { votes: { __increment: -1 } });
     });
   });
 
-  describe("startTimer", () => {
-    it("should start a new timer with default duration if none exists", async () => {
-      const boardId = "board-id";
+  describe('startTimer', () => {
+    it('should start a new timer with default duration if none exists', async () => {
+      const boardId = 'board-id';
 
       await boardService.startTimer(boardId, null);
 
-      expect(mockDoc).toHaveBeenCalledWith({}, "boards", boardId);
+      expect(mockDoc).toHaveBeenCalledWith({}, 'boards', boardId);
       expect(mockUpdateDoc).toHaveBeenCalledWith(
         {},
         {
@@ -537,11 +494,11 @@ describe("boardService", () => {
       );
     });
 
-    it("should resume a paused timer with remaining time", async () => {
-      const boardId = "board-id";
+    it('should resume a paused timer with remaining time', async () => {
+      const boardId = 'board-id';
       const currentBoardData = {
         id: boardId,
-        name: "Test Board",
+        name: 'Test Board',
         timerPausedDurationSeconds: 120, // 2 minutes remaining
         timerDurationSeconds: 300,
         timerOriginalDurationSeconds: 300,
@@ -563,13 +520,13 @@ describe("boardService", () => {
     });
   });
 
-  describe("pauseTimer", () => {
-    it("should pause a running timer and calculate remaining time", async () => {
-      const boardId = "board-id";
+  describe('pauseTimer', () => {
+    it('should pause a running timer and calculate remaining time', async () => {
+      const boardId = 'board-id';
       const startTime = new Date(Date.now() - 30000); // Started 30 seconds ago
       const currentBoardData = {
         id: boardId,
-        name: "Test Board",
+        name: 'Test Board',
         timerIsRunning: true,
         timerStartTime: {
           toMillis: () => startTime.getTime(),
@@ -596,16 +553,16 @@ describe("boardService", () => {
       expect(updateArgs.timerPausedDurationSeconds).toBeLessThanOrEqual(271);
     });
 
-    it("should handle invalid timer state gracefully", async () => {
-      const boardId = "board-id";
+    it('should handle invalid timer state gracefully', async () => {
+      const boardId = 'board-id';
       const invalidBoardData = {
         id: boardId,
-        name: "Test Board",
+        name: 'Test Board',
         timerIsRunning: false, // Not running
       } as Board;
 
       // Spy on console.warn
-      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
       await boardService.pauseTimer(boardId, invalidBoardData);
 
@@ -614,7 +571,7 @@ describe("boardService", () => {
 
       // Should log a warning
       expect(consoleSpy).toHaveBeenCalledWith(
-        "Timer cannot be paused, invalid state:",
+        'Timer cannot be paused, invalid state:',
         invalidBoardData
       );
 
@@ -622,14 +579,14 @@ describe("boardService", () => {
     });
   });
 
-  describe("resetTimer", () => {
-    it("should reset timer to initial state with specified duration", async () => {
-      const boardId = "board-id";
+  describe('resetTimer', () => {
+    it('should reset timer to initial state with specified duration', async () => {
+      const boardId = 'board-id';
       const initialDuration = 600; // 10 minutes
 
       await boardService.resetTimer(boardId, initialDuration);
 
-      expect(mockDoc).toHaveBeenCalledWith({}, "boards", boardId);
+      expect(mockDoc).toHaveBeenCalledWith({}, 'boards', boardId);
       expect(mockUpdateDoc).toHaveBeenCalledWith(
         {},
         {
@@ -642,8 +599,8 @@ describe("boardService", () => {
       );
     });
 
-    it("should use default duration (300s) if not specified", async () => {
-      const boardId = "board-id";
+    it('should use default duration (300s) if not specified', async () => {
+      const boardId = 'board-id';
 
       await boardService.resetTimer(boardId);
 
@@ -658,15 +615,15 @@ describe("boardService", () => {
     });
   });
 
-  describe("updateColumnSortState", () => {
-    it("should update column sort state in Firestore", async () => {
-      const boardId = "board-id";
-      const columnId = "col1";
+  describe('updateColumnSortState', () => {
+    it('should update column sort state in Firestore', async () => {
+      const boardId = 'board-id';
+      const columnId = 'col1';
       const sortByVotes = true;
 
       await boardService.updateColumnSortState(boardId, columnId, sortByVotes);
 
-      expect(mockDoc).toHaveBeenCalledWith({}, "boards", boardId);
+      expect(mockDoc).toHaveBeenCalledWith({}, 'boards', boardId);
       expect(mockUpdateDoc).toHaveBeenCalledWith(
         {},
         {
@@ -676,14 +633,14 @@ describe("boardService", () => {
     });
   });
 
-  describe("deleteBoard", () => {
+  describe('deleteBoard', () => {
     let mockBoardData: any;
     let mockBoardSnap: any;
 
     beforeEach(() => {
       mockBoardData = {
-        facilitatorId: "test-user-id",
-        name: "Test Board",
+        facilitatorId: 'test-user-id',
+        name: 'Test Board',
       };
 
       mockBoardSnap = {
@@ -691,47 +648,46 @@ describe("boardService", () => {
         data: vi.fn(() => mockBoardData),
       };
 
-      mockDoc.mockReturnValue({ id: "board-id" });
+      mockDoc.mockReturnValue({ id: 'board-id' });
       mockGetDocs.mockImplementation(() => {
         // Check the latest mockQuery call to determine which query is being executed
         if (
           mockCollection.mock.calls.length > 0 &&
-          mockCollection.mock.calls[mockCollection.mock.calls.length - 1][1] ===
-            "cards"
+          mockCollection.mock.calls[mockCollection.mock.calls.length - 1][1] === 'cards'
         ) {
           // This is a cards query
           return Promise.resolve({
             size: 2,
             docs: [
-              { id: "card1", ref: { id: "card1" } },
-              { id: "card2", ref: { id: "card2" } },
+              { id: 'card1', ref: { id: 'card1' } },
+              { id: 'card2', ref: { id: 'card2' } },
             ],
-            forEach: (fn) => {
-              fn({ id: "card1", ref: { id: "card1" } });
-              fn({ id: "card2", ref: { id: "card2" } });
+            forEach: fn => {
+              fn({ id: 'card1', ref: { id: 'card1' } });
+              fn({ id: 'card2', ref: { id: 'card2' } });
             },
           });
         } else {
           // This is a users query
           return Promise.resolve({
             size: 1,
-            docs: [{ id: "user1", ref: { id: "user1" } }],
-            forEach: (fn) => {
-              fn({ id: "user1", ref: { id: "user1" } });
+            docs: [{ id: 'user1', ref: { id: 'user1' } }],
+            forEach: fn => {
+              fn({ id: 'user1', ref: { id: 'user1' } });
             },
           });
         }
       });
     });
 
-    it("should delete a board when user is the facilitator", async () => {
+    it('should delete a board when user is the facilitator', async () => {
       // Mock getDoc to return a board with the test user as facilitator
       mockGetDoc.mockResolvedValueOnce(mockBoardSnap);
 
-      const result = await boardService.deleteBoard("board-id", "test-user-id");
+      const result = await boardService.deleteBoard('board-id', 'test-user-id');
 
       // Check that the board document was checked
-      expect(mockDoc).toHaveBeenCalledWith({}, "boards", "board-id");
+      expect(mockDoc).toHaveBeenCalledWith({}, 'boards', 'board-id');
       expect(mockGetDoc).toHaveBeenCalled();
 
       // Check that the board was deleted
@@ -739,7 +695,7 @@ describe("boardService", () => {
 
       // Check that cards were queried and batch deleted
       expect(mockQuery).toHaveBeenCalled();
-      expect(mockWhere).toHaveBeenCalledWith("boardId", "==", "board-id");
+      expect(mockWhere).toHaveBeenCalledWith('boardId', '==', 'board-id');
       expect(mockGetDocs).toHaveBeenCalled();
       expect(mockWriteBatch).toHaveBeenCalled();
       expect(batchUpdateMock.delete).toHaveBeenCalled();
@@ -752,28 +708,26 @@ describe("boardService", () => {
       expect(result).toBe(true);
     });
 
-    it("should throw an error when board does not exist", async () => {
+    it('should throw an error when board does not exist', async () => {
       // Mock getDoc to return a non-existent board
       mockBoardSnap.exists.mockReturnValue(false);
       mockGetDoc.mockResolvedValueOnce(mockBoardSnap);
 
       // Spy on console.error to suppress the error message
-      const consoleSpy = vi
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      await expect(
-        boardService.deleteBoard("nonexistent-board", "test-user-id")
-      ).rejects.toThrow("Board with ID nonexistent-board not found");
+      await expect(boardService.deleteBoard('nonexistent-board', 'test-user-id')).rejects.toThrow(
+        'Board with ID nonexistent-board not found'
+      );
 
       // Board shouldn't be deleted if it doesn't exist
       expect(mockDeleteDoc).not.toHaveBeenCalled();
 
       // Verify error was properly logged
       expect(consoleSpy).toHaveBeenCalledWith(
-        "Error deleting board:",
+        'Error deleting board:',
         expect.objectContaining({
-          message: "Board with ID nonexistent-board not found",
+          message: 'Board with ID nonexistent-board not found',
         })
       );
 
@@ -781,28 +735,26 @@ describe("boardService", () => {
       consoleSpy.mockRestore();
     });
 
-    it("should throw an error when user is not the facilitator", async () => {
+    it('should throw an error when user is not the facilitator', async () => {
       // Mock getDoc to return a board with a different facilitator
-      mockBoardData.facilitatorId = "different-user-id";
+      mockBoardData.facilitatorId = 'different-user-id';
       mockGetDoc.mockResolvedValueOnce(mockBoardSnap);
 
       // Spy on console.error to suppress the error message
-      const consoleSpy = vi
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      await expect(
-        boardService.deleteBoard("board-id", "test-user-id")
-      ).rejects.toThrow("Only the board creator can delete the board");
+      await expect(boardService.deleteBoard('board-id', 'test-user-id')).rejects.toThrow(
+        'Only the board creator can delete the board'
+      );
 
       // Board shouldn't be deleted if user is not the facilitator
       expect(mockDeleteDoc).not.toHaveBeenCalled();
 
       // Verify error was properly logged
       expect(consoleSpy).toHaveBeenCalledWith(
-        "Error deleting board:",
+        'Error deleting board:',
         expect.objectContaining({
-          message: "Only the board creator can delete the board",
+          message: 'Only the board creator can delete the board',
         })
       );
 
@@ -810,26 +762,24 @@ describe("boardService", () => {
       consoleSpy.mockRestore();
     });
 
-    it("should handle errors during deletion", async () => {
+    it('should handle errors during deletion', async () => {
       // Mock getDoc to return a valid board
       mockGetDoc.mockResolvedValueOnce(mockBoardSnap);
 
       // But make deleteDoc fail
-      const dbError = new Error("Database error");
+      const dbError = new Error('Database error');
       mockDeleteDoc.mockRejectedValueOnce(dbError);
 
       // Spy on console.error to verify and suppress the error message
-      const consoleSpy = vi
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       // First check that it throws the correct error
-      await expect(
-        boardService.deleteBoard("board-id", "test-user-id")
-      ).rejects.toThrow("Database error");
+      await expect(boardService.deleteBoard('board-id', 'test-user-id')).rejects.toThrow(
+        'Database error'
+      );
 
       // Then verify the error message was logged properly
-      expect(consoleSpy).toHaveBeenCalledWith("Error deleting board:", dbError);
+      expect(consoleSpy).toHaveBeenCalledWith('Error deleting board:', dbError);
 
       // Restore the original console.error
       consoleSpy.mockRestore();

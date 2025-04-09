@@ -1,20 +1,8 @@
-import {
-  ChangeEvent,
-  FocusEvent,
-  KeyboardEvent,
-  useEffect,
-  useRef,
-  useState,
-} from "react"; // Remove memo import
-import { useNavigate, useParams } from "react-router-dom";
+import { ChangeEvent, FocusEvent, KeyboardEvent, useEffect, useRef, useState } from 'react'; // Remove memo import
+import { useNavigate, useParams } from 'react-router-dom';
 // Use @hello-pangea/dnd instead of react-beautiful-dnd
-import {
-  DragDropContext,
-  Draggable,
-  Droppable,
-  DropResult,
-} from "@hello-pangea/dnd";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { DragDropContext, Draggable, Droppable, DropResult } from '@hello-pangea/dnd';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import {
   Download,
   Pause,
@@ -24,13 +12,13 @@ import {
   Share2,
   TrendingUp,
   Users,
-} from "lucide-react";
-import { useFirebase } from "../contexts/FirebaseContext";
+} from 'lucide-react';
+import { useFirebase } from '../contexts/FirebaseContext';
 import {
   addActionPoint,
   deleteActionPoint,
   toggleActionPoint,
-} from "../services/actionPointsService"; // Import action points service
+} from '../services/actionPointsService'; // Import action points service
 import {
   deleteBoard,
   joinBoard,
@@ -44,25 +32,25 @@ import {
   updateParticipantName as updateParticipantNameFirestore,
   updateShowAddColumnPlaceholder,
   updateUserCardsColor,
-} from "../services/boardService";
-import { Board as BoardType, Card as CardType, db } from "../services/firebase";
-import ActionPointsPanel, { ActionPoint } from "./ActionPointsPanel"; // Import ActionPointsPanel
-import AddColumnPlaceholder from "./AddColumnPlaceholder"; // Import the AddColumnPlaceholder component
-import CardComponent from "./Card";
-import Column from "./Column";
-import ExportModal from "./ExportModal"; // Import the ExportModal component
-import OptionsPanel from "./OptionsPanel"; // Import the OptionsPanel component
-import ParticipantsPanel from "./ParticipantsPanel"; // Add ParticipantsPanel import
-import ShareModal from "./ShareModal"; // Import the ShareModal component
+} from '../services/boardService';
+import { Board as BoardType, Card as CardType, db } from '../services/firebase';
+import ActionPointsPanel, { ActionPoint } from './ActionPointsPanel'; // Import ActionPointsPanel
+import AddColumnPlaceholder from './AddColumnPlaceholder'; // Import the AddColumnPlaceholder component
+import CardComponent from './Card';
+import Column from './Column';
+import ExportModal from './ExportModal'; // Import the ExportModal component
+import OptionsPanel from './OptionsPanel'; // Import the OptionsPanel component
+import ParticipantsPanel from './ParticipantsPanel'; // Add ParticipantsPanel import
+import ShareModal from './ShareModal'; // Import the ShareModal component
 
 // Import the new presence service
-import { OnlineUser } from "../services/firebase";
+import { OnlineUser } from '../services/firebase';
 import {
   setupPresence,
   subscribeToParticipants,
   updateParticipantColor,
   updateParticipantName as updateParticipantNameRTDB,
-} from "../services/presenceService";
+} from '../services/presenceService';
 
 // Track the last time we updated card colors to throttle updates
 let lastCardColorUpdate = 0;
@@ -70,22 +58,15 @@ const COLOR_UPDATE_INTERVAL = 5000; // Minimum 5 seconds between card color upda
 
 export default function Board() {
   const { boardId } = useParams<{ boardId: string }>();
-  const {
-    user,
-    loading: authLoading,
-    error: authError,
-    updateUserDisplayName,
-  } = useFirebase(); // Get auth loading state and updateUserDisplayName
+  const { user, loading: authLoading, error: authError, updateUserDisplayName } = useFirebase(); // Get auth loading state and updateUserDisplayName
   const navigate = useNavigate();
   const [board, setBoard] = useState<BoardType | null>(null); // Use BoardType
   const [cards, setCards] = useState<CardType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [remainingTime, setRemainingTime] = useState<number | null>(null); // State for countdown display
-  const [editableTimeStr, setEditableTimeStr] = useState<string>(""); // State for editable input
-  const [columnSortStates, setColumnSortStates] = useState<
-    Record<string, boolean>
-  >({}); // Track sort by votes per column
+  const [editableTimeStr, setEditableTimeStr] = useState<string>(''); // State for editable input
+  const [columnSortStates, setColumnSortStates] = useState<Record<string, boolean>>({}); // Track sort by votes per column
   const [isPanelOpen, setIsPanelOpen] = useState(false); // State for participants panel
   const [isActionPointsPanelOpen, setIsActionPointsPanelOpen] = useState(false); // State for action points panel
   const [isOptionsPanelOpen, setIsOptionsPanelOpen] = useState(false); // State for options panel
@@ -98,8 +79,7 @@ export default function Board() {
   const initialDurationSeconds = 300; // 5 minutes (default)
   const inputRef = useRef<HTMLInputElement>(null); // Ref for the input element
   const escapePressedRef = useRef(false); // Ref to track if blur was triggered by Escape
-  const [showAddColumnPlaceholder, setShowAddColumnPlaceholder] =
-    useState<boolean>(false);
+  const [showAddColumnPlaceholder, setShowAddColumnPlaceholder] = useState<boolean>(false);
 
   // Track if user's cards have been updated with the current color
   const cardColorsUpdatedRef = useRef(false);
@@ -112,7 +92,7 @@ export default function Board() {
 
     // If auth is done but there's no user (e.g., sign-in failed), handle error or redirect
     if (!user) {
-      setError("Authentication failed. Please try again.");
+      setError('Authentication failed. Please try again.');
       setLoading(false);
       return;
     }
@@ -128,15 +108,13 @@ export default function Board() {
 
     const checkAndSubscribe = async () => {
       try {
-        const boardRef = doc(db, "boards", boardId);
+        const boardRef = doc(db, 'boards', boardId);
         const boardSnap = await getDoc(boardRef);
 
         if (!boardSnap.exists()) {
           // Board doesn't exist, redirect to home page
-          console.log(
-            `Board ${boardId} not found, redirecting to home page...`
-          );
-          navigate("/");
+          console.log(`Board ${boardId} not found, redirecting to home page...`);
+          navigate('/');
           return;
         }
 
@@ -145,16 +123,14 @@ export default function Board() {
         setError(null);
 
         // Subscribe to board changes
-        unsubscribeBoard = subscribeToBoard(boardId, (boardData) => {
+        unsubscribeBoard = subscribeToBoard(boardId, boardData => {
           if (!boardData) {
             // Board doesn't exist or was deleted - unsubscribe and redirect
-            console.log(
-              `Board ${boardId} not found in subscription, redirecting to home...`
-            );
+            console.log(`Board ${boardId} not found in subscription, redirecting to home...`);
             unsubscribeBoard();
             unsubscribeCards();
             unsubscribeParticipants();
-            navigate("/");
+            navigate('/');
             return;
           }
 
@@ -178,15 +154,13 @@ export default function Board() {
           }
 
           // Initialize showAddColumnPlaceholder from board data
-          setShowAddColumnPlaceholder(
-            boardData.showAddColumnPlaceholder === true
-          );
+          setShowAddColumnPlaceholder(boardData.showAddColumnPlaceholder === true);
 
           setLoading(false); // Set loading false once we get *any* snapshot
         });
 
         // Subscribe to cards changes (can run concurrently)
-        unsubscribeCards = subscribeToCards(boardId, (cardsData) => {
+        unsubscribeCards = subscribeToCards(boardId, cardsData => {
           setCards(cardsData);
         });
 
@@ -195,7 +169,7 @@ export default function Board() {
           const joinResult = await joinBoard(
             boardId,
             user.uid,
-            user.displayName || "Anonymous User"
+            user.displayName || 'Anonymous User'
           );
 
           // If join was successful and we have a name that's different from the current user's displayName,
@@ -211,81 +185,73 @@ export default function Board() {
             cleanupPresence = await setupPresence(boardId, joinResult.name);
           } else {
             // Setup real-time presence tracking with the current display name
-            cleanupPresence = await setupPresence(
-              boardId,
-              user.displayName || "Anonymous User"
-            );
+            cleanupPresence = await setupPresence(boardId, user.displayName || 'Anonymous User');
           }
 
           // No need to update localStorage - we'll rely on Firestore for color preference
         } catch (joinError) {
-          console.error("Error joining board in Firestore:", joinError);
+          console.error('Error joining board in Firestore:', joinError);
         }
 
         // Subscribe to participants using the new real-time service
-        unsubscribeParticipants = subscribeToParticipants(
-          boardId,
-          (participantsData) => {
-            setParticipants(participantsData);
+        unsubscribeParticipants = subscribeToParticipants(boardId, participantsData => {
+          setParticipants(participantsData);
 
-            // Check if this user is in the participants list
-            const isUserActive = participantsData.some(
-              (p) => p.id === user.uid
-            );
+          // Check if this user is in the participants list
+          const isUserActive = participantsData.some(p => p.id === user.uid);
 
-            // Only update card colors if:
-            // 1. User is active in the participants list
-            // 2. We haven't updated colors in this session yet (using ref)
-            // 3. It's been at least COLOR_UPDATE_INTERVAL since the last update (throttling)
-            const now = Date.now();
-            if (
-              isUserActive &&
-              !cardColorsUpdatedRef.current &&
-              now - lastCardColorUpdate > COLOR_UPDATE_INTERVAL
-            ) {
-              // Get user's color from Firestore instead of localStorage
-              const getUserColor = async () => {
-                try {
-                  const userRef = doc(db, "users", user.uid);
-                  const userDoc = await getDoc(userRef);
+          // Only update card colors if:
+          // 1. User is active in the participants list
+          // 2. We haven't updated colors in this session yet (using ref)
+          // 3. It's been at least COLOR_UPDATE_INTERVAL since the last update (throttling)
+          const now = Date.now();
+          if (
+            isUserActive &&
+            !cardColorsUpdatedRef.current &&
+            now - lastCardColorUpdate > COLOR_UPDATE_INTERVAL
+          ) {
+            // Get user's color from Firestore instead of localStorage
+            const getUserColor = async () => {
+              try {
+                const userRef = doc(db, 'users', user.uid);
+                const userDoc = await getDoc(userRef);
 
-                  if (userDoc.exists() && userDoc.data().color) {
-                    const userColor = userDoc.data().color;
+                if (userDoc.exists() && userDoc.data().color) {
+                  const userColor = userDoc.data().color;
 
-                    lastCardColorUpdate = now; // Update timestamp before async operation
+                  lastCardColorUpdate = now; // Update timestamp before async operation
 
-                    updateUserCardsColor(user.uid, userColor, boardId)
-                      .then((result) => {
-                        if (result.success) {
-                          cardColorsUpdatedRef.current = true; // Mark as updated for this session
-                          console.log(
-                            `Updated ${result.updated} cards in this board with user's color`
-                          );
-                        }
-                      })
-                      .catch((err) => {
-                        console.error("Error updating card colors:", err);
-                        // Failed update, reset throttle to allow retry sooner
-                        lastCardColorUpdate = now - COLOR_UPDATE_INTERVAL / 2;
-                      });
-                  }
-                } catch (error) {
-                  console.error("Error getting user color:", error);
+                  updateUserCardsColor(user.uid, userColor, boardId)
+                    .then(result => {
+                      if (result.success) {
+                        cardColorsUpdatedRef.current = true; // Mark as updated for this session
+                        console.log(
+                          `Updated ${result.updated} cards in this board with user's color`
+                        );
+                      }
+                    })
+                    .catch(err => {
+                      console.error('Error updating card colors:', err);
+                      // Failed update, reset throttle to allow retry sooner
+                      lastCardColorUpdate = now - COLOR_UPDATE_INTERVAL / 2;
+                    });
                 }
-              };
+              } catch (error) {
+                console.error('Error getting user color:', error);
+              }
+            };
 
-              getUserColor();
-            }
+            getUserColor();
           }
-        );
+        });
 
         return () => {
           // This will be called when the component unmounts
           cleanupPresence();
         };
       } catch (err) {
-        console.error("Error checking/subscribing to board:", err);
-        setError("Failed to load board data. Check console for details.");
+        console.error('Error checking/subscribing to board:', err);
+        setError('Failed to load board data. Check console for details.');
         setLoading(false);
       }
     };
@@ -301,12 +267,12 @@ export default function Board() {
 
       // Clean up any resources from the setup
       setupPromise
-        .then((cleanup) => {
-          if (typeof cleanup === "function") {
+        .then(cleanup => {
+          if (typeof cleanup === 'function') {
             cleanup(); // This will clear intervals and remove event listeners
           }
         })
-        .catch((err) => console.error("Error during cleanup:", err));
+        .catch(err => console.error('Error during cleanup:', err));
     };
   }, [boardId, navigate, user, authLoading, updateUserDisplayName]);
 
@@ -322,11 +288,7 @@ export default function Board() {
       resetTimeoutRef.current = null;
     }
 
-    if (
-      board?.timerIsRunning &&
-      board.timerStartTime &&
-      board.timerDurationSeconds
-    ) {
+    if (board?.timerIsRunning && board.timerStartTime && board.timerDurationSeconds) {
       const startTimeMs = board.timerStartTime.toMillis();
       const durationMs = board.timerDurationSeconds * 1000;
       const endTimeMs = startTimeMs + durationMs;
@@ -356,13 +318,12 @@ export default function Board() {
             if (boardId && board) {
               // Check if boardId and board exist
               // Reset to the duration that was just used for the countdown
-              resetTimer(
-                boardId,
-                board.timerDurationSeconds ?? initialDurationSeconds
-              ).catch((err: unknown) => {
-                console.error("Error auto-resetting timer:", err);
-                // Optionally set an error state here
-              });
+              resetTimer(boardId, board.timerDurationSeconds ?? initialDurationSeconds).catch(
+                (err: unknown) => {
+                  console.error('Error auto-resetting timer:', err);
+                  // Optionally set an error state here
+                }
+              );
             }
             resetTimeoutRef.current = null; // Clear the ref after execution
           }, 990); // Delay slightly less than 1 second
@@ -386,8 +347,7 @@ export default function Board() {
       setEditableTimeStr(formatTime(pausedSeconds)); // Initialize editable string
     } else {
       // Timer is not running and not paused (reset state), show initial duration
-      const initialSeconds =
-        board?.timerDurationSeconds ?? initialDurationSeconds;
+      const initialSeconds = board?.timerDurationSeconds ?? initialDurationSeconds;
       setRemainingTime(initialSeconds);
       setEditableTimeStr(formatTime(initialSeconds)); // Initialize editable string
     }
@@ -413,11 +373,11 @@ export default function Board() {
   // Helper function to format time
   const formatTime = (totalSeconds: number | null): string => {
     if (totalSeconds === null || totalSeconds < 0) {
-      return "0:00"; // Or some default/loading state
+      return '0:00'; // Or some default/loading state
     }
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
-    return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
 
   // Helper function to parse "MM:SS" string to total seconds
@@ -426,13 +386,7 @@ export default function Board() {
     if (!parts) return null;
     const minutes = parseInt(parts[1], 10);
     const seconds = parseInt(parts[2], 10);
-    if (
-      isNaN(minutes) ||
-      isNaN(seconds) ||
-      seconds < 0 ||
-      seconds > 59 ||
-      minutes < 0
-    ) {
+    if (isNaN(minutes) || isNaN(seconds) || seconds < 0 || seconds > 59 || minutes < 0) {
       return null; // Invalid format or values
     }
     return minutes * 60 + seconds;
@@ -451,16 +405,16 @@ export default function Board() {
       }
       pauseTimer(boardId, board).catch((err: unknown) => {
         // Type err
-        console.error("Error pausing timer:", err);
-        setError("Failed to pause timer.");
+        console.error('Error pausing timer:', err);
+        setError('Failed to pause timer.');
       });
     } else {
       // --- Start or Resume Timer ---
       // Pass the current board state to startTimer
       startTimer(boardId, board).catch((err: unknown) => {
         // Type err
-        console.error("Error starting/resuming timer:", err);
-        setError("Failed to start/resume timer.");
+        console.error('Error starting/resuming timer:', err);
+        setError('Failed to start/resume timer.');
       });
     }
   };
@@ -473,17 +427,15 @@ export default function Board() {
 
     if (newDurationSeconds === null || newDurationSeconds < 0) {
       // Invalid input, revert to the last known valid time
-      console.warn("Invalid time format entered:", editableTimeStr);
+      console.warn('Invalid time format entered:', editableTimeStr);
       const lastValidTime =
-        board?.timerPausedDurationSeconds ??
-        board?.timerDurationSeconds ??
-        initialDurationSeconds;
+        board?.timerPausedDurationSeconds ?? board?.timerDurationSeconds ?? initialDurationSeconds;
       setEditableTimeStr(formatTime(lastValidTime));
       return;
     }
 
     // Update Firestore directly
-    const boardRef = doc(db, "boards", boardId);
+    const boardRef = doc(db, 'boards', boardId);
     try {
       await updateDoc(boardRef, {
         timerDurationSeconds: newDurationSeconds,
@@ -501,13 +453,11 @@ export default function Board() {
       });
       // Firestore listener will update the local state (remainingTime, editableTimeStr)
     } catch (err: unknown) {
-      console.error("Error updating timer duration:", err);
-      setError("Failed to update timer duration.");
+      console.error('Error updating timer duration:', err);
+      setError('Failed to update timer duration.');
       // Revert input on error
       const lastValidTime =
-        board?.timerPausedDurationSeconds ??
-        board?.timerDurationSeconds ??
-        initialDurationSeconds;
+        board?.timerPausedDurationSeconds ?? board?.timerDurationSeconds ?? initialDurationSeconds;
       setEditableTimeStr(formatTime(lastValidTime)); // Revert input on error
     }
   };
@@ -519,15 +469,13 @@ export default function Board() {
 
   // Handle saving on Enter key press
   const handleTimeInputKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
+    if (e.key === 'Enter') {
       handleSaveEditedTime();
       // inputRef.current?.blur(); // Remove this line - caused double save attempt
-    } else if (e.key === "Escape") {
+    } else if (e.key === 'Escape') {
       // Revert to last known valid time on Escape
       const lastValidTime =
-        board?.timerPausedDurationSeconds ??
-        board?.timerDurationSeconds ??
-        initialDurationSeconds;
+        board?.timerPausedDurationSeconds ?? board?.timerDurationSeconds ?? initialDurationSeconds;
       escapePressedRef.current = true; // Signal that Escape was pressed
       setEditableTimeStr(formatTime(lastValidTime));
       inputRef.current?.blur(); // Remove focus
@@ -545,15 +493,13 @@ export default function Board() {
     // Prevent saving if the blur was caused by clicking a timer control button
     if (
       e.relatedTarget instanceof HTMLButtonElement &&
-      e.relatedTarget.closest(".timer-controls") // Add a class to the controls container
+      e.relatedTarget.closest('.timer-controls') // Add a class to the controls container
     ) {
       return;
     }
     // Only save on blur if the value has actually changed from the last valid state
     const lastValidTime =
-      board?.timerPausedDurationSeconds ??
-      board?.timerDurationSeconds ??
-      initialDurationSeconds;
+      board?.timerPausedDurationSeconds ?? board?.timerDurationSeconds ?? initialDurationSeconds;
     if (editableTimeStr !== formatTime(lastValidTime)) {
       handleSaveEditedTime();
     }
@@ -583,17 +529,14 @@ export default function Board() {
       // Pass the determined duration to resetTimer
       resetTimer(boardId, durationToResetTo).catch((err: unknown) => {
         // Type err
-        console.error("Error resetting timer:", err);
-        setError("Failed to reset timer.");
+        console.error('Error resetting timer:', err);
+        setError('Failed to reset timer.');
       });
     }
   };
 
   // Handle updating participant name
-  const handleUpdateParticipantName = async (
-    userId: string,
-    newName: string
-  ) => {
+  const handleUpdateParticipantName = async (userId: string, newName: string) => {
     if (!userId || !newName.trim() || !boardId) return;
 
     try {
@@ -608,24 +551,21 @@ export default function Board() {
         updateUserDisplayName(newName);
       }
     } catch (error) {
-      console.error("Error updating participant name:", error);
-      setError("Failed to update name. Please try again.");
+      console.error('Error updating participant name:', error);
+      setError('Failed to update name. Please try again.');
       setTimeout(() => setError(null), 3000);
     }
   };
 
   // Handle updating participant color
-  const handleUpdateParticipantColor = async (
-    userId: string,
-    newColor: string
-  ) => {
+  const handleUpdateParticipantColor = async (userId: string, newColor: string) => {
     console.log(
       `handleUpdateParticipantColor called with userId: ${userId}, newColor: ${newColor}, boardId: ${boardId}`
     );
 
     // Validate inputs
     if (!userId || !newColor || !boardId) {
-      console.error("Missing required parameters:", {
+      console.error('Missing required parameters:', {
         userId,
         newColor,
         boardId,
@@ -634,7 +574,7 @@ export default function Board() {
     }
 
     // Get current user's color to check if it's actually changing
-    const currentUser = participants.find((p) => p.id === userId);
+    const currentUser = participants.find(p => p.id === userId);
     if (currentUser && currentUser.color === newColor) {
       console.log(`Color is already ${newColor}, no need to update`);
       return;
@@ -642,7 +582,7 @@ export default function Board() {
 
     try {
       // Update in Firestore
-      const userRef = doc(db, "users", userId);
+      const userRef = doc(db, 'users', userId);
       console.log(`Updating Firestore user document with color: ${newColor}`);
       await updateDoc(userRef, {
         color: newColor,
@@ -662,17 +602,15 @@ export default function Board() {
           lastCardColorUpdate = now;
           const result = await updateUserCardsColor(userId, newColor, boardId);
           if (result.success) {
-            console.log(
-              `Successfully updated ${result.updated} cards with new color`
-            );
+            console.log(`Successfully updated ${result.updated} cards with new color`);
 
             // Force a UI refresh by updating state
-            const updatedParticipants = participants.map((p) =>
+            const updatedParticipants = participants.map(p =>
               p.id === userId ? { ...p, color: newColor } : p
             );
             setParticipants(updatedParticipants);
           } else {
-            console.error("Error updating cards with new color:", result.error);
+            console.error('Error updating cards with new color:', result.error);
           }
         } else {
           console.log(
@@ -683,8 +621,8 @@ export default function Board() {
         }
       }
     } catch (error) {
-      console.error("Error updating participant color:", error);
-      setError("Failed to update color. Please try again.");
+      console.error('Error updating participant color:', error);
+      setError('Failed to update color. Please try again.');
       setTimeout(() => setError(null), 3000);
     }
   };
@@ -750,19 +688,13 @@ export default function Board() {
 
       // Replace the temporary action point with the real one to maintain
       // state consistency with Firestore
-      setActionPoints(
-        updatedActionPoints.map((ap) =>
-          ap.id === tempId ? newActionPoint : ap
-        )
-      );
+      setActionPoints(updatedActionPoints.map(ap => (ap.id === tempId ? newActionPoint : ap)));
     } catch (error) {
-      console.error("Error adding action point:", error);
-      setError("Failed to add action point. Please try again.");
+      console.error('Error adding action point:', error);
+      setError('Failed to add action point. Please try again.');
 
       // Remove the temporary action point on error
-      setActionPoints((prevPoints) =>
-        prevPoints.filter((ap) => ap.id !== tempId)
-      );
+      setActionPoints(prevPoints => prevPoints.filter(ap => ap.id !== tempId));
 
       setTimeout(() => setError(null), 3000);
     }
@@ -773,12 +705,12 @@ export default function Board() {
     if (!boardId) return;
 
     // Find the action point to toggle
-    const actionPoint = actionPoints.find((ap) => ap.id === id);
+    const actionPoint = actionPoints.find(ap => ap.id === id);
     if (!actionPoint) return;
 
     try {
       // Create a new array with the toggled action point
-      const updatedActionPoints = actionPoints.map((ap) =>
+      const updatedActionPoints = actionPoints.map(ap =>
         ap.id === id ? { ...ap, completed: !ap.completed } : ap
       );
 
@@ -788,14 +720,12 @@ export default function Board() {
       // Then update in Firestore
       await toggleActionPoint(boardId, id);
     } catch (error) {
-      console.error("Error toggling action point:", error);
-      setError("Failed to update action point. Please try again.");
+      console.error('Error toggling action point:', error);
+      setError('Failed to update action point. Please try again.');
 
       // Revert the local state on error
       setActionPoints(
-        actionPoints.map((ap) =>
-          ap.id === id ? { ...ap, completed: actionPoint.completed } : ap
-        )
+        actionPoints.map(ap => (ap.id === id ? { ...ap, completed: actionPoint.completed } : ap))
       );
 
       setTimeout(() => setError(null), 3000);
@@ -807,12 +737,12 @@ export default function Board() {
     if (!boardId) return;
 
     // Find the action point that's being deleted
-    const actionPointToDelete = actionPoints.find((ap) => ap.id === id);
+    const actionPointToDelete = actionPoints.find(ap => ap.id === id);
     if (!actionPointToDelete) return;
 
     try {
       // Create a new array without the deleted action point
-      const updatedActionPoints = actionPoints.filter((ap) => ap.id !== id);
+      const updatedActionPoints = actionPoints.filter(ap => ap.id !== id);
 
       // Update local state optimistically
       setActionPoints(updatedActionPoints);
@@ -820,8 +750,8 @@ export default function Board() {
       // Then delete from Firestore
       await deleteActionPoint(boardId, id);
     } catch (error) {
-      console.error("Error deleting action point:", error);
-      setError("Failed to delete action point. Please try again.");
+      console.error('Error deleting action point:', error);
+      setError('Failed to delete action point. Please try again.');
 
       // Add the action point back on error
       setActionPoints([...actionPoints]);
@@ -838,10 +768,7 @@ export default function Board() {
     if (!destination) return;
 
     // Dropped in the same position
-    if (
-      destination.droppableId === source.droppableId &&
-      destination.index === source.index
-    ) {
+    if (destination.droppableId === source.droppableId && destination.index === source.index) {
       return;
     }
 
@@ -851,9 +778,9 @@ export default function Board() {
     const destinationIndex = destination.index;
 
     // Find the card being moved
-    const draggedCardIndex = cards.findIndex((card) => card.id === draggableId);
+    const draggedCardIndex = cards.findIndex(card => card.id === draggableId);
     if (draggedCardIndex === -1) {
-      console.error("Card not found:", draggableId);
+      console.error('Card not found:', draggableId);
       return;
     }
 
@@ -869,9 +796,7 @@ export default function Board() {
 
     // Find where to insert the card (simplify this logic)
     // For now we'll just extract cards in the destination column to find the right spot
-    const destColumnCards = updatedCards.filter(
-      (card) => card.columnId === destinationColumnId
-    );
+    const destColumnCards = updatedCards.filter(card => card.columnId === destinationColumnId);
 
     // Calculate the insert index within the overall array
     let insertIndex;
@@ -886,7 +811,7 @@ export default function Board() {
       // Find the card at the target destination index
       const refCard = destColumnCards[destinationIndex];
       // Find its position in the overall array
-      insertIndex = updatedCards.findIndex((card) => card.id === refCard.id);
+      insertIndex = updatedCards.findIndex(card => card.id === refCard.id);
     }
 
     // Insert the card at the new position
@@ -906,7 +831,7 @@ export default function Board() {
         boardId!
       );
     } catch (error) {
-      console.error("Error updating card position:", error);
+      console.error('Error updating card position:', error);
       // Revert state if needed
     }
   };
@@ -924,7 +849,7 @@ export default function Board() {
   // Handle deleting the board
   const handleDeleteBoard = async () => {
     if (!boardId || !user) {
-      setError("You must be logged in to delete a board.");
+      setError('You must be logged in to delete a board.');
       setTimeout(() => setError(null), 3000);
       return;
     }
@@ -934,7 +859,7 @@ export default function Board() {
 
       // First check if the user is the facilitator
       if (board?.facilitatorId !== user.uid) {
-        setError("Only the board creator can delete this board.");
+        setError('Only the board creator can delete this board.');
         setLoading(false);
         setTimeout(() => setError(null), 3000);
         return;
@@ -944,13 +869,11 @@ export default function Board() {
       await deleteBoard(boardId, user.uid);
 
       // Then navigate to home page after successful deletion
-      navigate("/");
+      navigate('/');
     } catch (error) {
-      console.error("Error deleting board:", error);
+      console.error('Error deleting board:', error);
       setError(
-        error instanceof Error
-          ? error.message
-          : "Failed to delete board. Please try again."
+        error instanceof Error ? error.message : 'Failed to delete board. Please try again.'
       );
       setLoading(false);
       setTimeout(() => setError(null), 3000);
@@ -971,15 +894,12 @@ export default function Board() {
       if (!result.success) {
         // Revert state if the update failed
         setShowAddColumnPlaceholder(!show);
-        console.error(
-          "Failed to update column placeholder visibility:",
-          result.error
-        );
+        console.error('Failed to update column placeholder visibility:', result.error);
       }
     } catch (error) {
       // Revert state on error
       setShowAddColumnPlaceholder(!show);
-      console.error("Error toggling add column placeholder:", error);
+      console.error('Error toggling add column placeholder:', error);
     }
   };
 
@@ -994,9 +914,7 @@ export default function Board() {
   // Handle auth error state
   if (authError) {
     return (
-      <div className="p-4 text-center text-red-500">
-        Authentication Error: {authError.message}
-      </div>
+      <div className="p-4 text-center text-red-500">Authentication Error: {authError.message}</div>
     );
   }
 
@@ -1024,16 +942,14 @@ export default function Board() {
   }
 
   // Define ColumnType based on BoardType
-  type ColumnType = BoardType["columns"][string];
+  type ColumnType = BoardType['columns'][string];
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
       {/* Top Board Header */}
       <div className="px-6 py-3 border-b border-gray-200 bg-white flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <h1 className="text-lg font-semibold text-gray-800">
-            {board.name || "Unnamed Board"}
-          </h1>
+          <h1 className="text-lg font-semibold text-gray-800">{board.name || 'Unnamed Board'}</h1>
           {/* <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
             Free retrospective
           </span> */}
@@ -1058,10 +974,7 @@ export default function Board() {
                 title="Edit time (MM:SS)"
               />
             ) : (
-              <span
-                className="text-gray-700 font-medium w-12 text-right"
-                title="Remaining time"
-              >
+              <span className="text-gray-700 font-medium w-12 text-right" title="Remaining time">
                 {formatTime(remainingTime)}
               </span>
             )}
@@ -1070,10 +983,10 @@ export default function Board() {
               onClick={handleStartPauseTimer}
               className={`cursor-pointer ${
                 board?.timerIsRunning
-                  ? "text-orange-500 hover:text-orange-600" // Style for Pause
-                  : "text-blue-500 hover:text-blue-600" // Style for Play/Resume
+                  ? 'text-orange-500 hover:text-orange-600' // Style for Pause
+                  : 'text-blue-500 hover:text-blue-600' // Style for Play/Resume
               }`}
-              aria-label={board?.timerIsRunning ? "Pause timer" : "Start timer"} // Add aria-label
+              aria-label={board?.timerIsRunning ? 'Pause timer' : 'Start timer'} // Add aria-label
             >
               {board?.timerIsRunning ? (
                 <Pause className="h-4 w-4" /> // Show Pause icon when running
@@ -1097,7 +1010,7 @@ export default function Board() {
           <div className="flex space-x-5">
             <button
               className={`text-gray-700 hover:text-gray-900 flex items-center cursor-pointer ${
-                isPanelOpen ? "text-blue-500" : ""
+                isPanelOpen ? 'text-blue-500' : ''
               }`}
               onClick={toggleParticipantsPanel}
             >
@@ -1112,7 +1025,7 @@ export default function Board() {
 
             <button
               className={`text-gray-700 hover:text-gray-900 flex items-center cursor-pointer ${
-                isActionPointsPanelOpen ? "text-blue-500" : ""
+                isActionPointsPanelOpen ? 'text-blue-500' : ''
               }`}
               onClick={toggleActionPointsPanel}
             >
@@ -1143,7 +1056,7 @@ export default function Board() {
 
             <button
               className={`text-gray-700 hover:text-gray-900 flex items-center cursor-pointer ${
-                isOptionsPanelOpen ? "text-blue-500" : ""
+                isOptionsPanelOpen ? 'text-blue-500' : ''
               }`}
               onClick={toggleOptionsPanel}
             >
@@ -1166,7 +1079,7 @@ export default function Board() {
       <ShareModal
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
-        boardId={boardId || ""}
+        boardId={boardId || ''}
       />
 
       {/* Use the participants panel */}
@@ -1174,7 +1087,7 @@ export default function Board() {
         isOpen={isPanelOpen}
         onClose={() => setIsPanelOpen(false)}
         participants={participants}
-        currentUserId={user?.uid || ""}
+        currentUserId={user?.uid || ''}
         onUpdateName={handleUpdateParticipantName}
         onUpdateColor={handleUpdateParticipantColor}
       />
@@ -1209,7 +1122,7 @@ export default function Board() {
                   ? Math.min(Object.keys(board.columns).length + 1, 4)
                   : Math.min(Object.keys(board.columns).length, 4)
               }, minmax(0, 1fr))`,
-              gridAutoFlow: "column dense",
+              gridAutoFlow: 'column dense',
             }}
           >
             {Object.values(board.columns)
@@ -1230,41 +1143,33 @@ export default function Board() {
                     onSortToggle={async () => {
                       const newSortState = !columnSortStates[column.id];
                       try {
-                        await updateColumnSortState(
-                          boardId!,
-                          column.id,
-                          newSortState
-                        );
-                        setColumnSortStates((prev) => ({
+                        await updateColumnSortState(boardId!, column.id, newSortState);
+                        setColumnSortStates(prev => ({
                           ...prev,
                           [column.id]: newSortState,
                         }));
                       } catch (error) {
-                        console.error("Error updating sort state:", error);
+                        console.error('Error updating sort state:', error);
                       }
                     }}
                   >
                     <Droppable droppableId={column.id}>
-                      {(provided) => (
+                      {provided => (
                         <div
                           {...provided.droppableProps}
                           ref={provided.innerRef}
                           className="h-full overflow-y-scroll scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400"
                         >
                           {cards
-                            .filter((card) => card.columnId === column.id)
+                            .filter(card => card.columnId === column.id)
                             .sort((a, b) =>
                               columnSortStates[column.id]
                                 ? b.votes - a.votes
                                 : a.position - b.position
                             )
                             .map((card, index) => (
-                              <Draggable
-                                key={card.id}
-                                draggableId={card.id}
-                                index={index}
-                              >
-                                {(provided) => (
+                              <Draggable key={card.id} draggableId={card.id} index={index}>
+                                {provided => (
                                   <CardComponent
                                     provided={provided}
                                     card={card}

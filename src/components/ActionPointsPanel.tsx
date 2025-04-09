@@ -1,5 +1,5 @@
-import { Plus, X } from "lucide-react";
-import { KeyboardEvent, memo, useEffect, useRef, useState } from "react";
+import { Plus, X } from 'lucide-react';
+import { KeyboardEvent, memo, useEffect, useRef, useState } from 'react';
 
 export interface ActionPoint {
   id: string;
@@ -26,7 +26,7 @@ const ActionPointsPanel = memo(
     onDeleteActionPoint: (id: string) => void;
   }) => {
     const [isAddingActionPoint, setIsAddingActionPoint] = useState(false);
-    const [newActionPointText, setNewActionPointText] = useState("");
+    const [newActionPointText, setNewActionPointText] = useState('');
     const inputRef = useRef<HTMLInputElement>(null);
 
     // Focus input when adding action point
@@ -38,26 +38,26 @@ const ActionPointsPanel = memo(
 
     const handleStartAdd = () => {
       setIsAddingActionPoint(true);
-      setNewActionPointText("");
+      setNewActionPointText('');
     };
 
     const handleCancelAdd = () => {
       setIsAddingActionPoint(false);
-      setNewActionPointText("");
+      setNewActionPointText('');
     };
 
     const handleAddActionPoint = () => {
       if (newActionPointText.trim()) {
         onAddActionPoint(newActionPointText.trim());
         setIsAddingActionPoint(false);
-        setNewActionPointText("");
+        setNewActionPointText('');
       }
     };
 
     const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Enter") {
+      if (e.key === 'Enter') {
         handleAddActionPoint();
-      } else if (e.key === "Escape") {
+      } else if (e.key === 'Escape') {
         handleCancelAdd();
       }
     };
@@ -90,7 +90,7 @@ const ActionPointsPanel = memo(
                 No action points yet
               </li>
             ) : (
-              actionPoints.map((actionPoint) => (
+              actionPoints.map(actionPoint => (
                 <li
                   key={actionPoint.id}
                   className="flex items-center justify-between py-2 px-3 rounded-md hover:bg-gray-50"
@@ -105,9 +105,7 @@ const ActionPointsPanel = memo(
                     />
                     <span
                       className={`text-sm ${
-                        actionPoint.completed
-                          ? "text-gray-400 line-through"
-                          : "text-gray-700"
+                        actionPoint.completed ? 'text-gray-400 line-through' : 'text-gray-700'
                       }`}
                     >
                       {actionPoint.text}
@@ -132,7 +130,7 @@ const ActionPointsPanel = memo(
                 ref={inputRef}
                 type="text"
                 value={newActionPointText}
-                onChange={(e) => setNewActionPointText(e.target.value)}
+                onChange={e => setNewActionPointText(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Enter action point..."
                 className="w-full text-sm border-none focus:outline-none focus:ring-0 p-1"

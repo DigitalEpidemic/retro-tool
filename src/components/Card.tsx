@@ -1,9 +1,9 @@
-import { Edit2, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react";
-import { useRef, useState } from "react";
+import { Edit2, ThumbsDown, ThumbsUp, Trash2 } from 'lucide-react';
+import { useRef, useState } from 'react';
 // Import from boardService instead of cardService
-import { DraggableProvided } from "@hello-pangea/dnd"; // Import DraggableProvided
-import { deleteCard, updateCard, voteForCard } from "../services/boardService";
-import { Card as CardType } from "../services/firebase"; // Import Card type
+import { DraggableProvided } from '@hello-pangea/dnd'; // Import DraggableProvided
+import { deleteCard, updateCard, voteForCard } from '../services/boardService';
+import { Card as CardType } from '../services/firebase'; // Import Card type
 
 interface CardProps {
   provided: DraggableProvided; // Use DraggableProvided type
@@ -27,20 +27,17 @@ export default function Card({ provided, card, isOwner }: CardProps) {
     // Otherwise, fall back to the column-based logic
     const columnColors: Record<string, string> = {
       // Mad column (first column) - mint green
-      "column-1": "bg-green-100",
+      'column-1': 'bg-green-100',
       // Sad column (second column) - light purple for some cards, mint green for others
-      "column-2":
-        card.id.charCodeAt(0) % 2 === 0 ? "bg-green-100" : "bg-purple-100",
+      'column-2': card.id.charCodeAt(0) % 2 === 0 ? 'bg-green-100' : 'bg-purple-100',
       // Glad column (third column) - alternating colors
-      "column-3":
-        card.id.charCodeAt(0) % 2 === 0 ? "bg-green-100" : "bg-purple-100",
+      'column-3': card.id.charCodeAt(0) % 2 === 0 ? 'bg-green-100' : 'bg-purple-100',
       // Default fallback for any other columns
-      default:
-        card.id.charCodeAt(0) % 2 === 0 ? "bg-green-100" : "bg-purple-100",
+      default: card.id.charCodeAt(0) % 2 === 0 ? 'bg-green-100' : 'bg-purple-100',
     };
 
     // Return the color for the column or default to the fallback if column not found
-    return columnColors[card.columnId] || columnColors["default"];
+    return columnColors[card.columnId] || columnColors['default'];
   };
 
   const handleSave = () => {
@@ -59,20 +56,20 @@ export default function Card({ provided, card, isOwner }: CardProps) {
   };
 
   const handleDelete = () => {
-    if (window.confirm("Are you sure you want to delete this card?")) {
+    if (window.confirm('Are you sure you want to delete this card?')) {
       deleteCard(card.id);
     }
   };
 
-  const handleVote = (voteType: "up" | "down") => {
-    voteForCard(card.id, voteType).catch((error) => {
-      console.error("Vote failed:", error);
+  const handleVote = (voteType: 'up' | 'down') => {
+    voteForCard(card.id, voteType).catch(error => {
+      console.error('Vote failed:', error);
     });
   };
 
   return (
     <div
-      ref={(node) => {
+      ref={node => {
         provided.innerRef(node);
         cardRef.current = node;
       }}
@@ -84,7 +81,7 @@ export default function Card({ provided, card, isOwner }: CardProps) {
         <div className="p-3" style={{ height: `${cardHeight}px` }}>
           <textarea
             value={content}
-            onChange={(e) => setContent(e.target.value)}
+            onChange={e => setContent(e.target.value)}
             className="w-full h-[calc(100%-40px)] rounded border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm p-2 resize-none"
             autoFocus
           />
@@ -145,18 +142,16 @@ export default function Card({ provided, card, isOwner }: CardProps) {
               {/* Voting component horizontal layout on left */}
               <div className="flex items-center">
                 <button
-                  onClick={() => handleVote("up")}
+                  onClick={() => handleVote('up')}
                   className="p-1 rounded flex items-center transition-colors cursor-pointer text-gray-500 hover:text-green-600 hover:bg-green-50"
                 >
                   <ThumbsUp aria-label="Upvote" className="h-3 w-3" />
                 </button>
 
-                <span className="text-xs font-medium mx-1 text-gray-700">
-                  {card.votes}
-                </span>
+                <span className="text-xs font-medium mx-1 text-gray-700">{card.votes}</span>
 
                 <button
-                  onClick={() => handleVote("down")}
+                  onClick={() => handleVote('down')}
                   className="p-1 rounded flex items-center transition-colors cursor-pointer text-gray-500 hover:text-red-600 hover:bg-red-50"
                 >
                   <ThumbsDown aria-label="Downvote" className="h-3 w-3" />
@@ -166,7 +161,7 @@ export default function Card({ provided, card, isOwner }: CardProps) {
               {/* Author name on right */}
               <div className="text-right">
                 <div className="text-xs text-gray-500 italic">
-                  {card.authorName || "Wonderful Turtle"}
+                  {card.authorName || 'Wonderful Turtle'}
                 </div>
               </div>
             </div>

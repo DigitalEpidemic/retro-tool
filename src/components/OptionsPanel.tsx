@@ -1,5 +1,5 @@
-import { X, Trash2, AlertCircle, Plus, Eye, EyeOff } from "lucide-react";
-import { memo, useState } from "react";
+import { X, Trash2, AlertCircle, Plus, Eye, EyeOff } from 'lucide-react';
+import { memo, useState } from 'react';
 
 const OptionsPanel = memo(
   ({
@@ -43,7 +43,7 @@ const OptionsPanel = memo(
           {isBoardCreator && (
             <div className="border-b border-gray-200 pb-4">
               <h3 className="text-sm font-semibold text-gray-600 mb-3">Board Layout</h3>
-              
+
               <div className="space-y-3">
                 {/* Add Column Placeholder Toggle */}
                 <div className="flex items-center justify-between">
@@ -51,13 +51,13 @@ const OptionsPanel = memo(
                     <Plus className="h-4 w-4 mr-2 text-gray-500" />
                     <span className="text-sm text-gray-700">Add Column Placeholder</span>
                   </div>
-                  
+
                   <button
                     onClick={() => onToggleAddColumnPlaceholder(!showAddColumnPlaceholder)}
                     className={`flex items-center px-2 py-1 rounded text-xs font-medium ${
-                      showAddColumnPlaceholder 
-                        ? "bg-blue-100 text-blue-700" 
-                        : "bg-gray-100 text-gray-600"
+                      showAddColumnPlaceholder
+                        ? 'bg-blue-100 text-blue-700'
+                        : 'bg-gray-100 text-gray-600'
                     } cursor-pointer`}
                     data-testid="toggle-add-column-placeholder"
                   >
@@ -80,11 +80,12 @@ const OptionsPanel = memo(
 
           <div className="border-t border-gray-200 pt-4">
             <h3 className="text-sm font-semibold text-gray-600 mb-2">Danger Zone</h3>
-            
+
             {isConfirmingDelete && isBoardCreator ? (
               <div className="bg-red-50 p-3 rounded-md border border-red-200">
                 <p className="text-sm text-red-700 mb-3">
-                  Are you sure you want to delete this board? This action cannot be undone. All cards and action points will be permanently deleted.
+                  Are you sure you want to delete this board? This action cannot be undone. All
+                  cards and action points will be permanently deleted.
                 </p>
                 <div className="flex space-x-2">
                   <button
@@ -108,18 +109,18 @@ const OptionsPanel = memo(
                 <button
                   onClick={() => isBoardCreator && setIsConfirmingDelete(true)}
                   className={`flex items-center text-sm ${
-                    isBoardCreator 
-                      ? "text-red-600 hover:text-red-700 cursor-pointer" 
-                      : "text-gray-400 cursor-not-allowed"
+                    isBoardCreator
+                      ? 'text-red-600 hover:text-red-700 cursor-pointer'
+                      : 'text-gray-400 cursor-not-allowed'
                   } font-medium`}
                   data-testid="delete-board-button"
                   disabled={!isBoardCreator}
-                  title={!isBoardCreator ? "Only the board creator can delete this board" : ""}
+                  title={!isBoardCreator ? 'Only the board creator can delete this board' : ''}
                 >
                   <Trash2 className="h-4 w-4 mr-1.5" />
                   Delete Board
                 </button>
-                
+
                 {!isBoardCreator && (
                   <div className="mt-1.5 flex items-center text-xs text-gray-500 bg-gray-50 p-2 rounded">
                     <AlertCircle className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
@@ -135,4 +136,4 @@ const OptionsPanel = memo(
   }
 );
 
-export default OptionsPanel; 
+export default OptionsPanel;

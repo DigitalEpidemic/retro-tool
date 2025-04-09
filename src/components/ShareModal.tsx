@@ -1,5 +1,5 @@
-import { Clipboard, Copy, Link, QrCode, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Clipboard, Copy, Link, QrCode, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -7,11 +7,7 @@ interface ShareModalProps {
   boardId: string;
 }
 
-export default function ShareModal({
-  isOpen,
-  onClose,
-  boardId,
-}: ShareModalProps) {
+export default function ShareModal({ isOpen, onClose, boardId }: ShareModalProps) {
   const [copySuccess, setCopySuccess] = useState(false);
   const [showQrCode, setShowQrCode] = useState(false);
   const linkInputRef = useRef<HTMLInputElement>(null);
@@ -21,7 +17,7 @@ export default function ShareModal({
   const handleCopyToClipboard = () => {
     if (linkInputRef.current) {
       linkInputRef.current.select();
-      document.execCommand("copy");
+      document.execCommand('copy');
       setCopySuccess(true);
       setTimeout(() => setCopySuccess(false), 2000);
     }
@@ -66,10 +62,7 @@ export default function ShareModal({
         </div>
 
         <div className="p-6">
-          <label
-            htmlFor="board-link"
-            className="block text-sm font-medium text-gray-700 mb-2"
-          >
+          <label htmlFor="board-link" className="block text-sm font-medium text-gray-700 mb-2">
             Board Link
           </label>
           <div className="flex items-center space-x-2 mb-4">
@@ -108,7 +101,7 @@ export default function ShareModal({
               className="flex items-center text-sm text-blue-600 hover:text-blue-800 cursor-pointer"
             >
               <QrCode className="h-4 w-4 mr-1" />
-              <span>{showQrCode ? "Hide QR Code" : "Show QR Code"}</span>
+              <span>{showQrCode ? 'Hide QR Code' : 'Show QR Code'}</span>
             </button>
 
             {showQrCode && (
@@ -123,10 +116,8 @@ export default function ShareModal({
           </div>
 
           <p className="text-sm text-gray-600 mt-4">
-            Share this link with your team members to collaborate on this
-            retrospective board.
-            {showQrCode &&
-              " Mobile users can scan the QR code to join instantly."}
+            Share this link with your team members to collaborate on this retrospective board.
+            {showQrCode && ' Mobile users can scan the QR code to join instantly.'}
           </p>
         </div>
       </div>

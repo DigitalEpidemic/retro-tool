@@ -1,59 +1,55 @@
-import { get, off, onDisconnect, onValue, ref, set } from "firebase/database";
-import { doc, getDoc } from "firebase/firestore";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { auth, rtdb } from "../firebase";
-import {
-  setupPresence,
-  subscribeToParticipants,
-  updateParticipantName,
-} from "../presenceService";
+import { get, off, onDisconnect, onValue, ref, set } from 'firebase/database';
+import { doc, getDoc } from 'firebase/firestore';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { auth, rtdb } from '../firebase';
+import { setupPresence, subscribeToParticipants, updateParticipantName } from '../presenceService';
 
 // Mock firebase/database
-vi.mock("firebase/database", () => ({
+vi.mock('firebase/database', () => ({
   ref: vi.fn(),
   onValue: vi.fn(),
   onDisconnect: vi.fn(),
   set: vi.fn(),
   off: vi.fn(),
   get: vi.fn(),
-  serverTimestamp: vi.fn(() => "MOCK_TIMESTAMP"),
+  serverTimestamp: vi.fn(() => 'MOCK_TIMESTAMP'),
   query: vi.fn(),
   orderByChild: vi.fn(),
   equalTo: vi.fn(),
 }));
 
 // Mock firebase/firestore
-vi.mock("firebase/firestore", () => ({
+vi.mock('firebase/firestore', () => ({
   doc: vi.fn(),
   getDoc: vi.fn(),
 }));
 
 // Mock firebase services
-vi.mock("../firebase", () => ({
+vi.mock('../firebase', () => ({
   auth: {
     currentUser: {
-      uid: "test-user-id",
+      uid: 'test-user-id',
     },
   },
   rtdb: {},
   db: {},
 }));
 
-describe("presenceService", () => {
-  const mockBoardId = "test-board-id";
-  const mockDisplayName = "Test User";
-  const mockUserId = "test-user-id";
+describe('presenceService', () => {
+  const mockBoardId = 'test-board-id';
+  const mockDisplayName = 'Test User';
+  const mockUserId = 'test-user-id';
 
-  const mockStatusRef = { key: "status/test-user-id" };
+  const mockStatusRef = { key: 'status/test-user-id' };
   const mockBoardRef = {
-    key: "boards/test-board-id/participants/test-user-id",
+    key: 'boards/test-board-id/participants/test-user-id',
   };
   const mockOnDisconnect = {
     set: vi.fn().mockReturnThis(),
     remove: vi.fn().mockReturnThis(),
     cancel: vi.fn().mockReturnThis(),
   };
-  const mockDocRef = { id: "test-user-id" };
+  const mockDocRef = { id: 'test-user-id' };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -62,10 +58,10 @@ describe("presenceService", () => {
     (get as any).mockResolvedValue({
       exists: () => true,
       val: () => ({
-        id: "test-user-id",
-        name: "Old Name",
-        color: "#ff0000",
-        boardId: "test-board-id",
+        id: 'test-user-id',
+        name: 'Old Name',
+        color: '#ff0000',
+        boardId: 'test-board-id',
         lastOnline: 123456789,
       }),
     });
@@ -75,33 +71,30 @@ describe("presenceService", () => {
     (getDoc as any).mockResolvedValue({
       exists: () => true,
       data: () => ({
-        color: "#ff0000",
-        name: "Test User",
+        color: '#ff0000',
+        name: 'Test User',
       }),
     });
 
     // Setup the mocks for each test
     (ref as any).mockImplementation((_: any, path: string) => {
-      if (path?.includes("status")) return mockStatusRef;
-      if (path?.includes("participants")) return mockBoardRef;
-      return { key: "unknown-path" };
+      if (path?.includes('status')) return mockStatusRef;
+      if (path?.includes('participants')) return mockBoardRef;
+      return { key: 'unknown-path' };
     });
 
     (onDisconnect as any).mockReturnValue(mockOnDisconnect);
     (set as any).mockResolvedValue(undefined);
   });
 
-  describe("setupPresence", () => {
-    it("should set up presence tracking for a user", async () => {
+  describe('setupPresence', () => {
+    it('should set up presence tracking for a user', async () => {
       // Call the function
       const cleanup = await setupPresence(mockBoardId, mockDisplayName);
 
       // Verify refs were created correctly
       expect(ref).toHaveBeenCalledWith(rtdb, `status/${mockUserId}`);
-      expect(ref).toHaveBeenCalledWith(
-        rtdb,
-        `boards/${mockBoardId}/participants/${mockUserId}`
-      );
+      expect(ref).toHaveBeenCalledWith(rtdb, `boards/${mockBoardId}/participants/${mockUserId}`);
 
       // Verify Firestore doc was called to get the user's color
       expect(doc).toHaveBeenCalled();
@@ -112,28 +105,28 @@ describe("presenceService", () => {
       expect(onDisconnect).toHaveBeenCalledWith(mockBoardRef);
       expect(mockOnDisconnect.set).toHaveBeenCalledWith({
         online: false,
-        lastChanged: "MOCK_TIMESTAMP",
+        lastChanged: 'MOCK_TIMESTAMP',
       });
       expect(mockOnDisconnect.remove).toHaveBeenCalled();
 
       // Verify user data was set
       expect(set).toHaveBeenCalledWith(mockStatusRef, {
         online: true,
-        lastChanged: "MOCK_TIMESTAMP",
+        lastChanged: 'MOCK_TIMESTAMP',
       });
       expect(set).toHaveBeenCalledWith(
         mockBoardRef,
         expect.objectContaining({
           id: mockUserId,
           name: mockDisplayName,
-          color: "#ff0000", // Should use the color from Firestore
+          color: '#ff0000', // Should use the color from Firestore
           boardId: mockBoardId,
           lastOnline: expect.any(Number),
         })
       );
 
       // Verify cleanup function
-      expect(typeof cleanup).toBe("function");
+      expect(typeof cleanup).toBe('function');
 
       // Call cleanup function
       cleanup();
@@ -142,17 +135,17 @@ describe("presenceService", () => {
       expect(mockOnDisconnect.cancel).toHaveBeenCalledTimes(2);
       expect(set).toHaveBeenCalledWith(mockStatusRef, {
         online: false,
-        lastChanged: "MOCK_TIMESTAMP",
+        lastChanged: 'MOCK_TIMESTAMP',
       });
       expect(set).toHaveBeenCalledWith(mockBoardRef, null);
     });
 
-    it("should use generated color when Firestore has no color", async () => {
+    it('should use generated color when Firestore has no color', async () => {
       // Mock Firestore to return no color
       (getDoc as any).mockResolvedValue({
         exists: () => true,
         data: () => ({
-          name: "Test User",
+          name: 'Test User',
           // No color property
         }),
       });
@@ -176,11 +169,9 @@ describe("presenceService", () => {
       cleanup();
     });
 
-    it("should return empty cleanup function when no user is authenticated", async () => {
+    it('should return empty cleanup function when no user is authenticated', async () => {
       // Spy on console.error
-      const consoleErrorSpy = vi
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       // Temporarily replace auth.currentUser with null
       const originalCurrentUser = auth.currentUser;
@@ -196,11 +187,11 @@ describe("presenceService", () => {
 
       // Verify console.error was called with the correct message
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "Cannot setup presence without an authenticated user"
+        'Cannot setup presence without an authenticated user'
       );
 
       // Verify cleanup is a no-op function
-      expect(typeof cleanup).toBe("function");
+      expect(typeof cleanup).toBe('function');
       cleanup(); // Should not throw
 
       // Restore auth.currentUser and console.error
@@ -209,26 +200,26 @@ describe("presenceService", () => {
     });
   });
 
-  describe("subscribeToParticipants", () => {
-    it("should subscribe to participants for a board", () => {
+  describe('subscribeToParticipants', () => {
+    it('should subscribe to participants for a board', () => {
       const mockCallback = vi.fn();
       const mockSnapshot = {
         exists: () => true,
         forEach: (callback: (snap: any) => void) => {
           callback({
             val: () => ({
-              id: "user1",
-              name: "User One",
-              color: "#ff0000",
+              id: 'user1',
+              name: 'User One',
+              color: '#ff0000',
               boardId: mockBoardId,
               lastOnline: Date.now(),
             }),
           });
           callback({
             val: () => ({
-              id: "user2",
-              name: "User Two",
-              color: "#00ff00",
+              id: 'user2',
+              name: 'User Two',
+              color: '#00ff00',
               boardId: mockBoardId,
               lastOnline: Date.now(),
             }),
@@ -237,21 +228,16 @@ describe("presenceService", () => {
       };
 
       // Setup onValue to call the callback immediately with mock data
-      (onValue as any).mockImplementation(
-        (_: any, callback: (snapshot: any) => void) => {
-          callback(mockSnapshot);
-          return vi.fn(); // Return a mock unsubscribe function
-        }
-      );
+      (onValue as any).mockImplementation((_: any, callback: (snapshot: any) => void) => {
+        callback(mockSnapshot);
+        return vi.fn(); // Return a mock unsubscribe function
+      });
 
       // Call the function
       const unsubscribe = subscribeToParticipants(mockBoardId, mockCallback);
 
       // Verify ref was created correctly
-      expect(ref).toHaveBeenCalledWith(
-        rtdb,
-        `boards/${mockBoardId}/participants`
-      );
+      expect(ref).toHaveBeenCalledWith(rtdb, `boards/${mockBoardId}/participants`);
 
       // Verify onValue was called
       expect(onValue).toHaveBeenCalled();
@@ -259,13 +245,13 @@ describe("presenceService", () => {
       // Verify callback was called with participants
       expect(mockCallback).toHaveBeenCalledWith(
         expect.arrayContaining([
-          expect.objectContaining({ id: "user1", name: "User One" }),
-          expect.objectContaining({ id: "user2", name: "User Two" }),
+          expect.objectContaining({ id: 'user1', name: 'User One' }),
+          expect.objectContaining({ id: 'user2', name: 'User Two' }),
         ])
       );
 
       // Verify unsubscribe function
-      expect(typeof unsubscribe).toBe("function");
+      expect(typeof unsubscribe).toBe('function');
 
       // Call unsubscribe function
       unsubscribe();
@@ -274,7 +260,7 @@ describe("presenceService", () => {
       expect(off).toHaveBeenCalled();
     });
 
-    it("should handle empty participants list", () => {
+    it('should handle empty participants list', () => {
       const mockCallback = vi.fn();
       const mockSnapshot = {
         exists: () => false,
@@ -282,12 +268,10 @@ describe("presenceService", () => {
       };
 
       // Setup onValue to call the callback immediately with empty data
-      (onValue as any).mockImplementation(
-        (_: any, callback: (snapshot: any) => void) => {
-          callback(mockSnapshot);
-          return vi.fn();
-        }
-      );
+      (onValue as any).mockImplementation((_: any, callback: (snapshot: any) => void) => {
+        callback(mockSnapshot);
+        return vi.fn();
+      });
 
       // Call the function
       subscribeToParticipants(mockBoardId, mockCallback);
@@ -298,18 +282,15 @@ describe("presenceService", () => {
     });
   });
 
-  describe("updateParticipantName", () => {
-    it("should update a participant name", async () => {
-      const newName = "New User Name";
+  describe('updateParticipantName', () => {
+    it('should update a participant name', async () => {
+      const newName = 'New User Name';
 
       // Call the function
       await updateParticipantName(mockUserId, mockBoardId, newName);
 
       // Verify ref was created correctly
-      expect(ref).toHaveBeenCalledWith(
-        rtdb,
-        `boards/${mockBoardId}/participants/${mockUserId}`
-      );
+      expect(ref).toHaveBeenCalledWith(rtdb, `boards/${mockBoardId}/participants/${mockUserId}`);
 
       // Verify set was called with updated data
       expect(set).toHaveBeenCalledWith(
@@ -322,9 +303,9 @@ describe("presenceService", () => {
       );
     });
 
-    it("should not update if new name is empty", async () => {
+    it('should not update if new name is empty', async () => {
       // Call with empty name
-      await updateParticipantName(mockUserId, mockBoardId, "   ");
+      await updateParticipantName(mockUserId, mockBoardId, '   ');
 
       // Verify set was not called
       expect(set).not.toHaveBeenCalled();

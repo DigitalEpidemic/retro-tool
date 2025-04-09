@@ -1,8 +1,8 @@
-import type { DropResult } from "@hello-pangea/dnd";
-import "@testing-library/jest-dom";
-import * as matchers from "@testing-library/jest-dom/matchers";
-import { cleanup, configure } from "@testing-library/react";
-import { afterEach, expect, vi } from "vitest";
+import type { DropResult } from '@hello-pangea/dnd';
+import '@testing-library/jest-dom';
+import * as matchers from '@testing-library/jest-dom/matchers';
+import { cleanup, configure } from '@testing-library/react';
+import { afterEach, expect, vi } from 'vitest';
 
 // Configure React Testing Library
 configure({
@@ -24,7 +24,7 @@ class IntersectionObserverMock {
   disconnect = vi.fn();
 }
 
-Object.defineProperty(window, "IntersectionObserver", {
+Object.defineProperty(window, 'IntersectionObserver', {
   writable: true,
   configurable: true,
   value: IntersectionObserverMock,
@@ -37,14 +37,14 @@ class ResizeObserverMock {
   disconnect = vi.fn();
 }
 
-Object.defineProperty(window, "ResizeObserver", {
+Object.defineProperty(window, 'ResizeObserver', {
   writable: true,
   configurable: true,
   value: ResizeObserverMock,
 });
 
 // Mock window.matchMedia
-Object.defineProperty(window, "matchMedia", {
+Object.defineProperty(window, 'matchMedia', {
   writable: true,
   value: vi.fn().mockImplementation((query: string) => ({
     matches: false,
@@ -60,32 +60,28 @@ Object.defineProperty(window, "matchMedia", {
 
 // Set up the global mock for @hello-pangea/dnd
 // This tells Vitest to use our mock implementation for all tests
-vi.mock("@hello-pangea/dnd", async () => {
+vi.mock('@hello-pangea/dnd', async () => {
   // Import the mock implementation
-  const actual = await import("./test/mocks/@hello-pangea/dnd");
+  const actual = await import('./test/mocks/@hello-pangea/dnd');
   return actual;
 });
 
 // Disable DnD development warnings
-window["__react-beautiful-dnd-disable-dev-warnings"] = true;
+window['__react-beautiful-dnd-disable-dev-warnings'] = true;
 
 // Suppress console errors during tests
 const originalConsoleError = console.error;
 console.error = (...args: any[]) => {
   // Ignore certain errors that are expected in test environment
   const ignoredErrors = [
-    "Error: Not implemented: navigation",
-    "Warning: ReactDOM.render is no longer supported",
+    'Error: Not implemented: navigation',
+    'Warning: ReactDOM.render is no longer supported',
     // Add DnD related warnings here if needed
-    "Unable to find draggable with id",
-    "Invariant failed: Draggable",
+    'Unable to find draggable with id',
+    'Invariant failed: Draggable',
   ];
 
-  if (
-    !args.some((arg) =>
-      ignoredErrors.some((ignored) => String(arg).includes(ignored))
-    )
-  ) {
+  if (!args.some(arg => ignoredErrors.some(ignored => String(arg).includes(ignored)))) {
     originalConsoleError(...args);
   }
 };
@@ -94,6 +90,6 @@ console.error = (...args: any[]) => {
 declare global {
   interface Window {
     capturedOnDragEnd: ((result: DropResult) => void) | null;
-    "__react-beautiful-dnd-disable-dev-warnings": boolean;
+    '__react-beautiful-dnd-disable-dev-warnings': boolean;
   }
 }

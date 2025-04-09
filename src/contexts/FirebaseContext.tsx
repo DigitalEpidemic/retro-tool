@@ -3,16 +3,10 @@ import {
   getAuth,
   onAuthStateChanged,
   signInAnonymously,
-} from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
-import {
-  createContext,
-  ReactNode,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
-import { db } from "../services/firebase";
+} from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import { db } from '../services/firebase';
 
 // Extended User type that includes displayName convenience property
 interface ExtendedUser extends FirebaseUser {
@@ -56,11 +50,11 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
 
     // First, set up the auth state listener
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async firebaseUser => {
       try {
         if (firebaseUser) {
           // Fetch the user's stored data from Firestore
-          const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
+          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
 
           // Create an extended user object with the stored name if available
           const extendedUser = {
@@ -69,7 +63,7 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
             displayName:
               userDoc.exists() && userDoc.data()?.name
                 ? userDoc.data().name
-                : firebaseUser.displayName || "Anonymous User",
+                : firebaseUser.displayName || 'Anonymous User',
           } as ExtendedUser;
 
           setUser(extendedUser);
@@ -79,13 +73,13 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
             await signInAnonymously(auth);
             // The onAuthStateChanged listener will catch the result
           } catch (signInError) {
-            console.error("Anonymous sign-in failed:", signInError);
+            console.error('Anonymous sign-in failed:', signInError);
             setError(signInError as Error);
             setUser(null);
           }
         }
       } catch (err) {
-        console.error("Error in auth state change handler:", err);
+        console.error('Error in auth state change handler:', err);
         setError(err as Error);
       } finally {
         setLoading(false);
@@ -95,16 +89,14 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
     // Clean up the listener
     return () => {
       // Make sure unsubscribe is a function before calling it
-      if (typeof unsubscribe === "function") {
+      if (typeof unsubscribe === 'function') {
         unsubscribe();
       }
     };
   }, []);
 
   return (
-    <FirebaseContext.Provider
-      value={{ user, loading, error, updateUserDisplayName }}
-    >
+    <FirebaseContext.Provider value={{ user, loading, error, updateUserDisplayName }}>
       {children}
     </FirebaseContext.Provider>
   );
@@ -113,7 +105,7 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
 export const useFirebase = () => {
   const context = useContext(FirebaseContext);
   if (context === defaultContextValue) {
-    throw new Error("useFirebase must be used within a FirebaseProvider");
+    throw new Error('useFirebase must be used within a FirebaseProvider');
   }
   return context;
 };

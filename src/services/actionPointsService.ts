@@ -1,15 +1,12 @@
-import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { nanoid } from "nanoid";
-import { ActionPoint } from "../components/ActionPointsPanel";
-import { db } from "./firebase";
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { nanoid } from 'nanoid';
+import { ActionPoint } from '../components/ActionPointsPanel';
+import { db } from './firebase';
 
 /**
  * Add a new action point to a board
  */
-export const addActionPoint = async (
-  boardId: string,
-  text: string
-): Promise<ActionPoint> => {
+export const addActionPoint = async (boardId: string, text: string): Promise<ActionPoint> => {
   // Create a new action point object
   const newActionPoint: ActionPoint = {
     id: nanoid(),
@@ -18,7 +15,7 @@ export const addActionPoint = async (
   };
 
   // Get reference to board document
-  const boardRef = doc(db, "boards", boardId);
+  const boardRef = doc(db, 'boards', boardId);
 
   try {
     // First check if the board exists
@@ -42,7 +39,7 @@ export const addActionPoint = async (
 
     return newActionPoint;
   } catch (error) {
-    console.error("Error adding action point:", error);
+    console.error('Error adding action point:', error);
     throw error;
   }
 };
@@ -50,12 +47,9 @@ export const addActionPoint = async (
 /**
  * Toggle the completed status of an action point
  */
-export const toggleActionPoint = async (
-  boardId: string,
-  actionPointId: string
-): Promise<void> => {
+export const toggleActionPoint = async (boardId: string, actionPointId: string): Promise<void> => {
   // Get reference to board document
-  const boardRef = doc(db, "boards", boardId);
+  const boardRef = doc(db, 'boards', boardId);
 
   try {
     // Get the current board data
@@ -69,9 +63,7 @@ export const toggleActionPoint = async (
     const actionPoints = boardData.actionPoints || [];
 
     // Find the action point to toggle
-    const actionPointIndex = actionPoints.findIndex(
-      (ap: ActionPoint) => ap.id === actionPointId
-    );
+    const actionPointIndex = actionPoints.findIndex((ap: ActionPoint) => ap.id === actionPointId);
 
     if (actionPointIndex === -1) {
       throw new Error(`Action point with ID ${actionPointId} not found`);
@@ -91,7 +83,7 @@ export const toggleActionPoint = async (
       actionPoints: updatedActionPoints,
     });
   } catch (error) {
-    console.error("Error toggling action point:", error);
+    console.error('Error toggling action point:', error);
     throw error;
   }
 };
@@ -99,12 +91,9 @@ export const toggleActionPoint = async (
 /**
  * Delete an action point
  */
-export const deleteActionPoint = async (
-  boardId: string,
-  actionPointId: string
-): Promise<void> => {
+export const deleteActionPoint = async (boardId: string, actionPointId: string): Promise<void> => {
   // Get reference to board document
-  const boardRef = doc(db, "boards", boardId);
+  const boardRef = doc(db, 'boards', boardId);
 
   try {
     // Get the current board data
@@ -118,9 +107,7 @@ export const deleteActionPoint = async (
     const actionPoints = boardData.actionPoints || [];
 
     // Filter out the action point to delete
-    const updatedActionPoints = actionPoints.filter(
-      (ap: ActionPoint) => ap.id !== actionPointId
-    );
+    const updatedActionPoints = actionPoints.filter((ap: ActionPoint) => ap.id !== actionPointId);
 
     // If the array length is the same, the action point wasn't found
     if (updatedActionPoints.length === actionPoints.length) {
@@ -132,7 +119,7 @@ export const deleteActionPoint = async (
       actionPoints: updatedActionPoints,
     });
   } catch (error) {
-    console.error("Error deleting action point:", error);
+    console.error('Error deleting action point:', error);
     throw error;
   }
 };
@@ -140,11 +127,9 @@ export const deleteActionPoint = async (
 /**
  * Get all action points for a board
  */
-export const getActionPoints = async (
-  boardId: string
-): Promise<ActionPoint[]> => {
+export const getActionPoints = async (boardId: string): Promise<ActionPoint[]> => {
   // Get reference to board document
-  const boardRef = doc(db, "boards", boardId);
+  const boardRef = doc(db, 'boards', boardId);
 
   try {
     // Get the board data
@@ -159,7 +144,7 @@ export const getActionPoints = async (
     // Return the action points array, or an empty array if none exist
     return boardData.actionPoints || [];
   } catch (error) {
-    console.error("Error getting action points:", error);
+    console.error('Error getting action points:', error);
     throw error;
   }
 };

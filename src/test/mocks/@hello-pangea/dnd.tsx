@@ -1,5 +1,5 @@
-import React from "react";
-import { vi } from "vitest";
+import React from 'react';
+import { vi } from 'vitest';
 
 // This module mocks @hello-pangea/dnd components for testing
 // It automatically gets used when the package is imported in tests
@@ -13,7 +13,7 @@ const DragDropContext = ({ children, onDragEnd }: any) => {
 const Droppable = ({ children, droppableId }: any) => {
   const provided = {
     innerRef: vi.fn(),
-    droppableProps: { "data-testid": `droppable-${droppableId}` },
+    droppableProps: { 'data-testid': `droppable-${droppableId}` },
     placeholder: null,
   };
   return children(provided, {});
@@ -22,10 +22,10 @@ const Droppable = ({ children, droppableId }: any) => {
 const Draggable = ({ children, draggableId }: any) => {
   const provided = {
     innerRef: vi.fn(),
-    draggableProps: { "data-testid": `draggable-${draggableId}` },
+    draggableProps: { 'data-testid': `draggable-${draggableId}` },
     dragHandleProps: {},
   };
   return children(provided, {}, {});
 };
 
-export { DragDropContext, Droppable, Draggable }; 
+export { DragDropContext, Droppable, Draggable };

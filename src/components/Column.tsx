@@ -1,9 +1,9 @@
-import { doc, getDoc } from "firebase/firestore";
-import { ArrowUpDown, MoreVertical } from "lucide-react"; // Import icons
-import React, { useEffect, useRef, useState } from "react";
-import { useFirebase } from "../contexts/FirebaseContext"; // To get user ID
-import { addCard, deleteColumn } from "../services/boardService"; // To add new cards and delete columns
-import { db } from "../services/firebase";
+import { doc, getDoc } from 'firebase/firestore';
+import { ArrowUpDown, MoreVertical } from 'lucide-react'; // Import icons
+import React, { useEffect, useRef, useState } from 'react';
+import { useFirebase } from '../contexts/FirebaseContext'; // To get user ID
+import { addCard, deleteColumn } from '../services/boardService'; // To add new cards and delete columns
+import { db } from '../services/firebase';
 
 interface ColumnProps {
   id: string;
@@ -25,11 +25,11 @@ export default function Column({
   children,
 }: ColumnProps) {
   const { user } = useFirebase();
-  const [newCardContent, setNewCardContent] = React.useState("");
+  const [newCardContent, setNewCardContent] = React.useState('');
   const [isAddingCard, setIsAddingCard] = React.useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const [userColor, setUserColor] = useState<string>("bg-blue-200"); // Default color as Tailwind class
+  const [userColor, setUserColor] = useState<string>('bg-blue-200'); // Default color as Tailwind class
   const [isSubmitting, setIsSubmitting] = useState(false); // Track if a submission is in progress
 
   // Fetch the user's color from Firestore when the component mounts
@@ -38,14 +38,14 @@ export default function Column({
 
     const getUserColor = async () => {
       try {
-        const userRef = doc(db, "users", user.uid);
+        const userRef = doc(db, 'users', user.uid);
         const userSnap = await getDoc(userRef);
 
         if (userSnap.exists() && userSnap.data().color) {
           setUserColor(userSnap.data().color);
         }
       } catch (error) {
-        console.error("Error fetching user color:", error);
+        console.error('Error fetching user color:', error);
       }
     };
 
@@ -60,18 +60,18 @@ export default function Column({
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
 
   // Map column titles to RetroTool style titles based on the id
   const getMappedTitle = () => {
     const titleMap: Record<string, string> = {
-      "column-1": "Mad",
-      "column-2": "Sad",
-      "column-3": "Glad",
+      'column-1': 'Mad',
+      'column-2': 'Sad',
+      'column-3': 'Glad',
     };
     return titleMap[id] || title;
   };
@@ -84,17 +84,17 @@ export default function Column({
       setIsSubmitting(true); // Set submitting state to prevent multiple submissions
 
       // Get user's color from Firestore instead of localStorage
-      let userColor = "bg-blue-200"; // Default color as Tailwind class
+      let userColor = 'bg-blue-200'; // Default color as Tailwind class
 
       try {
-        const userRef = doc(db, "users", user.uid);
+        const userRef = doc(db, 'users', user.uid);
         const userDoc = await getDoc(userRef);
 
         if (userDoc.exists() && userDoc.data().color) {
           userColor = userDoc.data().color;
         }
       } catch (error) {
-        console.error("Error getting user color:", error);
+        console.error('Error getting user color:', error);
         // Proceed with default color
       }
 
@@ -103,13 +103,13 @@ export default function Column({
         id,
         newCardContent.trim(),
         user.uid,
-        user.displayName || "Anonymous User",
+        user.displayName || 'Anonymous User',
         userColor
       );
-      setNewCardContent(""); // Clear input after adding
+      setNewCardContent(''); // Clear input after adding
       setIsAddingCard(false); // Hide the form after adding
     } catch (error) {
-      console.error("Error adding card:", error);
+      console.error('Error adding card:', error);
       // Handle error appropriately (e.g., show a notification)
     } finally {
       setIsSubmitting(false); // Reset submitting state regardless of success or failure
@@ -122,11 +122,11 @@ export default function Column({
     try {
       const result = await deleteColumn(boardId, id);
       if (!result.success) {
-        console.error("Failed to delete column:", result.error);
+        console.error('Failed to delete column:', result.error);
       }
       setIsMenuOpen(false);
     } catch (error) {
-      console.error("Error deleting column:", error);
+      console.error('Error deleting column:', error);
     }
   };
 
@@ -134,9 +134,7 @@ export default function Column({
     <div className="w-full h-full bg-white flex flex-col overflow-hidden">
       {/* Column header */}
       <div className="flex justify-between items-center px-4 py-3 border-b border-gray-200 flex-shrink-0">
-        <h2 className="text-lg font-medium text-gray-800">
-          {getMappedTitle()}
-        </h2>
+        <h2 className="text-lg font-medium text-gray-800">{getMappedTitle()}</h2>
         <div className="flex items-center space-x-2">
           <button
             className="flex items-center text-blue-600 hover:text-blue-700 cursor-pointer"
@@ -162,8 +160,8 @@ export default function Column({
                 <button
                   className={`w-full text-left px-4 py-2 text-sm ${
                     isBoardOwner
-                      ? "text-red-600 hover:bg-gray-100 cursor-pointer"
-                      : "text-gray-400 cursor-not-allowed"
+                      ? 'text-red-600 hover:bg-gray-100 cursor-pointer'
+                      : 'text-gray-400 cursor-not-allowed'
                   }`}
                   onClick={handleDeleteColumn}
                   disabled={!isBoardOwner}
@@ -189,20 +187,20 @@ export default function Column({
         >
           <textarea
             value={newCardContent}
-            onChange={(e) => setNewCardContent(e.target.value)}
+            onChange={e => setNewCardContent(e.target.value)}
             placeholder="Type here... Press Enter to save."
             rows={3}
             className="w-full rounded-none border-none bg-gray-100 text-sm p-3 mb-2 resize-none focus:ring-0"
             required
             autoFocus
             disabled={isSubmitting}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
+            onKeyDown={e => {
+              if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 if (newCardContent.trim() && user && !isSubmitting) {
                   handleAddCard(e);
                 }
-              } else if (e.key === "Escape") {
+              } else if (e.key === 'Escape') {
                 e.preventDefault();
                 setIsAddingCard(false);
               }
@@ -222,7 +220,7 @@ export default function Column({
               className="px-3 py-1.5 text-xs font-medium bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 cursor-pointer"
               disabled={!newCardContent.trim() || !user || isSubmitting}
             >
-              {isSubmitting ? "Saving..." : "Save"}
+              {isSubmitting ? 'Saving...' : 'Save'}
             </button>
           </div>
         </form>
