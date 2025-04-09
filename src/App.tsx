@@ -7,7 +7,7 @@ import "./App.css";
 import Board from "./components/Board";
 import { useFirebase } from "./contexts/FirebaseContext";
 import "./index.css";
-import { createBoard, updateUserCardsColor } from "./services/boardService";
+import { createBoard } from "./services/boardService";
 import { db } from "./services/firebase";
 import { updateParticipantColor } from "./services/presenceService";
 
@@ -41,6 +41,12 @@ function Home() {
     { value: "#A78BFA", name: "Violet" },
     { value: "#F472B6", name: "Pink" },
     { value: "#6B7280", name: "Gray" },
+    { value: "#5EEAD4", name: "Teal" },
+    { value: "#C4B5FD", name: "Lavender" },
+    { value: "#84CC16", name: "Lime" },
+    { value: "#FDE68A", name: "Marigold" },
+    { value: "#FCA5A5", name: "Salmon" },
+    { value: "#94A3B8", name: "Slate" },
   ];
 
   // Load user color from Firestore if available
