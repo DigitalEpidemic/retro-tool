@@ -17,21 +17,21 @@ const mockParticipants: OnlineUser[] = [
   {
     id: "user1",
     name: "John Doe",
-    color: "#ff0000",
+    color: "bg-red-200",
     boardId: "board1",
     lastOnline: Date.now(),
   },
   {
     id: "user2",
     name: "Jane Smith",
-    color: "#00ff00",
+    color: "bg-green-200",
     boardId: "board1",
     lastOnline: Date.now(),
   },
   {
     id: "current-user",
     name: "Current User",
-    color: "#0000ff",
+    color: "bg-blue-200",
     boardId: "board1",
     lastOnline: Date.now(),
   },
@@ -41,6 +41,7 @@ describe("ParticipantsPanel", () => {
   // Setup for each test
   const mockOnClose = vi.fn();
   const mockOnUpdateName = vi.fn();
+  const mockOnUpdateColor = vi.fn();
   const currentUserId = "current-user";
 
   beforeEach(() => {
@@ -55,6 +56,7 @@ describe("ParticipantsPanel", () => {
         participants={mockParticipants}
         currentUserId={currentUserId}
         onUpdateName={mockOnUpdateName}
+        onUpdateColor={mockOnUpdateColor}
       />
     );
 
@@ -70,6 +72,7 @@ describe("ParticipantsPanel", () => {
         participants={mockParticipants}
         currentUserId={currentUserId}
         onUpdateName={mockOnUpdateName}
+        onUpdateColor={mockOnUpdateColor}
       />
     );
 
@@ -102,6 +105,7 @@ describe("ParticipantsPanel", () => {
         participants={mockParticipants}
         currentUserId={currentUserId}
         onUpdateName={mockOnUpdateName}
+        onUpdateColor={mockOnUpdateColor}
       />
     );
 
@@ -121,11 +125,12 @@ describe("ParticipantsPanel", () => {
         participants={mockParticipants}
         currentUserId={currentUserId}
         onUpdateName={mockOnUpdateName}
+        onUpdateColor={mockOnUpdateColor}
       />
     );
 
     // Current user should have an edit button
-    const editButton = screen.getByLabelText("Edit your name");
+    const editButton = screen.getByLabelText("Edit your name and color");
     expect(editButton).toBeInTheDocument();
 
     // Ensure edit button is only next to Current User
@@ -146,6 +151,7 @@ describe("ParticipantsPanel", () => {
         participants={[]}
         currentUserId={currentUserId}
         onUpdateName={mockOnUpdateName}
+        onUpdateColor={mockOnUpdateColor}
       />
     );
 
@@ -162,11 +168,12 @@ describe("ParticipantsPanel", () => {
         participants={mockParticipants}
         currentUserId={currentUserId}
         onUpdateName={mockOnUpdateName}
+        onUpdateColor={mockOnUpdateColor}
       />
     );
 
     // Find and click the edit button
-    const editButton = screen.getByLabelText("Edit your name");
+    const editButton = screen.getByLabelText("Edit your name and color");
     await user.click(editButton);
 
     // Input should appear
@@ -177,11 +184,183 @@ describe("ParticipantsPanel", () => {
     await user.clear(nameInput);
     await user.type(nameInput, "New Name");
 
-    // Save the name
-    const saveButton = screen.getByLabelText("Save name");
+    // Save the changes
+    const saveButton = screen.getByLabelText("Save changes");
     await user.click(saveButton);
 
     // Verify onUpdateName was called with correct parameters
     expect(mockOnUpdateName).toHaveBeenCalledWith("current-user", "New Name");
+  });
+
+  it("allows selecting a color but only applies it when save is clicked", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <ParticipantsPanel
+        isOpen={true}
+        onClose={mockOnClose}
+        participants={mockParticipants}
+        currentUserId={currentUserId}
+        onUpdateName={mockOnUpdateName}
+        onUpdateColor={mockOnUpdateColor}
+      />
+    );
+
+    // Find and click the edit button
+    const editButton = screen.getByLabelText("Edit your name and color");
+    await user.click(editButton);
+
+    // Color options should appear and the selector text should be visible
+    expect(screen.getByText("Select a color:")).toBeInTheDocument();
+
+    // Find and click a color button (red)
+    const redColorButton = screen.getByTitle("Red");
+    await user.click(redColorButton);
+
+    // Verify color change is not applied yet (onUpdateColor should not be called)
+    expect(mockOnUpdateColor).not.toHaveBeenCalled();
+
+    // The "New" text should be visible to indicate pending change
+    expect(screen.getByText("New: red")).toBeInTheDocument();
+
+    // Now click save
+    const saveButton = screen.getByLabelText("Save changes");
+    await user.click(saveButton);
+
+    // Verify onUpdateColor was called with correct parameters
+    expect(mockOnUpdateColor).toHaveBeenCalledWith(
+      "current-user",
+      "bg-red-200"
+    );
+  });
+
+  it("allows updating both name and color at once", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <ParticipantsPanel
+        isOpen={true}
+        onClose={mockOnClose}
+        participants={mockParticipants}
+        currentUserId={currentUserId}
+        onUpdateName={mockOnUpdateName}
+        onUpdateColor={mockOnUpdateColor}
+      />
+    );
+
+    // Find and click the edit button
+    const editButton = screen.getByLabelText("Edit your name and color");
+    await user.click(editButton);
+
+    // Change the name
+    const nameInput = screen.getByRole("textbox");
+    await user.clear(nameInput);
+    await user.type(nameInput, "Updated Name");
+
+    // Select a new color (green)
+    const greenColorButton = screen.getByTitle("Green");
+    await user.click(greenColorButton);
+
+    // Save all changes
+    const saveButton = screen.getByLabelText("Save changes");
+    await user.click(saveButton);
+
+    // Verify both update functions were called with correct parameters
+    expect(mockOnUpdateName).toHaveBeenCalledWith(
+      "current-user",
+      "Updated Name"
+    );
+    expect(mockOnUpdateColor).toHaveBeenCalledWith(
+      "current-user",
+      "bg-green-200"
+    );
+  });
+
+  it("doesn't update color if the same color is selected", async () => {
+    const user = userEvent.setup();
+
+    // Create a custom participant with blue color
+    const blueParticipant: OnlineUser[] = [
+      {
+        id: "current-user",
+        name: "Blue User",
+        color: "bg-blue-200",
+        boardId: "board1",
+        lastOnline: Date.now(),
+      },
+    ];
+
+    render(
+      <ParticipantsPanel
+        isOpen={true}
+        onClose={mockOnClose}
+        participants={blueParticipant}
+        currentUserId={currentUserId}
+        onUpdateName={mockOnUpdateName}
+        onUpdateColor={mockOnUpdateColor}
+      />
+    );
+
+    // Start editing
+    const editButton = screen.getByLabelText("Edit your name and color");
+    await user.click(editButton);
+
+    // Click the blue color (same as current)
+    const blueColorButton = screen.getByTitle("Blue");
+    await user.click(blueColorButton);
+
+    // Save changes
+    const saveButton = screen.getByLabelText("Save changes");
+    await user.click(saveButton);
+
+    // Name update should be called, but not color (since it didn't change)
+    expect(mockOnUpdateName).toHaveBeenCalled();
+    expect(mockOnUpdateColor).not.toHaveBeenCalled();
+  });
+
+  it("cancels editing without saving changes when cancel button is clicked", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <ParticipantsPanel
+        isOpen={true}
+        onClose={mockOnClose}
+        participants={mockParticipants}
+        currentUserId={currentUserId}
+        onUpdateName={mockOnUpdateName}
+        onUpdateColor={mockOnUpdateColor}
+      />
+    );
+
+    // Reset mocks for this test
+    mockOnUpdateName.mockReset();
+    mockOnUpdateColor.mockReset();
+
+    // Find and click the edit button
+    const editButton = screen.getByLabelText("Edit your name and color");
+    await user.click(editButton);
+
+    // Change the name
+    const nameInput = screen.getByRole("textbox");
+    await user.clear(nameInput);
+    await user.type(nameInput, "Canceled Name");
+
+    // Select a new color
+    const redColorButton = screen.getByTitle("Red");
+    await user.click(redColorButton);
+
+    // Click the cancel button
+    const cancelButton = screen.getByLabelText("Cancel changes");
+    await user.click(cancelButton);
+
+    // Edit mode should be closed
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+
+    // Verify that neither update function was called
+    expect(mockOnUpdateName).not.toHaveBeenCalled();
+    expect(mockOnUpdateColor).not.toHaveBeenCalled();
+
+    // The participant name should still be displayed
+    expect(screen.getByText("Current User (You)")).toBeInTheDocument();
   });
 });

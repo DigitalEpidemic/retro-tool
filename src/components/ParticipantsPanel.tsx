@@ -1,4 +1,4 @@
-import { Check, Edit2, X } from "lucide-react";
+import { Edit2, X } from "lucide-react";
 import { KeyboardEvent, memo, useEffect, useRef, useState } from "react";
 import { OnlineUser } from "../services/firebase";
 
@@ -10,16 +10,37 @@ const ParticipantsPanel = memo(
     participants,
     currentUserId,
     onUpdateName,
+    onUpdateColor,
   }: {
     isOpen: boolean;
     onClose: () => void;
     participants: OnlineUser[];
     currentUserId: string;
     onUpdateName: (userId: string, newName: string) => void;
+    onUpdateColor: (userId: string, newColor: string) => void;
   }) => {
     const [editingUser, setEditingUser] = useState<string | null>(null);
     const [newName, setNewName] = useState("");
+    const [newColor, setNewColor] = useState("");
     const inputRef = useRef<HTMLInputElement>(null);
+
+    // Available Tailwind color classes
+    const colorOptions = [
+      { value: "bg-red-200", name: "Red" },
+      { value: "bg-orange-200", name: "Orange" },
+      { value: "bg-amber-200", name: "Amber" },
+      { value: "bg-yellow-200", name: "Yellow" },
+      { value: "bg-lime-200", name: "Lime" },
+      { value: "bg-green-200", name: "Green" },
+      { value: "bg-teal-200", name: "Teal" },
+      { value: "bg-cyan-200", name: "Cyan" },
+      { value: "bg-sky-200", name: "Sky" },
+      { value: "bg-blue-200", name: "Blue" },
+      { value: "bg-indigo-200", name: "Indigo" },
+      { value: "bg-violet-200", name: "Violet" },
+      { value: "bg-fuchsia-200", name: "Fuchsia" },
+      { value: "bg-rose-200", name: "Rose" },
+    ];
 
     // Focus input when editing starts
     useEffect(() => {
@@ -28,21 +49,45 @@ const ParticipantsPanel = memo(
       }
     }, [editingUser]);
 
-    const handleStartEdit = (userId: string, currentName: string) => {
+    const handleStartEdit = (
+      userId: string,
+      currentName: string,
+      currentColor: string
+    ) => {
       setEditingUser(userId);
       setNewName(currentName);
+      setNewColor(currentColor || "bg-blue-200");
     };
 
-    const handleSaveName = () => {
-      if (editingUser && newName.trim()) {
-        onUpdateName(editingUser, newName.trim());
+    // Handle when the user selects a color (just updates local state, doesn't save yet)
+    const handleColorSelect = (color: string) => {
+      setNewColor(color);
+    };
+
+    // Save all changes (name and color) when the save button is clicked
+    const handleSaveChanges = () => {
+      if (editingUser) {
+        // Save name if it's been modified and is valid
+        if (newName.trim()) {
+          onUpdateName(editingUser, newName.trim());
+        }
+
+        // Get the current user's participant data
+        const participant = participants.find((p) => p.id === editingUser);
+
+        // Save color if it's different from current color
+        if (newColor && participant && newColor !== participant.color) {
+          onUpdateColor(editingUser, newColor);
+        }
+
+        // Close edit mode
         setEditingUser(null);
       }
     };
 
     const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
       if (e.key === "Enter") {
-        handleSaveName();
+        handleSaveChanges();
       } else if (e.key === "Escape") {
         setEditingUser(null);
       }
@@ -81,62 +126,138 @@ const ParticipantsPanel = memo(
                   className="flex items-center justify-between py-2 px-3 rounded-md hover:bg-gray-50"
                   data-testid={`participant-${participant.id}`}
                 >
-                  <div className="flex items-center">
-                    <div
-                      className={`h-8 w-8 rounded-full mr-3 flex items-center justify-center text-gray-700 ${
-                        participant.color || "bg-blue-200"
-                      }`}
-                    >
-                      {participant.name.charAt(0).toUpperCase()}
-                    </div>
-
+                  <div className="flex flex-col w-full">
                     {editingUser === participant.id ? (
-                      <input
-                        ref={inputRef}
-                        type="text"
-                        value={newName}
-                        onChange={(e) => setNewName(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        className="border border-blue-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        onBlur={handleSaveName}
-                        autoComplete="off"
-                        data-testid={`edit-input-${participant.id}`}
-                      />
+                      <>
+                        <div className="flex items-center w-full mb-2">
+                          <div
+                            className={`h-8 w-8 rounded-full mr-3 flex-shrink-0 flex items-center justify-center text-gray-700 ${
+                              participant.color || "bg-blue-200"
+                            }`}
+                            data-testid={`participant-color-${participant.id}`}
+                          >
+                            {participant.name.charAt(0).toUpperCase()}
+                          </div>
+                          <input
+                            ref={inputRef}
+                            type="text"
+                            value={newName}
+                            onChange={(e) => setNewName(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            className="w-full border border-blue-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            autoComplete="off"
+                            data-testid={`edit-input-${participant.id}`}
+                          />
+                        </div>
+                        <div className="pl-11">
+                          {" "}
+                          {/* Left padding to align with input field */}
+                          <p className="text-xs text-gray-600 mb-1 font-medium">
+                            Select a color:
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {colorOptions.map((color) => (
+                              <button
+                                key={color.value}
+                                onClick={() => handleColorSelect(color.value)}
+                                className={`${
+                                  color.value
+                                } w-7 h-7 rounded-full cursor-pointer shadow-sm transition-all 
+                                  ${
+                                    newColor === color.value
+                                      ? "ring-2 ring-blue-500 scale-110"
+                                      : "hover:scale-110 hover:ring-1 hover:ring-gray-400"
+                                  }`}
+                                aria-label={`Select ${color.name} color`}
+                                title={color.name}
+                                type="button"
+                              >
+                                {newColor === color.value && (
+                                  <span className="flex items-center justify-center text-blue-800">
+                                    ✓
+                                  </span>
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                          <div className="flex items-center justify-between mt-1">
+                            <p className="text-xs text-gray-500">
+                              Current:{" "}
+                              {participant.color
+                                .replace("bg-", "")
+                                .replace("-200", "")}
+                            </p>
+                            {newColor !== participant.color && (
+                              <p className="text-xs text-blue-600">
+                                New:{" "}
+                                {newColor
+                                  .replace("bg-", "")
+                                  .replace("-200", "")}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex justify-end mt-3 gap-2">
+                            <button
+                              onClick={() => setEditingUser(null)}
+                              className="text-gray-600 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm font-medium cursor-pointer transition-colors"
+                              aria-label="Cancel changes"
+                              data-testid={`cancel-changes-${participant.id}`}
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={handleSaveChanges}
+                              className="text-white bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded text-sm font-medium cursor-pointer transition-colors"
+                              aria-label="Save changes"
+                              data-testid={`save-changes-${participant.id}`}
+                            >
+                              Save
+                            </button>
+                          </div>
+                        </div>
+                      </>
                     ) : (
-                      <span
-                        className="font-medium text-gray-700"
-                        data-testid={`participant-name-${participant.id}`}
-                      >
-                        {participant.name}
-                        {participant.id === currentUserId && " (You)"}
-                      </span>
+                      <div className="flex items-center w-full justify-between">
+                        <div className="flex items-center">
+                          <div
+                            className={`h-8 w-8 rounded-full mr-3 flex items-center justify-center text-gray-700 ${
+                              participant.color || "bg-blue-200"
+                            }`}
+                            data-testid={`participant-color-${participant.id}`}
+                          >
+                            {participant.name.charAt(0).toUpperCase()}
+                          </div>
+                          <span
+                            className="font-medium text-gray-700"
+                            data-testid={`participant-name-${participant.id}`}
+                          >
+                            {participant.name}
+                            {participant.id === currentUserId && " (You)"}
+                          </span>
+                        </div>
+
+                        {participant.id === currentUserId && (
+                          <button
+                            onClick={() =>
+                              handleStartEdit(
+                                participant.id,
+                                participant.name,
+                                participant.color
+                              )
+                            }
+                            className="text-gray-400 hover:text-blue-500 cursor-pointer"
+                            aria-label="Edit your name and color"
+                            data-testid={`edit-name-${participant.id}`}
+                          >
+                            <Edit2
+                              className="h-4 w-4"
+                              data-testid="edit-icon"
+                            />
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
-
-                  {participant.id === currentUserId &&
-                    editingUser !== participant.id && (
-                      <button
-                        onClick={() =>
-                          handleStartEdit(participant.id, participant.name)
-                        }
-                        className="text-gray-400 hover:text-blue-500 cursor-pointer"
-                        aria-label="Edit your name"
-                        data-testid={`edit-name-${participant.id}`}
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </button>
-                    )}
-
-                  {editingUser === participant.id && (
-                    <button
-                      onClick={handleSaveName}
-                      className="text-green-500 hover:text-green-600 cursor-pointer"
-                      aria-label="Save name"
-                      data-testid={`save-name-${participant.id}`}
-                    >
-                      <Check className="h-4 w-4" />
-                    </button>
-                  )}
                 </li>
               ))
             )}

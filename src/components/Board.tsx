@@ -60,6 +60,7 @@ import { OnlineUser } from "../services/firebase";
 import {
   setupPresence,
   subscribeToParticipants,
+  updateParticipantColor,
   updateParticipantName as updateParticipantNameRTDB,
 } from "../services/presenceService";
 
@@ -215,7 +216,7 @@ export default function Board() {
               user.displayName || "Anonymous User"
             );
           }
-          
+
           // No need to update localStorage - we'll rely on Firestore for color preference
         } catch (joinError) {
           console.error("Error joining board in Firestore:", joinError);
@@ -226,45 +227,53 @@ export default function Board() {
           boardId,
           (participantsData) => {
             setParticipants(participantsData);
-            
+
             // Check if this user is in the participants list
-            const isUserActive = participantsData.some(p => p.id === user.uid);
-            
+            const isUserActive = participantsData.some(
+              (p) => p.id === user.uid
+            );
+
             // Only update card colors if:
             // 1. User is active in the participants list
             // 2. We haven't updated colors in this session yet (using ref)
             // 3. It's been at least COLOR_UPDATE_INTERVAL since the last update (throttling)
             const now = Date.now();
-            if (isUserActive && !cardColorsUpdatedRef.current && now - lastCardColorUpdate > COLOR_UPDATE_INTERVAL) {
+            if (
+              isUserActive &&
+              !cardColorsUpdatedRef.current &&
+              now - lastCardColorUpdate > COLOR_UPDATE_INTERVAL
+            ) {
               // Get user's color from Firestore instead of localStorage
               const getUserColor = async () => {
                 try {
                   const userRef = doc(db, "users", user.uid);
                   const userDoc = await getDoc(userRef);
-                  
+
                   if (userDoc.exists() && userDoc.data().color) {
                     const userColor = userDoc.data().color;
-                    
+
                     lastCardColorUpdate = now; // Update timestamp before async operation
-                    
+
                     updateUserCardsColor(user.uid, userColor, boardId)
-                      .then(result => {
+                      .then((result) => {
                         if (result.success) {
                           cardColorsUpdatedRef.current = true; // Mark as updated for this session
-                          console.log(`Updated ${result.updated} cards in this board with user's color`);
+                          console.log(
+                            `Updated ${result.updated} cards in this board with user's color`
+                          );
                         }
                       })
-                      .catch(err => {
+                      .catch((err) => {
                         console.error("Error updating card colors:", err);
                         // Failed update, reset throttle to allow retry sooner
-                        lastCardColorUpdate = now - (COLOR_UPDATE_INTERVAL / 2);
+                        lastCardColorUpdate = now - COLOR_UPDATE_INTERVAL / 2;
                       });
                   }
                 } catch (error) {
                   console.error("Error getting user color:", error);
                 }
               };
-              
+
               getUserColor();
             }
           }
@@ -601,6 +610,81 @@ export default function Board() {
     } catch (error) {
       console.error("Error updating participant name:", error);
       setError("Failed to update name. Please try again.");
+      setTimeout(() => setError(null), 3000);
+    }
+  };
+
+  // Handle updating participant color
+  const handleUpdateParticipantColor = async (
+    userId: string,
+    newColor: string
+  ) => {
+    console.log(
+      `handleUpdateParticipantColor called with userId: ${userId}, newColor: ${newColor}, boardId: ${boardId}`
+    );
+
+    // Validate inputs
+    if (!userId || !newColor || !boardId) {
+      console.error("Missing required parameters:", {
+        userId,
+        newColor,
+        boardId,
+      });
+      return;
+    }
+
+    // Get current user's color to check if it's actually changing
+    const currentUser = participants.find((p) => p.id === userId);
+    if (currentUser && currentUser.color === newColor) {
+      console.log(`Color is already ${newColor}, no need to update`);
+      return;
+    }
+
+    try {
+      // Update in Firestore
+      const userRef = doc(db, "users", userId);
+      console.log(`Updating Firestore user document with color: ${newColor}`);
+      await updateDoc(userRef, {
+        color: newColor,
+        lastUpdated: new Date(), // Add timestamp for tracking
+      });
+
+      // Update in Realtime Database for real-time presence
+      console.log(`Updating RTDB presence with color: ${newColor}`);
+      await updateParticipantColor(userId, boardId, newColor);
+
+      // If this is the current user, also update their cards' color
+      if (user && userId === user.uid) {
+        // Only update card colors if enough time has passed since the last update
+        const now = Date.now();
+        if (now - lastCardColorUpdate > COLOR_UPDATE_INTERVAL) {
+          console.log(`Updating user's cards color to: ${newColor}`);
+          lastCardColorUpdate = now;
+          const result = await updateUserCardsColor(userId, newColor, boardId);
+          if (result.success) {
+            console.log(
+              `Successfully updated ${result.updated} cards with new color`
+            );
+
+            // Force a UI refresh by updating state
+            const updatedParticipants = participants.map((p) =>
+              p.id === userId ? { ...p, color: newColor } : p
+            );
+            setParticipants(updatedParticipants);
+          } else {
+            console.error("Error updating cards with new color:", result.error);
+          }
+        } else {
+          console.log(
+            `Skipping card color update due to throttling. Time since last update: ${
+              now - lastCardColorUpdate
+            }ms`
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Error updating participant color:", error);
+      setError("Failed to update color. Please try again.");
       setTimeout(() => setError(null), 3000);
     }
   };
@@ -1092,6 +1176,7 @@ export default function Board() {
         participants={participants}
         currentUserId={user?.uid || ""}
         onUpdateName={handleUpdateParticipantName}
+        onUpdateColor={handleUpdateParticipantColor}
       />
 
       {/* Use the action points panel */}

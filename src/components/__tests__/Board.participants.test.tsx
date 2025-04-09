@@ -174,6 +174,7 @@ interface ParticipantsPanelProps {
   }>;
   currentUserId: string;
   onUpdateName: (userId: string, newName: string) => void;
+  onUpdateColor: (userId: string, newColor: string) => void;
 }
 
 const mockParticipantsPanel = (props: ParticipantsPanelProps) => {
@@ -193,13 +194,27 @@ const mockParticipantsPanel = (props: ParticipantsPanelProps) => {
             <li key={p.id} data-testid={`participant-${p.id}`}>
               {p.name} {p.id === props.currentUserId ? "(You)" : ""}
               {p.id === props.currentUserId && (
-                <button
-                  onClick={() => props.onUpdateName(p.id, "New Username")}
-                  aria-label="edit your name"
-                  data-testid="edit-name-button"
-                >
-                  Edit
-                </button>
+                <>
+                  <button
+                    onClick={() => {
+                      // In our test, we just directly call the update functions
+                      // to simplify testing
+                      props.onUpdateName(p.id, "New Username");
+                      props.onUpdateColor(p.id, "bg-green-200");
+                    }}
+                    aria-label="edit your name"
+                    data-testid="edit-name-button"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => props.onUpdateColor(p.id, "bg-red-200")}
+                    aria-label="change color"
+                    data-testid="change-color-button"
+                  >
+                    Change Color
+                  </button>
+                </>
               )}
             </li>
           ))}
@@ -219,14 +234,14 @@ vi.mock("../Board", async (importOriginal) => {
       {
         id: "user1",
         name: "User One",
-        color: "#ff0000",
+        color: "bg-red-200",
         boardId: "test-board-id",
         lastOnline: Date.now(),
       },
       {
         id: "current-user-id",
         name: "Current User",
-        color: "#0000ff",
+        color: "bg-blue-200",
         boardId: "test-board-id",
         lastOnline: Date.now(),
       },
@@ -264,6 +279,12 @@ vi.mock("../Board", async (importOriginal) => {
       }
     };
 
+    const handleUpdateColor = (userId, newColor) => {
+      // Update in Firestore and RTDB
+      const userRef = { id: userId };
+      presenceService.updateParticipantColor(userId, "test-board-id", newColor);
+    };
+
     return (
       <div>
         <h1>Test Board</h1>
@@ -289,6 +310,7 @@ vi.mock("../Board", async (importOriginal) => {
           participants: participants,
           currentUserId: "current-user-id",
           onUpdateName: handleUpdateName,
+          onUpdateColor: handleUpdateColor,
         })}
       </div>
     );
@@ -366,14 +388,14 @@ vi.mock("../../services/presenceService", () => {
         {
           id: "user1",
           name: "User One",
-          color: "#ff0000",
+          color: "bg-red-200",
           boardId: "test-board-id",
           lastOnline: Date.now(),
         },
         {
           id: "current-user-id",
           name: "Current User",
-          color: "#0000ff",
+          color: "bg-blue-200",
           boardId: "test-board-id",
           lastOnline: Date.now(),
         },
@@ -381,6 +403,7 @@ vi.mock("../../services/presenceService", () => {
       return vi.fn(); // Return unsubscribe function
     }),
     updateParticipantName: vi.fn().mockResolvedValue(true),
+    updateParticipantColor: vi.fn().mockResolvedValue(true),
   };
 });
 
@@ -587,5 +610,30 @@ describe("Board Component - Participants Integration", () => {
 
     // Verify updateUserDisplayName was called with the new name
     expect(updateUserDisplayNameMock).toHaveBeenCalledWith("New Username");
+  });
+
+  it("allows updating a participant's color", async () => {
+    const user = userEvent.setup();
+    renderBoard();
+
+    // Open the panel
+    const participantsButton = screen.getByTestId("participants-button");
+    await user.click(participantsButton);
+
+    // Wait for panel to open
+    await waitFor(() => {
+      expect(screen.getByTestId("participants-panel")).toBeInTheDocument();
+    });
+
+    // Find and click the change color button
+    const colorButton = screen.getByTestId("change-color-button");
+    await user.click(colorButton);
+
+    // Verify updateParticipantColor was called
+    expect(presenceService.updateParticipantColor).toHaveBeenCalledWith(
+      "current-user-id",
+      "test-board-id",
+      "bg-red-200"
+    );
   });
 });
