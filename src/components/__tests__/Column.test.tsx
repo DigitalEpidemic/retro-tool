@@ -1,10 +1,16 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { User } from "firebase/auth"; // Import User type
+import { getDoc } from "firebase/firestore"; // Import getDoc from firebase/firestore
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useFirebase } from "../../contexts/FirebaseContext"; // Adjust the import path
 import { addCard } from "../../services/boardService"; // Adjust the import path
-import { getDoc } from "firebase/firestore"; // Import getDoc from firebase/firestore
 import Column from "../Column"; // This is the real component
 
 // Mock dependencies
@@ -48,9 +54,14 @@ vi.mock("../../services/firebase", () => ({
   db: {},
   auth: { currentUser: { uid: "test-user-id" } },
   rtdb: {},
-  OnlineUser: function(id: string, name: string, color: string, boardId: string) {
+  OnlineUser: function (
+    id: string,
+    name: string,
+    color: string,
+    boardId: string
+  ) {
     return { id, name, color, boardId, lastOnline: Date.now() };
-  }
+  },
 }));
 
 // Mock user data
@@ -93,26 +104,34 @@ describe("Column", () => {
   };
 
   // --- Rendering Tests ---
-  it("renders correctly with the mapped title", () => {
-    renderColumn();
+  it("renders correctly with the mapped title", async () => {
+    await act(async () => {
+      renderColumn();
+    });
     expect(screen.getByText("Mad")).toBeInTheDocument(); // Mapped title for column-1
     expect(screen.queryByText("Default Title")).not.toBeInTheDocument();
   });
 
-  it("renders children correctly", () => {
-    renderColumn({}, <div data-testid="child-card">Test Card</div>);
+  it("renders children correctly", async () => {
+    await act(async () => {
+      renderColumn({}, <div data-testid="child-card">Test Card</div>);
+    });
     expect(screen.getByTestId("child-card")).toBeInTheDocument();
     expect(screen.getByText("Test Card")).toBeInTheDocument();
   });
 
-  it("renders icons", () => {
-    renderColumn();
+  it("renders icons", async () => {
+    await act(async () => {
+      renderColumn();
+    });
     expect(screen.getByTestId("arrow-up-down-icon")).toBeInTheDocument();
     expect(screen.getByTestId("more-vertical-icon")).toBeInTheDocument();
   });
 
-  it('renders "Add a card" button initially', () => {
-    renderColumn();
+  it('renders "Add a card" button initially', async () => {
+    await act(async () => {
+      renderColumn();
+    });
     expect(
       screen.getByRole("button", { name: "+ Add a card" })
     ).toBeInTheDocument();
@@ -122,10 +141,12 @@ describe("Column", () => {
   });
 
   // --- User Interaction Tests ---
-  it('shows the add card form when "Add a card" button is clicked', () => {
+  it('shows the add card form when "Add a card" button is clicked', async () => {
     renderColumn();
-    const addButton = screen.getByRole("button", { name: "+ Add a card" });
-    fireEvent.click(addButton);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+    });
 
     expect(
       screen.getByPlaceholderText("Type here... Press Enter to save.")
@@ -137,17 +158,22 @@ describe("Column", () => {
     ).not.toBeInTheDocument();
   });
 
-  it('hides the add card form when "Cancel" button is clicked', () => {
+  it('hides the add card form when "Cancel" button is clicked', async () => {
     renderColumn();
     // Open the form first
-    fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+    });
+
     expect(
       screen.getByPlaceholderText("Type here... Press Enter to save.")
     ).toBeInTheDocument();
 
     // Click Cancel
-    const cancelButton = screen.getByRole("button", { name: "Cancel" });
-    fireEvent.click(cancelButton);
+    await act(async () => {
+      const cancelButton = screen.getByRole("button", { name: "Cancel" });
+      fireEvent.click(cancelButton);
+    });
 
     expect(
       screen.queryByPlaceholderText("Type here... Press Enter to save.")
@@ -157,20 +183,31 @@ describe("Column", () => {
     ).toBeInTheDocument();
   });
 
-  it("updates textarea value on change", () => {
+  it("updates textarea value on change", async () => {
     renderColumn();
-    fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+    });
+
     const textarea = screen.getByPlaceholderText(
       "Type here... Press Enter to save."
     ) as HTMLTextAreaElement;
 
-    fireEvent.change(textarea, { target: { value: "New card idea" } });
+    await act(async () => {
+      fireEvent.change(textarea, { target: { value: "New card idea" } });
+    });
+
     expect(textarea.value).toBe("New card idea");
   });
 
   it("calls addCard and hides form on submit with valid content", async () => {
     renderColumn();
-    fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+    });
+
     const textarea = screen.getByPlaceholderText(
       "Type here... Press Enter to save."
     );
@@ -178,19 +215,24 @@ describe("Column", () => {
     const form = screen.getByTestId("add-card-form"); // Use data-testid
 
     // Enter content
-    fireEvent.change(textarea, {
-      target: { value: "  A valid card content  " },
+    await act(async () => {
+      fireEvent.change(textarea, {
+        target: { value: "  A valid card content  " },
+      });
     });
+
     expect(saveButton).not.toBeDisabled();
 
     // Submit form
-    fireEvent.submit(form); // Use form submit event
+    await act(async () => {
+      fireEvent.submit(form); // Use form submit event
+    });
 
     // Check if addCard was called correctly
     await waitFor(() => {
       expect(addCard).toHaveBeenCalledTimes(1);
     });
-    
+
     expect(vi.mocked(addCard)).toHaveBeenCalledWith(
       mockBoardId,
       mockColumnId,
@@ -211,21 +253,29 @@ describe("Column", () => {
     });
   });
 
-  it("calls onSortToggle when sort button is clicked", () => {
+  it("calls onSortToggle when sort button is clicked", async () => {
     renderColumn();
-    const sortButton = screen.getByRole("button", { name: /Sort/ }); // Use regex to find button containing "Sort"
-    fireEvent.click(sortButton);
+
+    await act(async () => {
+      const sortButton = screen.getByRole("button", { name: /Sort/ }); // Use regex to find button containing "Sort"
+      fireEvent.click(sortButton);
+    });
+
     expect(mockOnSortToggle).toHaveBeenCalledTimes(1);
   });
 
   // --- State/Prop Change Tests ---
-  it('shows "Votes" text when sortByVotes is true', () => {
-    renderColumn({ sortByVotes: true });
+  it('shows "Votes" text when sortByVotes is true', async () => {
+    await act(async () => {
+      renderColumn({ sortByVotes: true });
+    });
     expect(screen.getByText("Votes")).toBeInTheDocument();
   });
 
-  it('does not show "Votes" text when sortByVotes is false', () => {
-    renderColumn({ sortByVotes: false });
+  it('does not show "Votes" text when sortByVotes is false', async () => {
+    await act(async () => {
+      renderColumn({ sortByVotes: false });
+    });
     expect(screen.queryByText("Votes")).not.toBeInTheDocument();
   });
 
@@ -238,14 +288,23 @@ describe("Column", () => {
     vi.mocked(addCard).mockRejectedValue(new Error(errorMessage)); // Use vi.mocked
 
     renderColumn();
-    fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+    });
+
     const textarea = screen.getByPlaceholderText(
       "Type here... Press Enter to save."
     );
     const form = screen.getByTestId("add-card-form"); // Use data-testid
 
-    fireEvent.change(textarea, { target: { value: "Card content" } });
-    fireEvent.submit(form);
+    await act(async () => {
+      fireEvent.change(textarea, { target: { value: "Card content" } });
+    });
+
+    await act(async () => {
+      fireEvent.submit(form);
+    });
 
     await waitFor(() => {
       expect(addCard).toHaveBeenCalledTimes(1);
@@ -267,9 +326,13 @@ describe("Column", () => {
   });
 
   // --- Edge Case Tests ---
-  it("does not call addCard if content is empty or whitespace", () => {
+  it("does not call addCard if content is empty or whitespace", async () => {
     renderColumn();
-    fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+    });
+
     const textarea = screen.getByPlaceholderText(
       "Type here... Press Enter to save."
     );
@@ -277,19 +340,33 @@ describe("Column", () => {
     const form = screen.getByTestId("add-card-form"); // Use data-testid
 
     // Try with empty content
-    fireEvent.change(textarea, { target: { value: "" } });
+    await act(async () => {
+      fireEvent.change(textarea, { target: { value: "" } });
+    });
+
     expect(saveButton).toBeDisabled();
-    fireEvent.submit(form);
+
+    await act(async () => {
+      fireEvent.submit(form);
+    });
+
     expect(addCard).not.toHaveBeenCalled();
 
     // Try with whitespace only
-    fireEvent.change(textarea, { target: { value: "   " } });
+    await act(async () => {
+      fireEvent.change(textarea, { target: { value: "   " } });
+    });
+
     expect(saveButton).toBeDisabled();
-    fireEvent.submit(form);
+
+    await act(async () => {
+      fireEvent.submit(form);
+    });
+
     expect(addCard).not.toHaveBeenCalled();
   });
 
-  it("disables Save button if user is null", () => {
+  it("disables Save button if user is null", async () => {
     // Simulate no user, but provide full context type
     vi.mocked(useFirebase).mockReturnValue({
       user: null,
@@ -297,19 +374,28 @@ describe("Column", () => {
       error: null,
     });
     renderColumn();
-    fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+    });
+
     const textarea = screen.getByPlaceholderText(
       "Type here... Press Enter to save."
     );
     const saveButton = screen.getByRole("button", { name: "Save" });
 
     // Even with content, button should be disabled if no user
-    fireEvent.change(textarea, { target: { value: "Some content" } });
+    await act(async () => {
+      fireEvent.change(textarea, { target: { value: "Some content" } });
+    });
+
     expect(saveButton).toBeDisabled();
   });
 
-  it("uses default title if id does not match mapped titles", () => {
-    renderColumn({ id: "unknown-column", title: "Fallback Title" });
+  it("uses default title if id does not match mapped titles", async () => {
+    await act(async () => {
+      renderColumn({ id: "unknown-column", title: "Fallback Title" });
+    });
     expect(screen.getByText("Fallback Title")).toBeInTheDocument();
     expect(screen.queryByText("Mad")).not.toBeInTheDocument();
   });
@@ -318,7 +404,7 @@ describe("Column", () => {
   it("passes user's displayName and color to addCard", async () => {
     // Mock Firestore to return a user color
     const mockUserColor = "#60A5FA"; // Blue color
-    
+
     // Mock getDoc from Firestore to return a user with color
     vi.mocked(getDoc).mockResolvedValue({
       exists: () => true,
@@ -342,7 +428,10 @@ describe("Column", () => {
     });
 
     renderColumn();
-    fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+    });
 
     const textarea = screen.getByPlaceholderText(
       "Type here... Press Enter to save."
@@ -350,10 +439,14 @@ describe("Column", () => {
     const form = screen.getByTestId("add-card-form");
 
     // Enter content
-    fireEvent.change(textarea, { target: { value: "New card content" } });
+    await act(async () => {
+      fireEvent.change(textarea, { target: { value: "New card content" } });
+    });
 
     // Submit form
-    fireEvent.submit(form);
+    await act(async () => {
+      fireEvent.submit(form);
+    });
 
     // Verify addCard was called with the correct displayName and color
     await waitFor(() => {
@@ -385,7 +478,10 @@ describe("Column", () => {
     });
 
     renderColumn();
-    fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+    });
 
     const textarea = screen.getByPlaceholderText(
       "Type here... Press Enter to save."
@@ -393,16 +489,20 @@ describe("Column", () => {
     const form = screen.getByTestId("add-card-form");
 
     // Enter content
-    fireEvent.change(textarea, { target: { value: "Anonymous card" } });
+    await act(async () => {
+      fireEvent.change(textarea, { target: { value: "Anonymous card" } });
+    });
 
     // Submit form
-    fireEvent.submit(form);
+    await act(async () => {
+      fireEvent.submit(form);
+    });
 
     // Verify addCard was called with the "Anonymous User" fallback
     await waitFor(() => {
       expect(addCard).toHaveBeenCalledTimes(1);
     });
-    
+
     expect(vi.mocked(addCard)).toHaveBeenCalledWith(
       mockBoardId,
       mockColumnId,
@@ -414,42 +514,67 @@ describe("Column", () => {
   });
 
   // --- Snapshot Testing ---
-  it("matches snapshot", () => {
-    const { container } = renderColumn();
+  it("matches snapshot", async () => {
+    let container;
+    await act(async () => {
+      const renderResult = renderColumn();
+      container = renderResult.container;
+    });
     expect(container).toMatchSnapshot();
   });
 
-  it("matches snapshot when adding card", () => {
-    const { container } = renderColumn();
-    fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+  it("matches snapshot when adding card", async () => {
+    let container;
+    await act(async () => {
+      const renderResult = renderColumn();
+      container = renderResult.container;
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+    });
+
     expect(container).toMatchSnapshot();
   });
 
-  it("matches snapshot when sorted by votes", () => {
-    const { container } = renderColumn({ sortByVotes: true });
+  it("matches snapshot when sorted by votes", async () => {
+    let container;
+    await act(async () => {
+      const renderResult = renderColumn({ sortByVotes: true });
+      container = renderResult.container;
+    });
     expect(container).toMatchSnapshot();
   });
 
   // Test for Enter key functionality
   it("adds a card when pressing Enter in the textarea", async () => {
     renderColumn();
-    fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+    });
 
     const textarea = screen.getByPlaceholderText(
       "Type here... Press Enter to save."
     );
 
     // Enter content
-    fireEvent.change(textarea, { target: { value: "New card via Enter key" } });
+    await act(async () => {
+      fireEvent.change(textarea, {
+        target: { value: "New card via Enter key" },
+      });
+    });
 
     // Press Enter key
-    fireEvent.keyDown(textarea, { key: "Enter", code: "Enter" });
+    await act(async () => {
+      fireEvent.keyDown(textarea, { key: "Enter", code: "Enter" });
+    });
 
     // Check if addCard was called correctly
     await waitFor(() => {
       expect(addCard).toHaveBeenCalledTimes(1);
     });
-    
+
     expect(vi.mocked(addCard)).toHaveBeenCalledWith(
       mockBoardId,
       mockColumnId,
@@ -469,22 +594,29 @@ describe("Column", () => {
 
   it("does not add a card when pressing Enter with Shift key", async () => {
     renderColumn();
-    fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+    });
 
     const textarea = screen.getByPlaceholderText(
       "Type here... Press Enter to save."
     );
 
     // Enter content
-    fireEvent.change(textarea, {
-      target: { value: "Content with line break" },
+    await act(async () => {
+      fireEvent.change(textarea, {
+        target: { value: "Content with line break" },
+      });
     });
 
     // Press Enter with Shift key (should add a new line instead of submitting)
-    fireEvent.keyDown(textarea, {
-      key: "Enter",
-      code: "Enter",
-      shiftKey: true,
+    await act(async () => {
+      fireEvent.keyDown(textarea, {
+        key: "Enter",
+        code: "Enter",
+        shiftKey: true,
+      });
     });
 
     // Check that addCard was not called
@@ -498,17 +630,24 @@ describe("Column", () => {
 
   it("does not add a card when pressing Enter with empty content", async () => {
     renderColumn();
-    fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+    });
 
     const textarea = screen.getByPlaceholderText(
       "Type here... Press Enter to save."
     );
 
     // Leave content empty
-    fireEvent.change(textarea, { target: { value: "" } });
+    await act(async () => {
+      fireEvent.change(textarea, { target: { value: "" } });
+    });
 
     // Press Enter key
-    fireEvent.keyDown(textarea, { key: "Enter", code: "Enter" });
+    await act(async () => {
+      fireEvent.keyDown(textarea, { key: "Enter", code: "Enter" });
+    });
 
     // Check that addCard was not called
     expect(addCard).not.toHaveBeenCalled();
@@ -519,21 +658,28 @@ describe("Column", () => {
     ).toBeInTheDocument();
   });
 
-  it("cancels adding a card when pressing Escape key", () => {
+  it("cancels adding a card when pressing Escape key", async () => {
     renderColumn();
-    fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "+ Add a card" }));
+    });
 
     const textarea = screen.getByPlaceholderText(
       "Type here... Press Enter to save."
     );
 
     // Enter some content
-    fireEvent.change(textarea, {
-      target: { value: "Content that will be discarded" },
+    await act(async () => {
+      fireEvent.change(textarea, {
+        target: { value: "Content that will be discarded" },
+      });
     });
 
     // Press Escape key
-    fireEvent.keyDown(textarea, { key: "Escape", code: "Escape" });
+    await act(async () => {
+      fireEvent.keyDown(textarea, { key: "Escape", code: "Escape" });
+    });
 
     // Form should be hidden after Escape
     expect(
@@ -551,26 +697,30 @@ describe("Column", () => {
 
   // Add tests for column menu
   describe("Column menu functionality", () => {
-    it("opens the dropdown menu when clicking the MoreVertical icon", () => {
+    it("opens the dropdown menu when clicking the MoreVertical icon", async () => {
       renderColumn();
 
       // Initially, the dropdown should not be visible
       expect(screen.queryByText("Delete column")).not.toBeInTheDocument();
 
       // Click the menu button
-      const menuButton = screen.getByTestId("column-menu-column-1");
-      fireEvent.click(menuButton);
+      await act(async () => {
+        const menuButton = screen.getByTestId("column-menu-column-1");
+        fireEvent.click(menuButton);
+      });
 
       // Now the dropdown should be visible
       expect(screen.getByText("Delete column")).toBeInTheDocument();
     });
 
-    it("shows a disabled delete option for non-owner users", () => {
+    it("shows a disabled delete option for non-owner users", async () => {
       renderColumn({ isBoardOwner: false });
 
       // Open the menu
-      const menuButton = screen.getByTestId("column-menu-column-1");
-      fireEvent.click(menuButton);
+      await act(async () => {
+        const menuButton = screen.getByTestId("column-menu-column-1");
+        fireEvent.click(menuButton);
+      });
 
       // Find the delete button and check it's disabled
       const deleteButton = screen.getByTestId("delete-column-column-1");
@@ -579,12 +729,14 @@ describe("Column", () => {
       expect(deleteButton).toHaveClass("cursor-not-allowed");
     });
 
-    it("shows an enabled delete option for board owners", () => {
+    it("shows an enabled delete option for board owners", async () => {
       renderColumn({ isBoardOwner: true });
 
       // Open the menu
-      const menuButton = screen.getByTestId("column-menu-column-1");
-      fireEvent.click(menuButton);
+      await act(async () => {
+        const menuButton = screen.getByTestId("column-menu-column-1");
+        fireEvent.click(menuButton);
+      });
 
       // Find the delete button and check it's enabled
       const deleteButton = screen.getByTestId("delete-column-column-1");
@@ -603,12 +755,14 @@ describe("Column", () => {
       renderColumn({ isBoardOwner: true });
 
       // Open the menu
-      const menuButton = screen.getByTestId("column-menu-column-1");
-      fireEvent.click(menuButton);
+      await act(async () => {
+        fireEvent.click(screen.getByTestId("column-menu-column-1"));
+      });
 
       // Click the delete button
-      const deleteButton = screen.getByTestId("delete-column-column-1");
-      fireEvent.click(deleteButton);
+      await act(async () => {
+        fireEvent.click(screen.getByTestId("delete-column-column-1"));
+      });
 
       // Check if deleteColumn was called correctly
       await waitFor(() => {
@@ -637,12 +791,14 @@ describe("Column", () => {
       renderColumn({ isBoardOwner: true });
 
       // Open the menu
-      const menuButton = screen.getByTestId("column-menu-column-1");
-      fireEvent.click(menuButton);
+      await act(async () => {
+        fireEvent.click(screen.getByTestId("column-menu-column-1"));
+      });
 
       // Click the delete button
-      const deleteButton = screen.getByTestId("delete-column-column-1");
-      fireEvent.click(deleteButton);
+      await act(async () => {
+        fireEvent.click(screen.getByTestId("delete-column-column-1"));
+      });
 
       // Check if error was logged
       await waitFor(() => {
@@ -655,18 +811,22 @@ describe("Column", () => {
       consoleErrorSpy.mockRestore();
     });
 
-    it("closes the menu when clicking outside", () => {
+    it("closes the menu when clicking outside", async () => {
       renderColumn();
 
       // Open the menu
-      const menuButton = screen.getByTestId("column-menu-column-1");
-      fireEvent.click(menuButton);
+      await act(async () => {
+        const menuButton = screen.getByTestId("column-menu-column-1");
+        fireEvent.click(menuButton);
+      });
 
       // The dropdown should be visible
       expect(screen.getByText("Delete column")).toBeInTheDocument();
 
       // Click outside the menu
-      fireEvent.mouseDown(document.body);
+      await act(async () => {
+        fireEvent.mouseDown(document.body);
+      });
 
       // Now the dropdown should be hidden
       expect(screen.queryByText("Delete column")).not.toBeInTheDocument();
