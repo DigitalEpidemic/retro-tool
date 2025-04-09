@@ -290,7 +290,27 @@ describe("Column", () => {
   });
 
   // Test to verify the user's displayName is correctly passed to addCard
-  it("passes user's displayName to addCard", async () => {
+  it("passes user's displayName and color to addCard", async () => {
+    // Mock localStorage to have a user color
+    const mockUserColor = "#60A5FA"; // Blue color
+    const localStorageMock = {
+      getItem: vi.fn().mockImplementation((key) => {
+        if (key === 'userColor') return mockUserColor;
+        return null;
+      }),
+      setItem: vi.fn(),
+      clear: vi.fn(),
+      removeItem: vi.fn(),
+      length: 1,
+      key: vi.fn(),
+    };
+    
+    // Override the global localStorage object
+    Object.defineProperty(window, 'localStorage', {
+      value: localStorageMock,
+      writable: true
+    });
+    
     // Mock a user with a displayName
     const userWithName = {
       uid: "test-user-123",
@@ -318,7 +338,7 @@ describe("Column", () => {
     // Submit form
     fireEvent.submit(form);
 
-    // Verify addCard was called with the correct displayName
+    // Verify addCard was called with the correct displayName and color
     await waitFor(() => {
       expect(addCard).toHaveBeenCalledTimes(1);
       expect(vi.mocked(addCard)).toHaveBeenCalledWith(
@@ -326,7 +346,8 @@ describe("Column", () => {
         mockColumnId,
         "New card content",
         userWithName.uid,
-        userWithName.displayName
+        userWithName.displayName,
+        mockUserColor // Should include the color from localStorage
       );
     });
   });

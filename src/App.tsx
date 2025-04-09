@@ -7,8 +7,9 @@ import "./App.css";
 import Board from "./components/Board";
 import { useFirebase } from "./contexts/FirebaseContext";
 import "./index.css";
-import { createBoard } from "./services/boardService";
+import { createBoard, updateUserCardsColor } from "./services/boardService";
 import { db } from "./services/firebase";
+import { updateParticipantColor } from "./services/presenceService";
 
 // A simple component for the root path
 function Home() {
@@ -20,6 +21,8 @@ function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [joinBoardId, setJoinBoardId] = useState("");
   const [showJoinInput, setShowJoinInput] = useState(false);
+  const [isUpdatingColor, setIsUpdatingColor] = useState(false);
+  const [colorUpdateStatus, setColorUpdateStatus] = useState<string | null>(null);
 
   // Set initial username from Firebase user when available
   useEffect(() => {
@@ -40,9 +43,79 @@ function Home() {
     { value: "#6B7280", name: "Gray" },
   ];
 
-  const handleRandomColor = () => {
+  // Load user color from Firestore if available
+  useEffect(() => {
+    if (!user) return;
+
+    const loadUserColor = async () => {
+      try {
+        const userRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userRef);
+        
+        if (userSnap.exists() && userSnap.data().color) {
+          setUserColor(userSnap.data().color);
+        }
+      } catch (error) {
+        console.error("Error loading user color:", error);
+      }
+    };
+
+    loadUserColor();
+  }, [user]);
+
+  const handleRandomColor = async () => {
+    if (isUpdatingColor || !user) return;
+    
     const randomIndex = Math.floor(Math.random() * colorOptions.length);
-    setUserColor(colorOptions[randomIndex].value);
+    const newColor = colorOptions[randomIndex].value;
+    
+    await handleColorChange(newColor);
+  };
+
+  // Update color preference in Firestore without updating cards
+  const handleColorChange = async (color: string) => {
+    if (isUpdatingColor || !user) return;
+    
+    setIsUpdatingColor(true);
+    setColorUpdateStatus('Updating color preference...');
+    
+    try {
+      setUserColor(color);
+      
+      // Update in Firestore - this only updates the preference, not the cards
+      const userRef = doc(db, "users", user.uid);
+      await updateDoc(userRef, { color });
+      
+      // Check if the user is in a board
+      const userSnap = await getDoc(userRef);
+      const currentBoardId = userSnap.exists() ? userSnap.data().boardId : null;
+      
+      // Update in realtime database if the user is in a board
+      if (currentBoardId) {
+        try {
+          // Only update the participant color in the realtime database
+          // We won't update card colors here - that will happen in the Board component
+          // when the user is confirmed to be in the participants list
+          await updateParticipantColor(user.uid, currentBoardId, color);
+          setColorUpdateStatus('Color preference saved. Your cards will update when you are active in a board.');
+        } catch (rtdbError) {
+          console.error("Error updating realtime database color:", rtdbError);
+          setColorUpdateStatus('Color preference saved. Your cards will update when you are active in a board.');
+        }
+      } else {
+        // User is not in any board, just save the preference
+        setColorUpdateStatus('Color preference saved. Your cards will update when you join boards.');
+      }
+      
+      // Clear status after 3 seconds
+      setTimeout(() => setColorUpdateStatus(null), 3000);
+    } catch (error) {
+      console.error("Error updating color:", error);
+      setColorUpdateStatus('Error updating color preference.');
+      setTimeout(() => setColorUpdateStatus(null), 5000);
+    } finally {
+      setIsUpdatingColor(false);
+    }
   };
 
   const handleCreateBoard = async (e: FormEvent) => {
@@ -166,18 +239,32 @@ function Home() {
               <label className="block text-sm font-medium text-gray-700">
                 Your Card Color
               </label>
+              <p className="text-xs text-gray-500 mb-2">
+                This color will be used for all cards you create across any board.
+              </p>
+              {isUpdatingColor && (
+                <div className="mt-1 mb-2">
+                  <div className="h-1 bg-blue-200 rounded">
+                    <div className="h-1 bg-blue-500 rounded animate-pulse"></div>
+                  </div>
+                </div>
+              )}
+              {colorUpdateStatus && (
+                <p className="text-xs text-blue-600 mb-2">{colorUpdateStatus}</p>
+              )}
               <div className="mt-2 flex items-center">
                 <div className="flex flex-wrap gap-2">
                   {colorOptions.map((color) => (
                     <button
                       key={color.value}
                       type="button"
-                      onClick={() => setUserColor(color.value)}
+                      onClick={() => handleColorChange(color.value)}
+                      disabled={isUpdatingColor}
                       className={`h-8 w-8 rounded-full cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
                         userColor === color.value
                           ? "ring-2 ring-offset-2 ring-indigo-500"
                           : ""
-                      }`}
+                      } ${isUpdatingColor ? "opacity-50 cursor-not-allowed" : ""}`}
                       style={{ backgroundColor: color.value }}
                       title={color.name}
                       aria-label={`Select ${color.name} color`}
@@ -186,7 +273,10 @@ function Home() {
                   <button
                     type="button"
                     onClick={handleRandomColor}
-                    className="h-8 w-8 rounded-full bg-white border border-gray-300 flex items-center justify-center cursor-pointer"
+                    disabled={isUpdatingColor}
+                    className={`h-8 w-8 rounded-full bg-white border border-gray-300 flex items-center justify-center cursor-pointer ${
+                      isUpdatingColor ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
                     title="Random color"
                   >
                     <Shuffle className="h-4 w-4 text-gray-500" />

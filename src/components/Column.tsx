@@ -1,7 +1,9 @@
 import { ArrowUpDown, MoreVertical } from "lucide-react"; // Import icons
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { useFirebase } from "../contexts/FirebaseContext"; // To get user ID
 import { addCard, deleteColumn } from "../services/boardService"; // To add new cards and delete columns
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../services/firebase";
 
 interface ColumnProps {
   id: string;
@@ -27,6 +29,38 @@ export default function Column({
   const [isAddingCard, setIsAddingCard] = React.useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [userColor, setUserColor] = useState<string>("#6B7280"); // Default color
+
+  // Fetch the user's color from Firestore when the component mounts
+  useEffect(() => {
+    if (!user) return;
+    
+    const getUserColor = async () => {
+      try {
+        const userRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userRef);
+        
+        if (userSnap.exists() && userSnap.data().color) {
+          setUserColor(userSnap.data().color);
+        } else {
+          // Fallback to localStorage if not in Firestore
+          const savedColor = localStorage.getItem('userColor');
+          if (savedColor) {
+            setUserColor(savedColor);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching user color:", error);
+        // Fallback to localStorage
+        const savedColor = localStorage.getItem('userColor');
+        if (savedColor) {
+          setUserColor(savedColor);
+        }
+      }
+    };
+    
+    getUserColor();
+  }, [user]);
 
   // Close menu when clicking outside
   React.useEffect(() => {
@@ -57,12 +91,28 @@ export default function Column({
     if (!newCardContent.trim() || !user) return;
 
     try {
+      // Get user's color from Firestore instead of localStorage
+      let userColor = "#6B7280"; // Default color
+      
+      try {
+        const userRef = doc(db, "users", user.uid);
+        const userDoc = await getDoc(userRef);
+        
+        if (userDoc.exists() && userDoc.data().color) {
+          userColor = userDoc.data().color;
+        }
+      } catch (error) {
+        console.error("Error getting user color:", error);
+        // Proceed with default color
+      }
+      
       await addCard(
         boardId,
         id,
         newCardContent.trim(),
         user.uid,
-        user.displayName || "Anonymous User"
+        user.displayName || "Anonymous User",
+        userColor
       );
       setNewCardContent(""); // Clear input after adding
       setIsAddingCard(false); // Hide the form after adding

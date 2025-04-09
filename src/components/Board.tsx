@@ -43,6 +43,7 @@ import {
   updateColumnSortState,
   updateParticipantName as updateParticipantNameFirestore,
   updateShowAddColumnPlaceholder,
+  updateUserCardsColor,
 } from "../services/boardService";
 import { Board as BoardType, Card as CardType, db } from "../services/firebase";
 import ActionPointsPanel, { ActionPoint } from "./ActionPointsPanel"; // Import ActionPointsPanel
@@ -61,6 +62,10 @@ import {
   subscribeToParticipants,
   updateParticipantName as updateParticipantNameRTDB,
 } from "../services/presenceService";
+
+// Track the last time we updated card colors to throttle updates
+let lastCardColorUpdate = 0;
+const COLOR_UPDATE_INTERVAL = 5000; // Minimum 5 seconds between card color updates
 
 export default function Board() {
   const { boardId } = useParams<{ boardId: string }>();
@@ -94,6 +99,9 @@ export default function Board() {
   const escapePressedRef = useRef(false); // Ref to track if blur was triggered by Escape
   const [showAddColumnPlaceholder, setShowAddColumnPlaceholder] =
     useState<boolean>(true);
+
+  // Track if user's cards have been updated with the current color
+  const cardColorsUpdatedRef = useRef(false);
 
   useEffect(() => {
     // Don't proceed if auth is still loading or if there's no boardId
@@ -199,14 +207,16 @@ export default function Board() {
           ) {
             updateUserDisplayName(joinResult.name);
             // Setup real-time presence tracking with the updated display name
-            cleanupPresence = setupPresence(boardId, joinResult.name);
+            cleanupPresence = await setupPresence(boardId, joinResult.name);
           } else {
             // Setup real-time presence tracking with the current display name
-            cleanupPresence = setupPresence(
+            cleanupPresence = await setupPresence(
               boardId,
               user.displayName || "Anonymous User"
             );
           }
+          
+          // No need to update localStorage - we'll rely on Firestore for color preference
         } catch (joinError) {
           console.error("Error joining board in Firestore:", joinError);
         }
@@ -216,6 +226,47 @@ export default function Board() {
           boardId,
           (participantsData) => {
             setParticipants(participantsData);
+            
+            // Check if this user is in the participants list
+            const isUserActive = participantsData.some(p => p.id === user.uid);
+            
+            // Only update card colors if:
+            // 1. User is active in the participants list
+            // 2. We haven't updated colors in this session yet (using ref)
+            // 3. It's been at least COLOR_UPDATE_INTERVAL since the last update (throttling)
+            const now = Date.now();
+            if (isUserActive && !cardColorsUpdatedRef.current && now - lastCardColorUpdate > COLOR_UPDATE_INTERVAL) {
+              // Get user's color from Firestore instead of localStorage
+              const getUserColor = async () => {
+                try {
+                  const userRef = doc(db, "users", user.uid);
+                  const userDoc = await getDoc(userRef);
+                  
+                  if (userDoc.exists() && userDoc.data().color) {
+                    const userColor = userDoc.data().color;
+                    
+                    lastCardColorUpdate = now; // Update timestamp before async operation
+                    
+                    updateUserCardsColor(user.uid, userColor, boardId)
+                      .then(result => {
+                        if (result.success) {
+                          cardColorsUpdatedRef.current = true; // Mark as updated for this session
+                          console.log(`Updated ${result.updated} cards in this board with user's color`);
+                        }
+                      })
+                      .catch(err => {
+                        console.error("Error updating card colors:", err);
+                        // Failed update, reset throttle to allow retry sooner
+                        lastCardColorUpdate = now - (COLOR_UPDATE_INTERVAL / 2);
+                      });
+                  }
+                } catch (error) {
+                  console.error("Error getting user color:", error);
+                }
+              };
+              
+              getUserColor();
+            }
           }
         );
 

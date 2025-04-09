@@ -63,6 +63,7 @@ export interface Card {
   votes: number;
   position: number;
   actionable?: boolean;
+  color?: string;
 }
 
 // Type for a user

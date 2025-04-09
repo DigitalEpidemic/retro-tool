@@ -175,6 +175,18 @@ describe("Card", () => {
     expect(cardElement).toHaveClass("bg-purple-100"); // Default fallback for odd
   });
 
+  it("uses card's color property when available", () => {
+    const cardWithColor = {
+      ...mockCard,
+      color: "#60A5FA", // Blue color
+    };
+    const { container } = render(
+      <Card provided={provided} card={cardWithColor} isOwner={true} />
+    );
+    const cardElement = container.firstChild as HTMLElement;
+    expect(cardElement).toHaveClass("bg-blue-200"); // Should use bg-blue-200 based on the color mapping
+  });
+
   // 2. User Interaction Tests
   it("enters edit mode when edit button is clicked", () => {
     render(<Card provided={provided} card={mockCard} isOwner={true} />);

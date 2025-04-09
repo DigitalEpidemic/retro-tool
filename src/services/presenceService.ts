@@ -1,4 +1,5 @@
 import {
+  get,
   off,
   onDisconnect,
   onValue,
@@ -6,7 +7,8 @@ import {
   serverTimestamp as rtdbTimestamp,
   set,
 } from "firebase/database";
-import { auth, OnlineUser, rtdb } from "./firebase";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, OnlineUser, rtdb, db } from "./firebase";
 
 // Generate a consistent color for a user based on their ID
 const getColorForUser = (userId: string) => {
@@ -25,10 +27,10 @@ const getColorForUser = (userId: string) => {
  * @param displayName The user's display name
  * @returns A cleanup function to call when the component unmounts
  */
-export const setupPresence = (
+export const setupPresence = async (
   boardId: string,
   displayName: string
-): (() => void) => {
+): Promise<() => void> => {
   // Don't proceed if there's no authenticated user
   if (!auth.currentUser) {
     console.error("Cannot setup presence without an authenticated user");
@@ -38,12 +40,32 @@ export const setupPresence = (
   const userId = auth.currentUser.uid;
   const userStatusRef = ref(rtdb, `status/${userId}`);
   const userBoardRef = ref(rtdb, `boards/${boardId}/participants/${userId}`);
+  
+  // Try to get the user's color from Firestore, or generate one if not available
+  let userColor;
+  
+  try {
+    const userRef = doc(db, "users", userId);
+    const userSnap = await getDoc(userRef);
+    
+    if (userSnap.exists() && userSnap.data().color) {
+      // Use color from Firestore
+      userColor = userSnap.data().color;
+    } else {
+      // Fall back to generated color
+      userColor = getColorForUser(userId);
+    }
+  } catch (error) {
+    console.error("Error fetching user color for presence:", error);
+    // Fallback to generated color
+    userColor = getColorForUser(userId);
+  }
 
   // User data to store
   const userData: OnlineUser = {
     id: userId,
     name: displayName || "Anonymous",
-    color: getColorForUser(userId),
+    color: userColor,
     boardId,
     lastOnline: Date.now(),
   };
@@ -128,17 +150,47 @@ export const updateParticipantName = async (
   userId: string,
   boardId: string,
   newName: string
-) => {
-  if (!newName.trim()) return;
-
+): Promise<void> => {
   const userBoardRef = ref(rtdb, `boards/${boardId}/participants/${userId}`);
+  
+  try {
+    // Get current user data
+    const snapshot = await get(userBoardRef);
+    if (snapshot.exists()) {
+      const userData = snapshot.val();
+      // Update just the name, keeping other properties
+      await set(userBoardRef, {
+        ...userData,
+        name: newName,
+      });
+    }
+  } catch (error) {
+    console.error("Error updating participant name in RTDB:", error);
+    throw error;
+  }
+};
 
-  // Use the update method from firebase/database to only update the name field
-  await set(userBoardRef, {
-    id: userId,
-    name: newName,
-    color: getColorForUser(userId),
-    boardId,
-    lastOnline: Date.now(),
-  });
+// Update a participant's color in the real-time database
+export const updateParticipantColor = async (
+  userId: string,
+  boardId: string,
+  newColor: string
+): Promise<void> => {
+  const userBoardRef = ref(rtdb, `boards/${boardId}/participants/${userId}`);
+  
+  try {
+    // Get current user data
+    const snapshot = await get(userBoardRef);
+    if (snapshot.exists()) {
+      const userData = snapshot.val();
+      // Update just the color, keeping other properties
+      await set(userBoardRef, {
+        ...userData,
+        color: newColor,
+      });
+    }
+  } catch (error) {
+    console.error("Error updating participant color in RTDB:", error);
+    throw error;
+  }
 };

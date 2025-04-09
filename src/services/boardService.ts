@@ -95,7 +95,8 @@ export const addCard = async (
   columnId: string,
   content: string,
   authorId: string,
-  authorName: string = "Anonymous"
+  authorName: string = "Anonymous",
+  authorColor?: string // Add authorColor parameter
 ) => {
   const cardData = {
     boardId,
@@ -106,6 +107,7 @@ export const addCard = async (
     createdAt: serverTimestamp(),
     votes: 0,
     position: Date.now(), // Use timestamp for initial positioning, will be updated by DnD
+    color: authorColor, // Add color to the card data
   };
   await addDoc(collection(db, "cards"), cardData);
 };
@@ -439,22 +441,31 @@ export const joinBoard = async (
   userName: string = "Anonymous User"
 ) => {
   try {
-    // Random pastel color for the user
-    const getRandomPastelColor = () => {
-      // Use userId to generate a consistent color for the same user
-      const hash = Array.from(userId).reduce(
-        (acc, char) => acc + char.charCodeAt(0),
-        0
-      );
-      const hue = hash % 360;
-      return `hsl(${hue}, 70%, 80%)`; // Pastel color
-    };
-
     // Check if user document exists
     const userRef = doc(db, "users", userId);
 
     try {
       const userSnap = await getDoc(userRef);
+      
+      // Get the user's color - prioritize the stored Firestore color
+      let userColor;
+      if (userSnap.exists() && userSnap.data().color) {
+        // Use existing color from Firestore
+        userColor = userSnap.data().color;
+      } else {
+        // Generate a random color if no color exists
+        // Random pastel color for the user
+        const getRandomPastelColor = () => {
+          // Use userId to generate a consistent color for the same user
+          const hash = Array.from(userId).reduce(
+            (acc, char) => acc + char.charCodeAt(0),
+            0
+          );
+          const hue = hash % 360;
+          return `hsl(${hue}, 70%, 80%)`; // Pastel color
+        };
+        userColor = getRandomPastelColor();
+      }
 
       if (userSnap.exists()) {
         // Get the existing name if available
@@ -472,10 +483,12 @@ export const joinBoard = async (
             lastActive: serverTimestamp(),
             // Only update name if the incoming name is not anonymous or if no name exists
             name: nameToUse,
+            // Only update the color if it's not already set to preserve user preference
+            ...(userSnap.data().color ? {} : { color: userColor }),
           });
 
-          // Return the name that's being used
-          return { success: true, name: nameToUse };
+          // Return the name that's being used and the color
+          return { success: true, name: nameToUse, color: userColor };
         } catch (updateError) {
           console.error(`Failed to update user ${userId}:`, updateError);
           throw updateError;
@@ -486,14 +499,14 @@ export const joinBoard = async (
           const userData = {
             id: userId,
             name: userName,
-            color: getRandomPastelColor(),
+            color: userColor,
             boardId,
             lastActive: serverTimestamp(),
           };
           await setDoc(userRef, userData);
 
-          // Return the name that's being used
-          return { success: true, name: userName };
+          // Return the name that's being used and the color
+          return { success: true, name: userName, color: userColor };
         } catch (createError) {
           console.error(`Failed to create user ${userId}:`, createError);
           throw createError;
@@ -759,6 +772,56 @@ export const updateShowAddColumnPlaceholder = async (boardId: string, showPlaceh
     return { success: true };
   } catch (error) {
     console.error("Error updating add column placeholder visibility:", error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : "Unknown error" 
+    };
+  }
+};
+
+// Update color for all cards created by a user
+export const updateUserCardsColor = async (userId: string, newColor: string, specificBoardId?: string) => {
+  try {
+    // Find all cards authored by this user
+    let cardsQuery;
+    
+    if (specificBoardId) {
+      // If a specific board ID is provided, only update cards in that board
+      cardsQuery = query(
+        collection(db, "cards"),
+        where("authorId", "==", userId),
+        where("boardId", "==", specificBoardId)
+      );
+    } else {
+      // Otherwise update all cards by this user (original behavior)
+      cardsQuery = query(
+        collection(db, "cards"),
+        where("authorId", "==", userId)
+      );
+    }
+
+    const querySnapshot = await getDocs(cardsQuery);
+    
+    if (querySnapshot.empty) {
+      return { success: true, updated: 0 };
+    }
+
+    // Use a batch to update all cards efficiently
+    const batch = writeBatch(db);
+    
+    querySnapshot.forEach((cardDoc) => {
+      const cardRef = doc(db, "cards", cardDoc.id);
+      batch.update(cardRef, { color: newColor });
+    });
+
+    await batch.commit();
+    
+    return { 
+      success: true, 
+      updated: querySnapshot.size 
+    };
+  } catch (error) {
+    console.error("Error updating user's card colors:", error);
     return { 
       success: false, 
       error: error instanceof Error ? error.message : "Unknown error" 
