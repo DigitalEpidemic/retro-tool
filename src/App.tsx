@@ -17,7 +17,7 @@ function Home() {
   const { user, loading: authLoading, updateUserDisplayName } = useFirebase();
   const [username, setUsername] = useState("");
   const [boardName, setBoardName] = useState("");
-  const [userColor, setUserColor] = useState("bg-blue-100");
+  const [userColor, setUserColor] = useState("bg-blue-200");
   const [isLoading, setIsLoading] = useState(false);
   const [joinBoardId, setJoinBoardId] = useState("");
   const [showJoinInput, setShowJoinInput] = useState(false);
@@ -33,25 +33,22 @@ function Home() {
     }
   }, [user]);
 
-  // Array of predefined colors the user can choose from
+  // Array of 14 predefined distinct colors from Tailwind
   const colorOptions = [
-    // Light variants
-    { value: "bg-red-100", name: "Light Red" },
-    { value: "bg-orange-100", name: "Light Orange" },
-    { value: "bg-yellow-100", name: "Light Yellow" },
-    { value: "bg-green-100", name: "Light Green" },
-    { value: "bg-blue-100", name: "Light Blue" },
-    { value: "bg-purple-100", name: "Light Purple" },
-    { value: "bg-pink-100", name: "Light Pink" },
-
-    // Dark variants
-    { value: "bg-red-300", name: "Dark Red" },
-    { value: "bg-orange-300", name: "Dark Orange" },
-    { value: "bg-yellow-300", name: "Dark Yellow" },
-    { value: "bg-green-300", name: "Dark Green" },
-    { value: "bg-blue-300", name: "Dark Blue" },
-    { value: "bg-purple-300", name: "Dark Purple" },
-    { value: "bg-pink-300", name: "Dark Pink" },
+    { value: "bg-red-200", name: "Red" },
+    { value: "bg-orange-200", name: "Orange" },
+    { value: "bg-amber-200", name: "Amber" },
+    { value: "bg-yellow-200", name: "Yellow" },
+    { value: "bg-lime-200", name: "Lime" },
+    { value: "bg-green-200", name: "Green" },
+    { value: "bg-teal-200", name: "Teal" },
+    { value: "bg-cyan-200", name: "Cyan" },
+    { value: "bg-sky-200", name: "Sky" },
+    { value: "bg-blue-200", name: "Blue" },
+    { value: "bg-indigo-200", name: "Indigo" },
+    { value: "bg-violet-200", name: "Violet" },
+    { value: "bg-fuchsia-200", name: "Fuchsia" },
+    { value: "bg-rose-200", name: "Rose" },
   ];
 
   // Load user color from Firestore if available

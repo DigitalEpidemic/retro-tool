@@ -134,7 +134,7 @@ export default function Card({ provided, card, isOwner }: CardProps) {
 
           {/* Card content with padding to accommodate action buttons */}
           <div className="flex-grow py-3 mr-[30px] ml-[30px]">
-            <p className="text-sm text-gray-900 whitespace-pre-wrap break-words leading-relaxed text-left">
+            <p className="text-sm text-gray-800 whitespace-pre-wrap break-words leading-relaxed text-left">
               {card.content}
             </p>
           </div>
@@ -151,7 +151,9 @@ export default function Card({ provided, card, isOwner }: CardProps) {
                   <ThumbsUp aria-label="Upvote" className="h-3 w-3" />
                 </button>
 
-                <span className="text-xs font-medium mx-1">{card.votes}</span>
+                <span className="text-xs font-medium mx-1 text-gray-700">
+                  {card.votes}
+                </span>
 
                 <button
                   onClick={() => handleVote("down")}

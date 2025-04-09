@@ -29,7 +29,7 @@ export default function Column({
   const [isAddingCard, setIsAddingCard] = React.useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const [userColor, setUserColor] = useState<string>("bg-blue-100"); // Default color as Tailwind class
+  const [userColor, setUserColor] = useState<string>("bg-blue-200"); // Default color as Tailwind class
 
   // Fetch the user's color from Firestore when the component mounts
   useEffect(() => {
@@ -81,7 +81,7 @@ export default function Column({
 
     try {
       // Get user's color from Firestore instead of localStorage
-      let userColor = "bg-blue-100"; // Default color as Tailwind class
+      let userColor = "bg-blue-200"; // Default color as Tailwind class
 
       try {
         const userRef = doc(db, "users", user.uid);

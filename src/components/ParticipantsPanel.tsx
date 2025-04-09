@@ -83,8 +83,8 @@ const ParticipantsPanel = memo(
                 >
                   <div className="flex items-center">
                     <div
-                      className={`h-8 w-8 rounded-full mr-3 flex items-center justify-center text-white ${
-                        participant.color || "bg-blue-100"
+                      className={`h-8 w-8 rounded-full mr-3 flex items-center justify-center text-gray-700 ${
+                        participant.color || "bg-blue-200"
                       }`}
                     >
                       {participant.name.charAt(0).toUpperCase()}

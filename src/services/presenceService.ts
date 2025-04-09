@@ -12,25 +12,22 @@ import { auth, db, OnlineUser, rtdb } from "./firebase";
 
 // Generate a consistent Tailwind color class for a user based on their ID
 const getColorForUser = (userId: string) => {
-  // Available Tailwind color classes to choose from with distinct light/dark variants
+  // Available Tailwind color classes - exactly 14 distinct colors
   const tailwindColors = [
-    // Light variants
-    "bg-red-100",
-    "bg-orange-100",
-    "bg-yellow-100",
-    "bg-green-100",
-    "bg-blue-100",
-    "bg-purple-100",
-    "bg-pink-100",
-
-    // Dark variants
-    "bg-red-300",
-    "bg-orange-300",
-    "bg-yellow-300",
-    "bg-green-300",
-    "bg-blue-300",
-    "bg-purple-300",
-    "bg-pink-300",
+    "bg-red-200",
+    "bg-orange-200",
+    "bg-amber-200",
+    "bg-yellow-200",
+    "bg-lime-200",
+    "bg-green-200",
+    "bg-teal-200",
+    "bg-cyan-200",
+    "bg-sky-200",
+    "bg-blue-200",
+    "bg-indigo-200",
+    "bg-violet-200",
+    "bg-fuchsia-200",
+    "bg-rose-200",
   ];
 
   // Use user ID to generate a consistent index

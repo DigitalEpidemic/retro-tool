@@ -60,7 +60,7 @@ exports[`Card > matches snapshot when not owner 1`] = `
     class="flex-grow py-3 mr-[30px] ml-[30px]"
   >
     <p
-      class="text-sm text-gray-900 whitespace-pre-wrap break-words leading-relaxed text-left"
+      class="text-sm text-gray-800 whitespace-pre-wrap break-words leading-relaxed text-left"
     >
       Test Card Content
     </p>
@@ -84,7 +84,7 @@ exports[`Card > matches snapshot when not owner 1`] = `
           </div>
         </button>
         <span
-          class="text-xs font-medium mx-1"
+          class="text-xs font-medium mx-1 text-gray-700"
         >
           5
         </span>
@@ -152,7 +152,7 @@ exports[`Card > matches snapshot when owner 1`] = `
     class="flex-grow py-3 mr-[30px] ml-[30px]"
   >
     <p
-      class="text-sm text-gray-900 whitespace-pre-wrap break-words leading-relaxed text-left"
+      class="text-sm text-gray-800 whitespace-pre-wrap break-words leading-relaxed text-left"
     >
       Test Card Content
     </p>
@@ -176,7 +176,7 @@ exports[`Card > matches snapshot when owner 1`] = `
           </div>
         </button>
         <span
-          class="text-xs font-medium mx-1"
+          class="text-xs font-medium mx-1 text-gray-700"
         >
           5
         </span>
