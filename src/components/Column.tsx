@@ -42,20 +42,9 @@ export default function Column({
         
         if (userSnap.exists() && userSnap.data().color) {
           setUserColor(userSnap.data().color);
-        } else {
-          // Fallback to localStorage if not in Firestore
-          const savedColor = localStorage.getItem('userColor');
-          if (savedColor) {
-            setUserColor(savedColor);
-          }
         }
       } catch (error) {
         console.error("Error fetching user color:", error);
-        // Fallback to localStorage
-        const savedColor = localStorage.getItem('userColor');
-        if (savedColor) {
-          setUserColor(savedColor);
-        }
       }
     };
     

@@ -151,6 +151,11 @@ export const updateParticipantName = async (
   boardId: string,
   newName: string
 ): Promise<void> => {
+  // Don't update if the new name is empty or only whitespace
+  if (!newName || newName.trim() === "") {
+    return;
+  }
+  
   const userBoardRef = ref(rtdb, `boards/${boardId}/participants/${userId}`);
   
   try {

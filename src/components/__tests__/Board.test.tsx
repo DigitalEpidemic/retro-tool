@@ -450,7 +450,7 @@ const mockCards = [
 ];
 
 vi.mock("../../services/presenceService", () => ({
-  setupPresence: vi.fn(() => {
+  setupPresence: vi.fn().mockResolvedValue(() => {
     // Return a valid cleanup function
     return function cleanupPresence() {
       // Cleanup implementation

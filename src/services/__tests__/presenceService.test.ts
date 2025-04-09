@@ -1,4 +1,5 @@
 import { get, off, onDisconnect, onValue, ref, set } from "firebase/database";
+import { doc, getDoc } from "firebase/firestore";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { auth, rtdb } from "../firebase";
 import {
@@ -21,6 +22,12 @@ vi.mock("firebase/database", () => ({
   equalTo: vi.fn(),
 }));
 
+// Mock firebase/firestore
+vi.mock("firebase/firestore", () => ({
+  doc: vi.fn(),
+  getDoc: vi.fn(),
+}));
+
 // Mock firebase services
 vi.mock("../firebase", () => ({
   auth: {
@@ -29,6 +36,7 @@ vi.mock("../firebase", () => ({
     },
   },
   rtdb: {},
+  db: {},
 }));
 
 describe("presenceService", () => {
@@ -45,6 +53,7 @@ describe("presenceService", () => {
     remove: vi.fn().mockReturnThis(),
     cancel: vi.fn().mockReturnThis(),
   };
+  const mockDocRef = { id: "test-user-id" };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -61,6 +70,16 @@ describe("presenceService", () => {
       }),
     });
 
+    // Mock Firestore doc and getDoc
+    (doc as any).mockReturnValue(mockDocRef);
+    (getDoc as any).mockResolvedValue({
+      exists: () => true,
+      data: () => ({
+        color: "#ff0000",
+        name: "Test User",
+      }),
+    });
+
     // Setup the mocks for each test
     (ref as any).mockImplementation((_: any, path: string) => {
       if (path?.includes("status")) return mockStatusRef;
@@ -73,9 +92,9 @@ describe("presenceService", () => {
   });
 
   describe("setupPresence", () => {
-    it("should set up presence tracking for a user", () => {
+    it("should set up presence tracking for a user", async () => {
       // Call the function
-      const cleanup = setupPresence(mockBoardId, mockDisplayName);
+      const cleanup = await setupPresence(mockBoardId, mockDisplayName);
 
       // Verify refs were created correctly
       expect(ref).toHaveBeenCalledWith(rtdb, `status/${mockUserId}`);
@@ -83,6 +102,10 @@ describe("presenceService", () => {
         rtdb,
         `boards/${mockBoardId}/participants/${mockUserId}`
       );
+
+      // Verify Firestore doc was called to get the user's color
+      expect(doc).toHaveBeenCalled();
+      expect(getDoc).toHaveBeenCalled();
 
       // Verify onDisconnect was set up
       expect(onDisconnect).toHaveBeenCalledWith(mockStatusRef);
@@ -103,7 +126,7 @@ describe("presenceService", () => {
         expect.objectContaining({
           id: mockUserId,
           name: mockDisplayName,
-          color: expect.any(String),
+          color: "#ff0000", // Should use the color from Firestore
           boardId: mockBoardId,
           lastOnline: expect.any(Number),
         })
@@ -124,7 +147,36 @@ describe("presenceService", () => {
       expect(set).toHaveBeenCalledWith(mockBoardRef, null);
     });
 
-    it("should return empty cleanup function when no user is authenticated", () => {
+    it("should use generated color when Firestore has no color", async () => {
+      // Mock Firestore to return no color
+      (getDoc as any).mockResolvedValue({
+        exists: () => true,
+        data: () => ({
+          name: "Test User",
+          // No color property
+        }),
+      });
+
+      // Call the function
+      const cleanup = await setupPresence(mockBoardId, mockDisplayName);
+
+      // Verify user data was set with a generated color
+      expect(set).toHaveBeenCalledWith(
+        mockBoardRef,
+        expect.objectContaining({
+          id: mockUserId,
+          name: mockDisplayName,
+          color: expect.any(String), // Should be a generated color
+          boardId: mockBoardId,
+          lastOnline: expect.any(Number),
+        })
+      );
+
+      // Clean up
+      cleanup();
+    });
+
+    it("should return empty cleanup function when no user is authenticated", async () => {
       // Spy on console.error
       const consoleErrorSpy = vi
         .spyOn(console, "error")
@@ -135,7 +187,7 @@ describe("presenceService", () => {
       (auth as any).currentUser = null;
 
       // Call the function
-      const cleanup = setupPresence(mockBoardId, mockDisplayName);
+      const cleanup = await setupPresence(mockBoardId, mockDisplayName);
 
       // Verify no refs or listeners were created
       expect(ref).not.toHaveBeenCalled();

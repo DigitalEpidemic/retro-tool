@@ -1,9 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { User } from "firebase/auth"; // Import User type
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useFirebase } from "../../contexts/FirebaseContext"; // Adjust the import path
 import { addCard } from "../../services/boardService"; // Adjust the import path
+import { getDoc } from "firebase/firestore"; // Import getDoc from firebase/firestore
 import Column from "../Column"; // This is the real component
 
 // Mock dependencies
@@ -14,6 +15,16 @@ vi.mock("../../contexts/FirebaseContext", () => ({
 vi.mock("../../services/boardService", () => ({
   addCard: vi.fn(),
   deleteColumn: vi.fn(),
+}));
+
+// Mock firebase/firestore
+vi.mock("firebase/firestore", () => ({
+  getDoc: vi.fn().mockResolvedValue({
+    exists: () => true,
+    data: () => ({ color: "#60A5FA", name: "Test User" }),
+  }),
+  doc: vi.fn().mockReturnValue({ id: "test-doc-ref" }),
+  getFirestore: vi.fn(() => ({})),
 }));
 
 // Mock lucide-react icons
@@ -31,6 +42,16 @@ vi.mock("lucide-react", () => {
     ),
   };
 });
+
+// Mock firebase services
+vi.mock("../../services/firebase", () => ({
+  db: {},
+  auth: { currentUser: { uid: "test-user-id" } },
+  rtdb: {},
+  OnlineUser: function(id: string, name: string, color: string, boardId: string) {
+    return { id, name, color, boardId, lastOnline: Date.now() };
+  }
+}));
 
 // Mock user data
 const mockUser = { uid: "test-user-123", displayName: null };
@@ -168,22 +189,26 @@ describe("Column", () => {
     // Check if addCard was called correctly
     await waitFor(() => {
       expect(addCard).toHaveBeenCalledTimes(1);
-      expect(vi.mocked(addCard)).toHaveBeenCalledWith(
-        mockBoardId,
-        mockColumnId,
-        "A valid card content", // Content should be trimmed
-        mockUser.uid,
-        mockUser.displayName || "Anonymous User" // Include displayName parameter
-      );
     });
+    
+    expect(vi.mocked(addCard)).toHaveBeenCalledWith(
+      mockBoardId,
+      mockColumnId,
+      "A valid card content", // Content should be trimmed
+      mockUser.uid,
+      mockUser.displayName || "Anonymous User", // Include displayName parameter
+      "#60A5FA" // Include the color parameter
+    );
 
     // Check if form is hidden and input cleared
-    expect(
-      screen.queryByPlaceholderText("Type here... Press Enter to save.")
-    ).not.toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "+ Add a card" })
-    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        screen.queryByPlaceholderText("Type here... Press Enter to save.")
+      ).not.toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "+ Add a card" })
+      ).toBeInTheDocument();
+    });
   });
 
   it("calls onSortToggle when sort button is clicked", () => {
@@ -289,28 +314,20 @@ describe("Column", () => {
     expect(screen.queryByText("Mad")).not.toBeInTheDocument();
   });
 
-  // Test to verify the user's displayName is correctly passed to addCard
+  // Test to verify the user's displayName and color are correctly passed to addCard
   it("passes user's displayName and color to addCard", async () => {
-    // Mock localStorage to have a user color
+    // Mock Firestore to return a user color
     const mockUserColor = "#60A5FA"; // Blue color
-    const localStorageMock = {
-      getItem: vi.fn().mockImplementation((key) => {
-        if (key === 'userColor') return mockUserColor;
-        return null;
+    
+    // Mock getDoc from Firestore to return a user with color
+    vi.mocked(getDoc).mockResolvedValue({
+      exists: () => true,
+      data: () => ({
+        color: mockUserColor,
+        name: "Test User",
       }),
-      setItem: vi.fn(),
-      clear: vi.fn(),
-      removeItem: vi.fn(),
-      length: 1,
-      key: vi.fn(),
-    };
-    
-    // Override the global localStorage object
-    Object.defineProperty(window, 'localStorage', {
-      value: localStorageMock,
-      writable: true
-    });
-    
+    } as any);
+
     // Mock a user with a displayName
     const userWithName = {
       uid: "test-user-123",
@@ -347,7 +364,7 @@ describe("Column", () => {
         "New card content",
         userWithName.uid,
         userWithName.displayName,
-        mockUserColor // Should include the color from localStorage
+        mockUserColor // Should include the color from Firestore
       );
     });
   });
@@ -384,14 +401,16 @@ describe("Column", () => {
     // Verify addCard was called with the "Anonymous User" fallback
     await waitFor(() => {
       expect(addCard).toHaveBeenCalledTimes(1);
-      expect(vi.mocked(addCard)).toHaveBeenCalledWith(
-        mockBoardId,
-        mockColumnId,
-        "Anonymous card",
-        userWithoutName.uid,
-        "Anonymous User"
-      );
     });
+    
+    expect(vi.mocked(addCard)).toHaveBeenCalledWith(
+      mockBoardId,
+      mockColumnId,
+      "Anonymous card",
+      userWithoutName.uid,
+      "Anonymous User",
+      "#60A5FA" // Include the color parameter
+    );
   });
 
   // --- Snapshot Testing ---
@@ -429,19 +448,23 @@ describe("Column", () => {
     // Check if addCard was called correctly
     await waitFor(() => {
       expect(addCard).toHaveBeenCalledTimes(1);
-      expect(vi.mocked(addCard)).toHaveBeenCalledWith(
-        mockBoardId,
-        mockColumnId,
-        "New card via Enter key",
-        mockUser.uid,
-        mockUser.displayName || "Anonymous User"
-      );
     });
+    
+    expect(vi.mocked(addCard)).toHaveBeenCalledWith(
+      mockBoardId,
+      mockColumnId,
+      "New card via Enter key",
+      mockUser.uid,
+      mockUser.displayName || "Anonymous User",
+      "#60A5FA" // Include the color parameter
+    );
 
     // Form should be hidden after submission
-    expect(
-      screen.queryByPlaceholderText("Type here... Press Enter to save.")
-    ).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        screen.queryByPlaceholderText("Type here... Press Enter to save.")
+      ).not.toBeInTheDocument();
+    });
   });
 
   it("does not add a card when pressing Enter with Shift key", async () => {

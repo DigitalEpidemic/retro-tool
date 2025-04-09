@@ -185,7 +185,7 @@ vi.mock("../Card", () => ({
 }));
 
 vi.mock("../../services/presenceService", () => ({
-  setupPresence: vi.fn().mockReturnValue(() => {
+  setupPresence: vi.fn().mockResolvedValue(() => {
     // Return a valid cleanup function that can be called
     return function cleanupPresence() {
       // Cleanup implementation
