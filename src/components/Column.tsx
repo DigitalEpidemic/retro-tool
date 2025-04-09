@@ -30,6 +30,7 @@ export default function Column({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const [userColor, setUserColor] = useState<string>("bg-blue-200"); // Default color as Tailwind class
+  const [isSubmitting, setIsSubmitting] = useState(false); // Track if a submission is in progress
 
   // Fetch the user's color from Firestore when the component mounts
   useEffect(() => {
@@ -77,9 +78,11 @@ export default function Column({
 
   const handleAddCard = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCardContent.trim() || !user) return;
+    if (!newCardContent.trim() || !user || isSubmitting) return;
 
     try {
+      setIsSubmitting(true); // Set submitting state to prevent multiple submissions
+
       // Get user's color from Firestore instead of localStorage
       let userColor = "bg-blue-200"; // Default color as Tailwind class
 
@@ -108,6 +111,8 @@ export default function Column({
     } catch (error) {
       console.error("Error adding card:", error);
       // Handle error appropriately (e.g., show a notification)
+    } finally {
+      setIsSubmitting(false); // Reset submitting state regardless of success or failure
     }
   };
 
@@ -190,10 +195,11 @@ export default function Column({
             className="w-full rounded-none border-none bg-gray-100 text-sm p-3 mb-2 resize-none focus:ring-0"
             required
             autoFocus
+            disabled={isSubmitting}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
-                if (newCardContent.trim() && user) {
+                if (newCardContent.trim() && user && !isSubmitting) {
                   handleAddCard(e);
                 }
               } else if (e.key === "Escape") {
@@ -207,15 +213,16 @@ export default function Column({
               type="button"
               onClick={() => setIsAddingCard(false)}
               className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded hover:bg-gray-200 cursor-pointer"
+              disabled={isSubmitting}
             >
               Cancel
             </button>
             <button
               type="submit"
               className="px-3 py-1.5 text-xs font-medium bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 cursor-pointer"
-              disabled={!newCardContent.trim() || !user}
+              disabled={!newCardContent.trim() || !user || isSubmitting}
             >
-              Save
+              {isSubmitting ? "Saving..." : "Save"}
             </button>
           </div>
         </form>
