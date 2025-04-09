@@ -17,12 +17,14 @@ function Home() {
   const { user, loading: authLoading, updateUserDisplayName } = useFirebase();
   const [username, setUsername] = useState("");
   const [boardName, setBoardName] = useState("");
-  const [userColor, setUserColor] = useState("#6B7280");
+  const [userColor, setUserColor] = useState("bg-blue-100");
   const [isLoading, setIsLoading] = useState(false);
   const [joinBoardId, setJoinBoardId] = useState("");
   const [showJoinInput, setShowJoinInput] = useState(false);
   const [isUpdatingColor, setIsUpdatingColor] = useState(false);
-  const [colorUpdateStatus, setColorUpdateStatus] = useState<string | null>(null);
+  const [colorUpdateStatus, setColorUpdateStatus] = useState<string | null>(
+    null
+  );
 
   // Set initial username from Firebase user when available
   useEffect(() => {
@@ -33,20 +35,23 @@ function Home() {
 
   // Array of predefined colors the user can choose from
   const colorOptions = [
-    { value: "#F87171", name: "Red" },
-    { value: "#FB923C", name: "Orange" },
-    { value: "#FBBF24", name: "Amber" },
-    { value: "#34D399", name: "Emerald" },
-    { value: "#60A5FA", name: "Blue" },
-    { value: "#A78BFA", name: "Violet" },
-    { value: "#F472B6", name: "Pink" },
-    { value: "#6B7280", name: "Gray" },
-    { value: "#5EEAD4", name: "Teal" },
-    { value: "#C4B5FD", name: "Lavender" },
-    { value: "#84CC16", name: "Lime" },
-    { value: "#FDE68A", name: "Marigold" },
-    { value: "#FCA5A5", name: "Salmon" },
-    { value: "#94A3B8", name: "Slate" },
+    // Light variants
+    { value: "bg-red-100", name: "Light Red" },
+    { value: "bg-orange-100", name: "Light Orange" },
+    { value: "bg-yellow-100", name: "Light Yellow" },
+    { value: "bg-green-100", name: "Light Green" },
+    { value: "bg-blue-100", name: "Light Blue" },
+    { value: "bg-purple-100", name: "Light Purple" },
+    { value: "bg-pink-100", name: "Light Pink" },
+
+    // Dark variants
+    { value: "bg-red-300", name: "Dark Red" },
+    { value: "bg-orange-300", name: "Dark Orange" },
+    { value: "bg-yellow-300", name: "Dark Yellow" },
+    { value: "bg-green-300", name: "Dark Green" },
+    { value: "bg-blue-300", name: "Dark Blue" },
+    { value: "bg-purple-300", name: "Dark Purple" },
+    { value: "bg-pink-300", name: "Dark Pink" },
   ];
 
   // Load user color from Firestore if available
@@ -57,7 +62,7 @@ function Home() {
       try {
         const userRef = doc(db, "users", user.uid);
         const userSnap = await getDoc(userRef);
-        
+
         if (userSnap.exists() && userSnap.data().color) {
           setUserColor(userSnap.data().color);
         }
@@ -71,31 +76,31 @@ function Home() {
 
   const handleRandomColor = async () => {
     if (isUpdatingColor || !user) return;
-    
+
     const randomIndex = Math.floor(Math.random() * colorOptions.length);
     const newColor = colorOptions[randomIndex].value;
-    
+
     await handleColorChange(newColor);
   };
 
   // Update color preference in Firestore without updating cards
   const handleColorChange = async (color: string) => {
     if (isUpdatingColor || !user) return;
-    
+
     setIsUpdatingColor(true);
-    setColorUpdateStatus('Updating color preference...');
-    
+    setColorUpdateStatus("Updating color preference...");
+
     try {
       setUserColor(color);
-      
+
       // Update in Firestore - this only updates the preference, not the cards
       const userRef = doc(db, "users", user.uid);
       await updateDoc(userRef, { color });
-      
+
       // Check if the user is in a board
       const userSnap = await getDoc(userRef);
       const currentBoardId = userSnap.exists() ? userSnap.data().boardId : null;
-      
+
       // Update in realtime database if the user is in a board
       if (currentBoardId) {
         try {
@@ -103,21 +108,27 @@ function Home() {
           // We won't update card colors here - that will happen in the Board component
           // when the user is confirmed to be in the participants list
           await updateParticipantColor(user.uid, currentBoardId, color);
-          setColorUpdateStatus('Color preference saved. Your cards will update when you are active in a board.');
+          setColorUpdateStatus(
+            "Color preference saved. Your cards will update when you are active in a board."
+          );
         } catch (rtdbError) {
           console.error("Error updating realtime database color:", rtdbError);
-          setColorUpdateStatus('Color preference saved. Your cards will update when you are active in a board.');
+          setColorUpdateStatus(
+            "Color preference saved. Your cards will update when you are active in a board."
+          );
         }
       } else {
         // User is not in any board, just save the preference
-        setColorUpdateStatus('Color preference saved. Your cards will update when you join boards.');
+        setColorUpdateStatus(
+          "Color preference saved. Your cards will update when you join boards."
+        );
       }
-      
+
       // Clear status after 3 seconds
       setTimeout(() => setColorUpdateStatus(null), 3000);
     } catch (error) {
       console.error("Error updating color:", error);
-      setColorUpdateStatus('Error updating color preference.');
+      setColorUpdateStatus("Error updating color preference.");
       setTimeout(() => setColorUpdateStatus(null), 5000);
     } finally {
       setIsUpdatingColor(false);
@@ -246,7 +257,8 @@ function Home() {
                 Your Card Color
               </label>
               <p className="text-xs text-gray-500 mb-2">
-                This color will be used for all cards you create across any board.
+                This color will be used for all cards you create across any
+                board.
               </p>
               {isUpdatingColor && (
                 <div className="mt-1 mb-2">
@@ -256,7 +268,9 @@ function Home() {
                 </div>
               )}
               {colorUpdateStatus && (
-                <p className="text-xs text-blue-600 mb-2">{colorUpdateStatus}</p>
+                <p className="text-xs text-blue-600 mb-2">
+                  {colorUpdateStatus}
+                </p>
               )}
               <div className="mt-2 flex items-center">
                 <div className="flex flex-wrap gap-2">
@@ -270,8 +284,9 @@ function Home() {
                         userColor === color.value
                           ? "ring-2 ring-offset-2 ring-indigo-500"
                           : ""
-                      } ${isUpdatingColor ? "opacity-50 cursor-not-allowed" : ""}`}
-                      style={{ backgroundColor: color.value }}
+                      } ${
+                        isUpdatingColor ? "opacity-50 cursor-not-allowed" : ""
+                      } ${color.value}`}
                       title={color.name}
                       aria-label={`Select ${color.name} color`}
                     ></button>

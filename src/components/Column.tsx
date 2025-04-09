@@ -1,8 +1,8 @@
+import { doc, getDoc } from "firebase/firestore";
 import { ArrowUpDown, MoreVertical } from "lucide-react"; // Import icons
-import React, { useRef, useState, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useFirebase } from "../contexts/FirebaseContext"; // To get user ID
 import { addCard, deleteColumn } from "../services/boardService"; // To add new cards and delete columns
-import { doc, getDoc } from "firebase/firestore";
 import { db } from "../services/firebase";
 
 interface ColumnProps {
@@ -29,17 +29,17 @@ export default function Column({
   const [isAddingCard, setIsAddingCard] = React.useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const [userColor, setUserColor] = useState<string>("#6B7280"); // Default color
+  const [userColor, setUserColor] = useState<string>("bg-blue-100"); // Default color as Tailwind class
 
   // Fetch the user's color from Firestore when the component mounts
   useEffect(() => {
     if (!user) return;
-    
+
     const getUserColor = async () => {
       try {
         const userRef = doc(db, "users", user.uid);
         const userSnap = await getDoc(userRef);
-        
+
         if (userSnap.exists() && userSnap.data().color) {
           setUserColor(userSnap.data().color);
         }
@@ -47,7 +47,7 @@ export default function Column({
         console.error("Error fetching user color:", error);
       }
     };
-    
+
     getUserColor();
   }, [user]);
 
@@ -81,12 +81,12 @@ export default function Column({
 
     try {
       // Get user's color from Firestore instead of localStorage
-      let userColor = "#6B7280"; // Default color
-      
+      let userColor = "bg-blue-100"; // Default color as Tailwind class
+
       try {
         const userRef = doc(db, "users", user.uid);
         const userDoc = await getDoc(userRef);
-        
+
         if (userDoc.exists() && userDoc.data().color) {
           userColor = userDoc.data().color;
         }
@@ -94,7 +94,7 @@ export default function Column({
         console.error("Error getting user color:", error);
         // Proceed with default color
       }
-      
+
       await addCard(
         boardId,
         id,

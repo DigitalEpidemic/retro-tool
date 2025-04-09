@@ -19,9 +19,9 @@ export default function Card({ provided, card, isOwner }: CardProps) {
 
   // Function to determine card color based on column or random assignment
   const getCardColor = () => {
-    // If the card has a color property, use it
+    // If the card has a color property, use it directly as it's already a Tailwind class
     if (card.color) {
-      return getBgColorClass(card.color);
+      return card.color;
     }
 
     // Otherwise, fall back to the column-based logic
@@ -41,23 +41,6 @@ export default function Card({ provided, card, isOwner }: CardProps) {
 
     // Return the color for the column or default to the fallback if column not found
     return columnColors[card.columnId] || columnColors["default"];
-  };
-
-  // Convert hex color to bg color class
-  const getBgColorClass = (hexColor: string) => {
-    // Map of hex colors to Tailwind bg color classes
-    const colorMap: Record<string, string> = {
-      '#F87171': 'bg-red-200', // Red
-      '#FB923C': 'bg-orange-200', // Orange
-      '#FBBF24': 'bg-amber-200', // Amber
-      '#34D399': 'bg-emerald-200', // Emerald
-      '#60A5FA': 'bg-blue-200', // Blue
-      '#A78BFA': 'bg-violet-200', // Violet
-      '#F472B6': 'bg-pink-200', // Pink
-      '#6B7280': 'bg-gray-200', // Gray
-    };
-
-    return colorMap[hexColor] || 'bg-gray-200'; // Default to gray if color not found
   };
 
   const handleSave = () => {

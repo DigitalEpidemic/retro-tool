@@ -178,13 +178,13 @@ describe("Card", () => {
   it("uses card's color property when available", () => {
     const cardWithColor = {
       ...mockCard,
-      color: "#60A5FA", // Blue color
+      color: "bg-blue-300", // Dark blue Tailwind class
     };
     const { container } = render(
       <Card provided={provided} card={cardWithColor} isOwner={true} />
     );
     const cardElement = container.firstChild as HTMLElement;
-    expect(cardElement).toHaveClass("bg-blue-200"); // Should use bg-blue-200 based on the color mapping
+    expect(cardElement).toHaveClass("bg-blue-300"); // Should directly use the Tailwind class
   });
 
   // 2. User Interaction Tests

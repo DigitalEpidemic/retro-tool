@@ -96,7 +96,7 @@ export const addCard = async (
   content: string,
   authorId: string,
   authorName: string = "Anonymous",
-  authorColor?: string // Add authorColor parameter
+  authorColor?: string // Tailwind class name (e.g., 'bg-red-200')
 ) => {
   const cardData = {
     boardId,
@@ -107,7 +107,7 @@ export const addCard = async (
     createdAt: serverTimestamp(),
     votes: 0,
     position: Date.now(), // Use timestamp for initial positioning, will be updated by DnD
-    color: authorColor, // Add color to the card data
+    color: authorColor, // Tailwind class name for card background
   };
   await addDoc(collection(db, "cards"), cardData);
 };
@@ -346,7 +346,7 @@ export const subscribeToBoardParticipants = (
           const user = {
             id: doc.id,
             name: data.name || "Anonymous",
-            color: data.color || "#6B7280",
+            color: data.color || "bg-blue-100",
             boardId: data.boardId || boardId,
             lastActive: data.lastActive || null,
             isViewingPage: data.isViewingPage !== false, // Default to true if not set
@@ -446,23 +446,45 @@ export const joinBoard = async (
 
     try {
       const userSnap = await getDoc(userRef);
-      
+
       // Get the user's color - prioritize the stored Firestore color
       let userColor;
       if (userSnap.exists() && userSnap.data().color) {
         // Use existing color from Firestore
         userColor = userSnap.data().color;
       } else {
-        // Generate a random color if no color exists
-        // Random pastel color for the user
+        // Generate a Tailwind color class if no color exists
         const getRandomPastelColor = () => {
-          // Use userId to generate a consistent color for the same user
+          // Available Tailwind color classes to choose from with distinct light/dark variants
+          const tailwindColors = [
+            // Light variants
+            "bg-red-100",
+            "bg-orange-100",
+            "bg-yellow-100",
+            "bg-green-100",
+            "bg-blue-100",
+            "bg-purple-100",
+            "bg-pink-100",
+
+            // Dark variants
+            "bg-red-300",
+            "bg-orange-300",
+            "bg-yellow-300",
+            "bg-green-300",
+            "bg-blue-300",
+            "bg-purple-300",
+            "bg-pink-300",
+          ];
+
+          // Use userId to generate a consistent index
           const hash = Array.from(userId).reduce(
             (acc, char) => acc + char.charCodeAt(0),
             0
           );
-          const hue = hash % 360;
-          return `hsl(${hue}, 70%, 80%)`; // Pastel color
+
+          // Select a color based on the hash
+          const colorIndex = hash % tailwindColors.length;
+          return tailwindColors[colorIndex];
         };
         userColor = getRandomPastelColor();
       }
@@ -599,55 +621,55 @@ export const deleteBoard = async (boardId: string, userId: string) => {
     // 1. Check if the user is the facilitator of the board
     const boardRef = doc(db, "boards", boardId);
     const boardSnap = await getDoc(boardRef);
-    
+
     if (!boardSnap.exists()) {
       throw new Error(`Board with ID ${boardId} not found`);
     }
-    
+
     const boardData = boardSnap.data();
     if (boardData.facilitatorId !== userId) {
       throw new Error("Only the board creator can delete the board");
     }
-    
+
     // 2. Since we've verified permissions, use a direct approach for deletion
-    
+
     // First delete the board document itself - this is the most critical part
     await deleteDoc(boardRef);
-    
+
     // Then find and delete cards
     const cardsQuery = query(
       collection(db, "cards"),
       where("boardId", "==", boardId)
     );
-    
+
     const cardsSnapshot = await getDocs(cardsQuery);
-    
+
     // Delete cards using a batch - but even if this fails, the board is already gone
     if (cardsSnapshot.size > 0) {
       const batch = writeBatch(db);
-      cardsSnapshot.docs.forEach(doc => batch.delete(doc.ref));
+      cardsSnapshot.docs.forEach((doc) => batch.delete(doc.ref));
       await batch.commit();
     }
-    
+
     // Update user records to remove associations with this board
     const usersQuery = query(
       collection(db, "users"),
       where("boardId", "==", boardId)
     );
-    
+
     const usersSnapshot = await getDocs(usersQuery);
-    
+
     if (usersSnapshot.size > 0) {
       const batch = writeBatch(db);
-      usersSnapshot.docs.forEach(doc => 
+      usersSnapshot.docs.forEach((doc) =>
         batch.update(doc.ref, {
           boardId: null,
-          lastLeaveTime: serverTimestamp()
+          lastLeaveTime: serverTimestamp(),
         })
       );
       await batch.commit();
     }
-    
+
     return true;
   } catch (error) {
     console.error("Error deleting board:", error);
@@ -661,47 +683,47 @@ export const deleteColumn = async (boardId: string, columnId: string) => {
     // 1. Get the board document
     const boardRef = doc(db, "boards", boardId);
     const boardSnap = await getDoc(boardRef);
-    
+
     if (!boardSnap.exists()) {
       throw new Error(`Board with ID ${boardId} not found`);
     }
-    
+
     // 2. Get the board data and update columns
     const boardData = boardSnap.data() as Board;
     const columns = boardData.columns || {};
-    
+
     // Create a new columns object without the deleted column
     const updatedColumns = { ...columns };
     delete updatedColumns[columnId];
-    
+
     // 3. Update the board document with the modified columns
     await updateDoc(boardRef, {
-      columns: updatedColumns
+      columns: updatedColumns,
     });
-    
+
     // 4. Delete all cards associated with this column
     const cardsQuery = query(
       collection(db, "cards"),
       where("boardId", "==", boardId),
       where("columnId", "==", columnId)
     );
-    
+
     const querySnapshot = await getDocs(cardsQuery);
     const batch = writeBatch(db);
-    
+
     querySnapshot.forEach((document) => {
       batch.delete(doc(db, "cards", document.id));
     });
-    
+
     // Commit the batch delete
     await batch.commit();
-    
+
     return { success: true };
   } catch (error) {
     console.error("Error deleting column:", error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : "Unknown error" 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
     };
   }
 };
@@ -712,79 +734,86 @@ export const addColumn = async (boardId: string, title: string) => {
     // 1. Get the board document
     const boardRef = doc(db, "boards", boardId);
     const boardSnap = await getDoc(boardRef);
-    
+
     if (!boardSnap.exists()) {
       throw new Error(`Board with ID ${boardId} not found`);
     }
-    
+
     // 2. Get the board data and existing columns
     const boardData = boardSnap.data() as Board;
     const columns = boardData.columns || {};
-    
+
     // 3. Generate a unique ID for the new column
     const columnId = `col-${Date.now()}`;
-    
+
     // 4. Determine the highest order value
     const highestOrder = Object.values(columns).reduce(
       (max, col) => Math.max(max, col.order),
       -1
     );
-    
+
     // 5. Create the new column object
     const newColumn = {
       id: columnId,
       title,
       order: highestOrder + 1,
-      sortByVotes: false
+      sortByVotes: false,
     };
-    
+
     // 6. Add the new column to the columns object
-    const updatedColumns = { 
+    const updatedColumns = {
       ...columns,
-      [columnId]: newColumn 
+      [columnId]: newColumn,
     };
-    
+
     // 7. Update the board document with the modified columns
     await updateDoc(boardRef, {
-      columns: updatedColumns
+      columns: updatedColumns,
     });
-    
-    return { 
+
+    return {
       success: true,
-      columnId 
+      columnId,
     };
   } catch (error) {
     console.error("Error adding column:", error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : "Unknown error" 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
     };
   }
 };
 
 // Update the board's preference for showing the add column placeholder
-export const updateShowAddColumnPlaceholder = async (boardId: string, showPlaceholder: boolean) => {
+export const updateShowAddColumnPlaceholder = async (
+  boardId: string,
+  showPlaceholder: boolean
+) => {
   try {
     const boardRef = doc(db, "boards", boardId);
     await updateDoc(boardRef, {
-      showAddColumnPlaceholder: showPlaceholder
+      showAddColumnPlaceholder: showPlaceholder,
     });
     return { success: true };
   } catch (error) {
     console.error("Error updating add column placeholder visibility:", error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : "Unknown error" 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
     };
   }
 };
 
 // Update color for all cards created by a user
-export const updateUserCardsColor = async (userId: string, newColor: string, specificBoardId?: string) => {
+export const updateUserCardsColor = async (
+  userId: string,
+  newColor: string,
+  specificBoardId?: string
+) => {
   try {
     // Find all cards authored by this user
     let cardsQuery;
-    
+
     if (specificBoardId) {
       // If a specific board ID is provided, only update cards in that board
       cardsQuery = query(
@@ -801,30 +830,31 @@ export const updateUserCardsColor = async (userId: string, newColor: string, spe
     }
 
     const querySnapshot = await getDocs(cardsQuery);
-    
+
     if (querySnapshot.empty) {
       return { success: true, updated: 0 };
     }
 
     // Use a batch to update all cards efficiently
     const batch = writeBatch(db);
-    
+
     querySnapshot.forEach((cardDoc) => {
       const cardRef = doc(db, "cards", cardDoc.id);
+      // newColor is now a Tailwind class like 'bg-red-200'
       batch.update(cardRef, { color: newColor });
     });
 
     await batch.commit();
-    
-    return { 
-      success: true, 
-      updated: querySnapshot.size 
+
+    return {
+      success: true,
+      updated: querySnapshot.size,
     };
   } catch (error) {
     console.error("Error updating user's card colors:", error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : "Unknown error" 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
     };
   }
 };

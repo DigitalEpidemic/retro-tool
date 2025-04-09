@@ -8,17 +8,40 @@ import {
   set,
 } from "firebase/database";
 import { doc, getDoc } from "firebase/firestore";
-import { auth, OnlineUser, rtdb, db } from "./firebase";
+import { auth, db, OnlineUser, rtdb } from "./firebase";
 
-// Generate a consistent color for a user based on their ID
+// Generate a consistent Tailwind color class for a user based on their ID
 const getColorForUser = (userId: string) => {
-  // Use user ID to generate a consistent color
+  // Available Tailwind color classes to choose from with distinct light/dark variants
+  const tailwindColors = [
+    // Light variants
+    "bg-red-100",
+    "bg-orange-100",
+    "bg-yellow-100",
+    "bg-green-100",
+    "bg-blue-100",
+    "bg-purple-100",
+    "bg-pink-100",
+
+    // Dark variants
+    "bg-red-300",
+    "bg-orange-300",
+    "bg-yellow-300",
+    "bg-green-300",
+    "bg-blue-300",
+    "bg-purple-300",
+    "bg-pink-300",
+  ];
+
+  // Use user ID to generate a consistent index
   const hash = Array.from(userId).reduce(
     (acc, char) => acc + char.charCodeAt(0),
     0
   );
-  const hue = hash % 360;
-  return `hsl(${hue}, 70%, 80%)`; // Pastel color
+
+  // Select a color based on the hash
+  const colorIndex = hash % tailwindColors.length;
+  return tailwindColors[colorIndex];
 };
 
 /**
@@ -40,14 +63,14 @@ export const setupPresence = async (
   const userId = auth.currentUser.uid;
   const userStatusRef = ref(rtdb, `status/${userId}`);
   const userBoardRef = ref(rtdb, `boards/${boardId}/participants/${userId}`);
-  
+
   // Try to get the user's color from Firestore, or generate one if not available
   let userColor;
-  
+
   try {
     const userRef = doc(db, "users", userId);
     const userSnap = await getDoc(userRef);
-    
+
     if (userSnap.exists() && userSnap.data().color) {
       // Use color from Firestore
       userColor = userSnap.data().color;
@@ -155,9 +178,9 @@ export const updateParticipantName = async (
   if (!newName || newName.trim() === "") {
     return;
   }
-  
+
   const userBoardRef = ref(rtdb, `boards/${boardId}/participants/${userId}`);
-  
+
   try {
     // Get current user data
     const snapshot = await get(userBoardRef);
@@ -179,10 +202,10 @@ export const updateParticipantName = async (
 export const updateParticipantColor = async (
   userId: string,
   boardId: string,
-  newColor: string
+  newColor: string // Now a Tailwind class name like 'bg-red-200'
 ): Promise<void> => {
   const userBoardRef = ref(rtdb, `boards/${boardId}/participants/${userId}`);
-  
+
   try {
     // Get current user data
     const snapshot = await get(userBoardRef);

@@ -63,14 +63,14 @@ export interface Card {
   votes: number;
   position: number;
   actionable?: boolean;
-  color?: string;
+  color?: string; // Tailwind class name (e.g., 'bg-red-200')
 }
 
 // Type for a user
 export interface User {
   id: string;
   name: string;
-  color: string;
+  color: string; // Tailwind class name (e.g., 'bg-red-200')
   boardId: string;
   lastActive: Timestamp;
   isViewingPage?: boolean;
@@ -80,7 +80,7 @@ export interface User {
 export interface OnlineUser {
   id: string;
   name: string;
-  color: string;
+  color: string; // Tailwind class name (e.g., 'bg-red-200')
   boardId: string;
   lastOnline: number;
 }

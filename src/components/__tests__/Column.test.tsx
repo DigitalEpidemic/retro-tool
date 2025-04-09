@@ -24,14 +24,17 @@ vi.mock("../../services/boardService", () => ({
 }));
 
 // Mock firebase/firestore
-vi.mock("firebase/firestore", () => ({
-  getDoc: vi.fn().mockResolvedValue({
-    exists: () => true,
-    data: () => ({ color: "#60A5FA", name: "Test User" }),
-  }),
-  doc: vi.fn().mockReturnValue({ id: "test-doc-ref" }),
-  getFirestore: vi.fn(() => ({})),
-}));
+vi.mock("firebase/firestore", async () => {
+  const actual = await vi.importActual("firebase/firestore");
+  return {
+    ...actual,
+    doc: vi.fn(),
+    getDoc: vi.fn().mockResolvedValue({
+      exists: () => true,
+      data: () => ({ color: "bg-blue-100", name: "Test User" }),
+    }),
+  };
+});
 
 // Mock lucide-react icons
 vi.mock("lucide-react", () => {
@@ -239,7 +242,7 @@ describe("Column", () => {
       "A valid card content", // Content should be trimmed
       mockUser.uid,
       mockUser.displayName || "Anonymous User", // Include displayName parameter
-      "#60A5FA" // Include the color parameter
+      "bg-blue-100" // Include the color parameter
     );
 
     // Check if form is hidden and input cleared
@@ -403,7 +406,7 @@ describe("Column", () => {
   // Test to verify the user's displayName and color are correctly passed to addCard
   it("passes user's displayName and color to addCard", async () => {
     // Mock Firestore to return a user color
-    const mockUserColor = "#60A5FA"; // Blue color
+    const mockUserColor = "bg-blue-100"; // Light blue color
 
     // Mock getDoc from Firestore to return a user with color
     vi.mocked(getDoc).mockResolvedValue({
@@ -509,7 +512,7 @@ describe("Column", () => {
       "Anonymous card",
       userWithoutName.uid,
       "Anonymous User",
-      "#60A5FA" // Include the color parameter
+      "bg-blue-100" // Default light blue color
     );
   });
 
@@ -581,7 +584,7 @@ describe("Column", () => {
       "New card via Enter key",
       mockUser.uid,
       mockUser.displayName || "Anonymous User",
-      "#60A5FA" // Include the color parameter
+      "bg-blue-100" // Default light blue color
     );
 
     // Form should be hidden after submission
