@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import AddColumnPlaceholder from '../AddColumnPlaceholder';
 import { addColumn } from '../../services/boardService';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach, Mock } from 'vitest';
 
 // Mock the boardService
 vi.mock('../../services/boardService', () => ({
@@ -47,7 +47,7 @@ describe('AddColumnPlaceholder', () => {
 
   it('calls addColumn service when form is submitted', async () => {
     // Mock successful response
-    (addColumn as any).mockResolvedValue({ success: true, columnId: 'new-column-id' });
+    (addColumn as Mock).mockResolvedValue({ success: true, columnId: 'new-column-id' });
 
     render(<AddColumnPlaceholder boardId={mockBoardId} onColumnAdded={mockOnColumnAdded} />);
 
@@ -76,7 +76,7 @@ describe('AddColumnPlaceholder', () => {
 
   it('shows error message when column addition fails', async () => {
     // Mock failed response
-    (addColumn as any).mockResolvedValue({
+    (addColumn as Mock).mockResolvedValue({
       success: false,
       error: 'Failed to add column',
     });

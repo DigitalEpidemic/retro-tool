@@ -4,7 +4,8 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Board, Card } from '../../services/firebase';
-import ExportModal, { createAndDownloadMarkdownFile, formatExportFilename } from '../ExportModal';
+import ExportModal from '../ExportModal';
+import { createAndDownloadMarkdownFile, formatExportFilename } from '../../utils/exportUtils';
 import { ActionPoint } from '../ActionPointsPanel';
 
 // Mock document.execCommand for clipboard test

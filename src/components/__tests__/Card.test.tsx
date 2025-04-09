@@ -94,13 +94,11 @@ describe('Card', () => {
     // Ideally, CardType would have authorName?: string
     const cardWithoutAuthorName = {
       ...mockCard,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       authorName: undefined as any, // Cast to bypass TS error for this specific test case
     };
     render(
       <Card
         provided={provided}
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         card={cardWithoutAuthorName as CardType} // Cast needed because of the 'any' above
         isOwner={true}
       />

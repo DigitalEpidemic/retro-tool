@@ -1,37 +1,13 @@
 import { Clipboard, FileDown, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Board, Card } from '../services/firebase';
+import { createAndDownloadMarkdownFile, formatExportFilename } from '../utils/exportUtils';
 
 interface ExportModalProps {
   isOpen: boolean;
   onClose: () => void;
   board: Board | null;
   cards: Card[];
-}
-
-// Extract file saving logic to a testable function
-export function createAndDownloadMarkdownFile(markdownContent: string, fileName: string) {
-  const blob = new Blob([markdownContent], { type: 'text/markdown' });
-  const url = URL.createObjectURL(blob);
-
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-
-  // Clean up
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-}
-
-// Export the filename creation logic for testing
-export function formatExportFilename(boardName: string): string {
-  // Remove "Board: " prefix from the board name
-  const cleanedBoardName = boardName.replace(/^Board:\s*/i, '');
-
-  const dateStr = new Date().toISOString().split('T')[0];
-  return `${dateStr}-${cleanedBoardName.replace(/\s+/g, '-').toLowerCase()}.md`;
 }
 
 export default function ExportModal({ isOpen, onClose, board, cards }: ExportModalProps) {
@@ -50,7 +26,7 @@ export default function ExportModal({ isOpen, onClose, board, cards }: ExportMod
     const cardsByColumn: Record<string, Card[]> = {};
 
     // Initialize empty arrays for each column
-    Object.entries(board.columns).forEach(([columnId, column]) => {
+    Object.keys(board.columns).forEach(columnId => {
       cardsByColumn[columnId] = [];
     });
 
@@ -158,14 +134,14 @@ export default function ExportModal({ isOpen, onClose, board, cards }: ExportMod
         <div className="flex justify-end space-x-3 border-t border-gray-200 p-4">
           <button
             onClick={handleCopyToClipboard}
-            className="flex items-center space-x-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300"
+            className="flex items-center space-x-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300 cursor-pointer"
           >
             <Clipboard className="h-4 w-4" />
             <span>{copySuccess ? 'Copied!' : 'Copy to Clipboard'}</span>
           </button>
           <button
             onClick={handleSaveAsFile}
-            className="flex items-center space-x-1 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex items-center space-x-1 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
           >
             <FileDown className="h-4 w-4" />
             <span>Save as File</span>
