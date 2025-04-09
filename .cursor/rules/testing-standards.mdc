@@ -3,7 +3,7 @@ description:
 globs: 
 alwaysApply: false
 ---
- # Testing Standards
+# Testing Standards
 
 ## Test Syntax
 
@@ -28,3 +28,17 @@ alwaysApply: false
 - Ensure tests are deterministic and don't depend on external state
 - Use appropriate assertions to validate the expected behavior
 - Use userEvent where possible instead of fireEvent for better simulation
+- NEVER use the --silent flag when running tests, as it hides important warnings and errors that need to be fixed
+- Always wrap state-changing operations (including component rendering and event firing) in act() to prevent React act() warnings
+
+## Running Tests
+
+- Run tests with `npm test -- <pattern>` to focus on specific tests
+- When debugging test failures or warnings, always run without the --silent flag
+- Fix all warnings that appear during tests, especially React act() warnings
+- Use correct Vitest filtering patterns:
+  - Use `npm test -- -t "ComponentName"` to run all tests for a specific component
+  - DO NOT use nested descriptions in the -t pattern like `npm test -- -t "Column Sorting > handles toggling"` as this doesn't work with Vitest
+  - To run a specific test, use the full test name: `npm test -- -t "renders correctly"`
+  - For file path filtering, use `npm test -- src/components/__tests__/Column.test.tsx`
+  - To combine filters, use multiple flags: `npm test -- src/components/__tests__/Column.test.tsx -t "renders"`
