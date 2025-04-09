@@ -36,7 +36,7 @@ export const createBoard = async (
     isActive: true,
     columns,
     facilitatorId: creatorId || null, // Store creator if provided
-    showAddColumnPlaceholder: true, // Default to showing the add column placeholder
+    showAddColumnPlaceholder: false, // Default to hiding the add column placeholder
   };
 
   if (boardId) {

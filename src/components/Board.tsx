@@ -98,7 +98,7 @@ export default function Board() {
   const inputRef = useRef<HTMLInputElement>(null); // Ref for the input element
   const escapePressedRef = useRef(false); // Ref to track if blur was triggered by Escape
   const [showAddColumnPlaceholder, setShowAddColumnPlaceholder] =
-    useState<boolean>(true);
+    useState<boolean>(false);
 
   // Track if user's cards have been updated with the current color
   const cardColorsUpdatedRef = useRef(false);
@@ -178,7 +178,7 @@ export default function Board() {
 
           // Initialize showAddColumnPlaceholder from board data
           setShowAddColumnPlaceholder(
-            boardData.showAddColumnPlaceholder !== false
+            boardData.showAddColumnPlaceholder === true
           );
 
           setLoading(false); // Set loading false once we get *any* snapshot
