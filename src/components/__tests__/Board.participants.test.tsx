@@ -4,6 +4,7 @@ import React from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as FirebaseContext from '../../contexts/FirebaseContext';
+import { useFirebase } from '../../contexts/useFirebase';
 import * as boardService from '../../services/boardService';
 import * as presenceService from '../../services/presenceService';
 import Board from '../Board';
@@ -244,7 +245,7 @@ vi.mock('../Board', async importOriginal => {
     ]);
 
     // Get Firebase context for user info
-    const { updateUserDisplayName } = FirebaseContext.useFirebase();
+    const { updateUserDisplayName } = useFirebase();
 
     React.useEffect(() => {
       // Mock the behavior in the component useEffect
@@ -416,6 +417,15 @@ vi.mock('../../services/firebase', () => {
   };
 });
 
+vi.mock('../../contexts/useFirebase', () => ({
+  useFirebase: vi.fn(() => ({
+    user: { uid: 'test-user-id', displayName: 'Test User' },
+    loading: false,
+    error: null,
+    updateUserDisplayName: vi.fn(),
+  })),
+}));
+
 describe('Board Component - Participants Integration', () => {
   const mockBoardId = 'test-board-id';
   const mockUser = {
@@ -429,7 +439,7 @@ describe('Board Component - Participants Integration', () => {
     vi.clearAllMocks();
 
     // Mock Firebase Context
-    vi.mocked(FirebaseContext.useFirebase).mockReturnValue({
+    vi.mocked(useFirebase).mockReturnValue({
       user: mockUser,
       loading: false,
       error: null,
@@ -573,7 +583,7 @@ describe('Board Component - Participants Integration', () => {
 
   it('updates context when the current user changes their name', async () => {
     const updateUserDisplayNameMock = vi.fn().mockResolvedValue(true);
-    vi.mocked(FirebaseContext.useFirebase).mockReturnValue({
+    vi.mocked(useFirebase).mockReturnValue({
       user: mockUser,
       loading: false,
       error: null,

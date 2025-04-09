@@ -5,7 +5,7 @@ import { FormEvent, useEffect, useState } from 'react';
 import { Route, Routes, useNavigate } from 'react-router-dom';
 import './App.css';
 import Board from './components/Board';
-import { useFirebase } from './contexts/FirebaseContext';
+import { useFirebase } from './contexts/useFirebase';
 import './index.css';
 import { createBoard } from './services/boardService';
 import { db } from './services/firebase';

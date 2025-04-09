@@ -1,33 +1,12 @@
 import {
-  User as FirebaseUser,
   getAuth,
   onAuthStateChanged,
   signInAnonymously,
 } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
-import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { db } from '../services/firebase';
-
-// Extended User type that includes displayName convenience property
-interface ExtendedUser extends FirebaseUser {
-  displayName: string | null; // Make sure displayName is part of the interface
-}
-
-interface FirebaseContextType {
-  user: ExtendedUser | null;
-  loading: boolean;
-  error: Error | null;
-  updateUserDisplayName?: (name: string) => void;
-}
-
-// Create a default context value
-const defaultContextValue: FirebaseContextType = {
-  user: null,
-  loading: true,
-  error: null,
-};
-
-const FirebaseContext = createContext<FirebaseContextType>(defaultContextValue);
+import { ExtendedUser, FirebaseContext } from './FirebaseTypes';
 
 export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<ExtendedUser | null>(null);
@@ -102,10 +81,4 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export const useFirebase = () => {
-  const context = useContext(FirebaseContext);
-  if (context === defaultContextValue) {
-    throw new Error('useFirebase must be used within a FirebaseProvider');
-  }
-  return context;
-};
+// Hook moved to useFirebase.ts file

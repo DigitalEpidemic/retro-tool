@@ -1,7 +1,8 @@
 import { act, render, screen, waitFor } from '@testing-library/react'; // Import act
 import { User } from 'firebase/auth';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { FirebaseProvider, useFirebase } from './FirebaseContext'; // Adjust the import path as needed
+import { FirebaseProvider } from './FirebaseContext'; // Adjust the import path as needed
+import { useFirebase } from './useFirebase';
 
 // Mock Firebase fully including both auth and firestore
 vi.mock('firebase/app', () => ({

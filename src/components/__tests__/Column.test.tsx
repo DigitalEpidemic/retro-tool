@@ -3,12 +3,12 @@ import { User } from 'firebase/auth'; // Import User type
 import { getDoc } from 'firebase/firestore'; // Import getDoc from firebase/firestore
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { useFirebase } from '../../contexts/FirebaseContext'; // Adjust the import path
+import { useFirebase } from '../../contexts/useFirebase'; // Adjust the import path
 import { addCard } from '../../services/boardService'; // Adjust the import path
 import Column from '../Column'; // This is the real component
 
 // Mock dependencies
-vi.mock('../../contexts/FirebaseContext', () => ({
+vi.mock('../../contexts/useFirebase', () => ({
   useFirebase: vi.fn(),
 }));
 

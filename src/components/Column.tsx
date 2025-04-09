@@ -1,7 +1,7 @@
 import { doc, getDoc } from 'firebase/firestore';
 import { ArrowUpDown, MoreVertical } from 'lucide-react'; // Import icons
 import React, { useRef, useState } from 'react';
-import { useFirebase } from '../contexts/FirebaseContext'; // To get user ID
+import { useFirebase } from '../contexts/useFirebase'; // To get user ID
 import { addCard, deleteColumn } from '../services/boardService'; // To add new cards and delete columns
 import { db } from '../services/firebase';
 

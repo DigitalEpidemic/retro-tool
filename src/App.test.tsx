@@ -5,14 +5,18 @@ import App from './App'; // The component we're testing
 import * as FirebaseContext from './contexts/FirebaseContext';
 
 // Mock the FirebaseContext to provide the necessary values
-vi.mock('./contexts/FirebaseContext', () => ({
+vi.mock('./contexts/useFirebase', () => ({
   useFirebase: vi.fn(() => ({
     user: { uid: 'test-user-id', displayName: 'Test User' },
     loading: false,
     error: null,
     updateUserDisplayName: vi.fn(),
   })),
-  FirebaseProvider: ({ children }: { children: React.ReactNode }) => children, // Mock FirebaseProvider as a passthrough
+}));
+
+// Mock FirebaseProvider as a passthrough component
+vi.mock('./contexts/FirebaseContext', () => ({
+  FirebaseProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 // Mock the Board component since we only want to test routing logic in App.tsx

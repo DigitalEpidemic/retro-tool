@@ -13,7 +13,7 @@ import {
   TrendingUp,
   Users,
 } from 'lucide-react';
-import { useFirebase } from '../contexts/FirebaseContext';
+import { useFirebase } from '../contexts/useFirebase';
 import {
   addActionPoint,
   deleteActionPoint,

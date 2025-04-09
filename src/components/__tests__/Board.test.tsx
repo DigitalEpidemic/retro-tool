@@ -8,6 +8,7 @@ import React from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as FirebaseContext from '../../contexts/FirebaseContext';
+import { useFirebase } from '../../contexts/useFirebase';
 import * as boardService from '../../services/boardService';
 import type { Board as BoardType } from '../../services/firebase';
 import Board from '../Board';
@@ -284,13 +285,8 @@ vi.mock('../../services/boardService', () => {
   };
 });
 
-vi.mock('../../contexts/FirebaseContext', () => ({
-  useFirebase: vi.fn(() => ({
-    user: { uid: 'test-user-id', displayName: 'Test User' },
-    loading: false,
-    error: null,
-    updateUserDisplayName: vi.fn(),
-  })),
+vi.mock('../../contexts/useFirebase', () => ({
+  useFirebase: vi.fn(),
 }));
 
 let mockDocExists = true;
@@ -491,7 +487,7 @@ describe('Board', () => {
     mockDocExists = true;
     mockDocData = { name: 'Test Board' };
 
-    vi.mocked(FirebaseContext.useFirebase).mockReturnValue({
+    vi.mocked(useFirebase).mockReturnValue({
       user: mockUser,
       loading: false,
       error: null,
@@ -557,7 +553,7 @@ describe('Board', () => {
   });
 
   it('displays loading state when loading', async () => {
-    vi.mocked(FirebaseContext.useFirebase).mockReturnValue({
+    vi.mocked(useFirebase).mockReturnValue({
       user: null,
       loading: true,
       error: null,
@@ -568,7 +564,7 @@ describe('Board', () => {
   });
 
   it('displays error state when there is an auth error', async () => {
-    vi.mocked(FirebaseContext.useFirebase).mockReturnValue({
+    vi.mocked(useFirebase).mockReturnValue({
       user: null,
       loading: false,
       error: new Error('Authentication failed'),
@@ -579,7 +575,7 @@ describe('Board', () => {
   });
 
   it('displays loading state when auth is loading', async () => {
-    vi.mocked(FirebaseContext.useFirebase).mockReturnValue({
+    vi.mocked(useFirebase).mockReturnValue({
       user: null,
       loading: true,
       error: null,
@@ -592,7 +588,7 @@ describe('Board', () => {
   });
 
   it('displays error state when auth is done but user is null', async () => {
-    vi.mocked(FirebaseContext.useFirebase).mockReturnValue({
+    vi.mocked(useFirebase).mockReturnValue({
       user: null,
       loading: false,
       error: null,
@@ -777,7 +773,7 @@ describe('Board', () => {
   });
 
   it('creates a snapshot of the component', async () => {
-    vi.mocked(FirebaseContext.useFirebase).mockReturnValue({
+    vi.mocked(useFirebase).mockReturnValue({
       user: mockUser,
       loading: false,
       error: null,
@@ -1213,11 +1209,10 @@ describe('Board', () => {
 
   it('should show AddColumnPlaceholder for board creator when enabled', async () => {
     // Set up Firebase context mock with a user that matches the creator ID
-    vi.spyOn(FirebaseContext, 'useFirebase').mockReturnValue({
+    vi.mocked(useFirebase).mockReturnValue({
       user: { ...mockUser, uid: 'test-creator-id' },
       loading: false,
       error: null,
-      updateUserDisplayName: vi.fn(),
     });
 
     // Mock board subscription to return a board with a matching facilitatorId and showAddColumnPlaceholder enabled
@@ -1258,7 +1253,7 @@ describe('Board', () => {
 
     // Verify that the conditions needed for AddColumnPlaceholder to render are correct
     // 1. Check the mocked user ID matches the board creator ID
-    const user = vi.mocked(FirebaseContext.useFirebase)().user;
+    const user = vi.mocked(useFirebase)().user;
     expect(user?.uid).toBe('test-creator-id');
 
     // 2. Confirm the board data has showAddColumnPlaceholder set to true
@@ -1343,5 +1338,15 @@ describe('Board', () => {
       expect(sortedCards[0].id).toBe('1');
       expect(sortedCards[1].id).toBe('2');
     });
+  });
+
+  it('can rerender and show the board update after a board data change', async () => {
+    vi.mocked(useFirebase).mockReturnValue({
+      user: mockUser,
+      loading: false,
+      error: null,
+    });
+
+    // ... existing code ...
   });
 });

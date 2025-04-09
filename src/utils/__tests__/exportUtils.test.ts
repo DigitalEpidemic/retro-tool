@@ -4,6 +4,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAndDownloadMarkdownFile, formatExportFilename } from '../exportUtils';
 
+interface CustomDateConstructor extends DateConstructor {
+  new(): Date & { toISOString(): string };
+}
+
 describe('formatExportFilename', () => {
   // Original Date object
   const originalDate = global.Date;
@@ -20,7 +24,7 @@ describe('formatExportFilename', () => {
       toISOString() {
         return '2025-04-07T12:00:00.000Z';
       }
-    } as any;
+    } as CustomDateConstructor;
   });
 
   afterEach(() => {
@@ -44,6 +48,8 @@ describe('formatExportFilename', () => {
 });
 
 describe('createAndDownloadMarkdownFile', () => {
+  type MockBlob = Record<string, unknown>;
+  
   beforeEach(() => {
     // Mock DOM APIs
     global.URL.createObjectURL = vi.fn().mockReturnValue('mock-url');
@@ -54,8 +60,8 @@ describe('createAndDownloadMarkdownFile', () => {
   });
 
   it('should create a Blob with correct content type', () => {
-    const mockBlob = {};
-    global.Blob = vi.fn().mockReturnValue(mockBlob) as any;
+    const mockBlob: MockBlob = {};
+    global.Blob = vi.fn().mockReturnValue(mockBlob) as unknown as typeof Blob;
     
     createAndDownloadMarkdownFile('Test Content', 'test.md');
     

@@ -5,6 +5,7 @@ import { Timestamp, updateDoc } from 'firebase/firestore';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as FirebaseContext from '../../contexts/FirebaseContext';
+import { useFirebase } from '../../contexts/useFirebase';
 import * as boardService from '../../services/boardService';
 import type { Board as BoardType } from '../../services/firebase';
 import Board from '../Board';
@@ -64,7 +65,7 @@ vi.mock('../../services/boardService', () => {
   };
 });
 
-vi.mock('../../contexts/FirebaseContext', () => ({
+vi.mock('../../contexts/useFirebase', () => ({
   useFirebase: vi.fn(() => ({
     user: { uid: 'test-user-id', displayName: 'Test User' },
     loading: false,
@@ -182,7 +183,7 @@ describe('Timer Functionality', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    vi.mocked(FirebaseContext.useFirebase).mockReturnValue({
+    vi.mocked(useFirebase).mockReturnValue({
       user: {} as FirebaseUser,
       loading: false,
       error: null,

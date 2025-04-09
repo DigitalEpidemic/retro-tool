@@ -3,6 +3,7 @@
  */
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Timestamp } from 'firebase/firestore';
 import { Board, Card } from '../../services/firebase';
 import ExportModal from '../ExportModal';
 import { createAndDownloadMarkdownFile, formatExportFilename } from '../../utils/exportUtils';
@@ -10,6 +11,20 @@ import { ActionPoint } from '../ActionPointsPanel';
 
 // Mock document.execCommand for clipboard test
 document.execCommand = vi.fn();
+
+// Mock for Timestamp
+const createMockTimestamp = () => {
+  const now = new Date();
+  return {
+    toDate: () => now,
+    toMillis: () => now.getTime(),
+    seconds: Math.floor(now.getTime() / 1000),
+    nanoseconds: 0,
+    isEqual: () => false,
+    toJSON: () => ({ seconds: 0, nanoseconds: 0 }),
+    valueOf: () => 0
+  } as unknown as Timestamp;
+};
 
 describe('ExportModal', () => {
   const mockActionPoints: ActionPoint[] = [
@@ -34,7 +49,7 @@ describe('ExportModal', () => {
   const mockBoard: Board = {
     id: 'board-1',
     name: 'Test Retro Board',
-    createdAt: { toDate: () => new Date(), toMillis: () => Date.now() } as any,
+    createdAt: createMockTimestamp(),
     isActive: true,
     columns: {
       col1: { id: 'col1', title: 'What went well', order: 0 },
@@ -52,10 +67,7 @@ describe('ExportModal', () => {
       content: 'Great teamwork',
       authorId: 'user-1',
       authorName: 'John',
-      createdAt: {
-        toDate: () => new Date(),
-        toMillis: () => Date.now(),
-      } as any,
+      createdAt: createMockTimestamp(),
       votes: 3,
       position: 0,
     },
@@ -66,10 +78,7 @@ describe('ExportModal', () => {
       content: 'Communication could be better',
       authorId: 'user-2',
       authorName: 'Jane',
-      createdAt: {
-        toDate: () => new Date(),
-        toMillis: () => Date.now(),
-      } as any,
+      createdAt: createMockTimestamp(),
       votes: 2,
       position: 0,
     },
@@ -80,10 +89,7 @@ describe('ExportModal', () => {
       content: 'Create more documentation',
       authorId: 'user-3',
       authorName: 'Bob',
-      createdAt: {
-        toDate: () => new Date(),
-        toMillis: () => Date.now(),
-      } as any,
+      createdAt: createMockTimestamp(),
       votes: 1,
       position: 0,
     },
@@ -213,6 +219,10 @@ describe('formatExportFilename', () => {
   // Original Date object
   const originalDate = global.Date;
 
+  interface CustomDateConstructor extends DateConstructor {
+    new(): Date & { toISOString(): string };
+  }
+
   beforeEach(() => {
     // Mock Date to return a fixed date
     const fixedDate = new Date('2025-04-07T12:00:00.000Z');
@@ -225,7 +235,7 @@ describe('formatExportFilename', () => {
       toISOString() {
         return '2025-04-07T12:00:00.000Z';
       }
-    } as any;
+    } as CustomDateConstructor;
   });
 
   afterEach(() => {
@@ -249,55 +259,27 @@ describe('formatExportFilename', () => {
 });
 
 describe('createAndDownloadMarkdownFile', () => {
-  // Mock the browser APIs
-  const originalURL = global.URL;
-  const mockURL = {
-    createObjectURL: vi.fn(() => 'mock-blob-url'),
-    revokeObjectURL: vi.fn(),
-  };
-
-  // Setup mock for anchor element
-  const mockLink = {
-    href: '',
-    download: '',
-    click: vi.fn(),
-  };
-
-  // Setup mocks for document methods with proper typing
-  let originalCreateElement: typeof document.createElement;
-  let originalAppendChild: typeof document.body.appendChild;
-  let originalRemoveChild: typeof document.body.removeChild;
-
+  let mockElement: HTMLAnchorElement;
+  
   beforeEach(() => {
-    // Clear mocks before each test
-    vi.clearAllMocks();
-
-    // Mock URL functions
-    global.URL = { ...mockURL } as any;
-
-    // Mock document.createElement
-    originalCreateElement = document.createElement;
-    document.createElement = vi.fn().mockImplementation((tag: string) => {
-      if (tag === 'a') {
-        return mockLink as unknown as HTMLAnchorElement;
-      }
-      // For any other tag, call the original implementation
-      return originalCreateElement.call(document, tag);
-    });
-
-    // Mock document.body methods
-    originalAppendChild = document.body.appendChild;
-    originalRemoveChild = document.body.removeChild;
-    document.body.appendChild = vi.fn().mockReturnValue(document.body);
-    document.body.removeChild = vi.fn().mockReturnValue(document.body);
+    // Mock DOM APIs
+    global.URL.createObjectURL = vi.fn().mockReturnValue('blob:mockurl');
+    global.URL.revokeObjectURL = vi.fn();
+    global.Blob = vi.fn().mockImplementation((content, options) => {
+      return { content, options };
+    }) as unknown as typeof Blob;
+    
+    // Mock the document methods
+    mockElement = document.createElement('a');
+    mockElement.click = vi.fn();
+    vi.spyOn(document, 'createElement').mockReturnValue(mockElement);
+    vi.spyOn(document.body, 'appendChild').mockImplementation(() => mockElement);
+    vi.spyOn(document.body, 'removeChild').mockImplementation(() => mockElement);
   });
 
   afterEach(() => {
     // Restore all mocks
-    global.URL = originalURL;
-    document.createElement = originalCreateElement;
-    document.body.appendChild = originalAppendChild;
-    document.body.removeChild = originalRemoveChild;
+    vi.restoreAllMocks();
   });
 
   it('should create a blob and generate a URL', () => {
@@ -306,7 +288,7 @@ describe('createAndDownloadMarkdownFile', () => {
 
     // Since we can't easily verify the Blob without type issues,
     // we'll just verify that createObjectURL was called
-    expect(mockURL.createObjectURL).toHaveBeenCalledTimes(1);
+    expect(global.URL.createObjectURL).toHaveBeenCalledTimes(1);
   });
 
   it('should create and configure an anchor element', () => {
@@ -317,8 +299,8 @@ describe('createAndDownloadMarkdownFile', () => {
     expect(document.createElement).toHaveBeenCalledWith('a');
 
     // Verify anchor element properties were set
-    expect(mockLink.href).toBe('mock-blob-url');
-    expect(mockLink.download).toBe('test-file.md');
+    expect(mockElement.href).toBe('blob:mockurl');
+    expect(mockElement.download).toBe('test-file.md');
   });
 
   it('should trigger the download and clean up resources', () => {
@@ -326,11 +308,11 @@ describe('createAndDownloadMarkdownFile', () => {
     createAndDownloadMarkdownFile('# Test Content', 'test-file.md');
 
     // Verify the anchor was appended to the body, clicked, and removed
-    expect(document.body.appendChild).toHaveBeenCalledWith(mockLink);
-    expect(mockLink.click).toHaveBeenCalled();
-    expect(document.body.removeChild).toHaveBeenCalledWith(mockLink);
+    expect(document.body.appendChild).toHaveBeenCalledWith(mockElement);
+    expect(mockElement.click).toHaveBeenCalled();
+    expect(document.body.removeChild).toHaveBeenCalledWith(mockElement);
 
     // Verify URL.revokeObjectURL was called to clean up
-    expect(mockURL.revokeObjectURL).toHaveBeenCalledWith('mock-blob-url');
+    expect(global.URL.revokeObjectURL).toHaveBeenCalledWith('blob:mockurl');
   });
 });
