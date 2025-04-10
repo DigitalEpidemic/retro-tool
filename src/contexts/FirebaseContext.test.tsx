@@ -1,5 +1,12 @@
 import { act, render, screen, waitFor } from '@testing-library/react'; // Import act
-import { Auth, NextOrObserver, Unsubscribe, User, UserCredential } from 'firebase/auth';
+import {
+  Auth,
+  NextOrObserver,
+  signInAnonymously,
+  Unsubscribe,
+  User,
+  UserCredential,
+} from 'firebase/auth';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FirebaseProvider } from './FirebaseContext'; // Adjust the import path as needed
 import { useFirebase } from './useFirebase';
@@ -57,9 +64,6 @@ vi.mock('firebase/firestore', () => ({
     })
   ),
 }));
-
-// Import the mocked services
-import { signInAnonymously } from 'firebase/auth';
 
 // Mock Firebase services
 vi.mock('../services/firebase', () => ({
