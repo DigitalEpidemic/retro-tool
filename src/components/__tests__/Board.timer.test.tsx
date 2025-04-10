@@ -251,12 +251,12 @@ describe('Timer Functionality', () => {
 
     // Clear reset timer mock to ensure we can check it's called
     vi.mocked(boardService.resetTimer).mockClear();
-    
+
     const resetButton = screen.getByRole('button', { name: /reset timer/i });
     await act(async () => {
       await user.click(resetButton);
     });
-    
+
     // Verify resetTimer was called with the right parameters
     expect(boardService.resetTimer).toHaveBeenCalledWith('test-board-id', 300);
 
@@ -520,7 +520,7 @@ describe('Timer Functionality', () => {
 
     // Make sure resetTimer mock is cleared
     vi.mocked(boardService.resetTimer).mockClear();
-    
+
     const resetButton = screen.getByRole('button', { name: /reset timer/i });
     expect(resetButton).toBeInTheDocument();
 
@@ -581,7 +581,7 @@ describe('Timer Functionality', () => {
     // First click on the timer to make it editable
     const timerDisplay = screen.getByText('2:00');
     await user.click(timerDisplay);
-    
+
     const timerInput = screen.getByDisplayValue('2:00');
     await user.clear(timerInput);
     await user.type(timerInput, 'abc');
@@ -697,13 +697,13 @@ describe('Timer Functionality', () => {
       const focusEvent = new FocusEvent('blur', {
         bubbles: true,
         cancelable: true,
-        relatedTarget: playButton
+        relatedTarget: playButton,
       });
       timerInput.dispatchEvent(focusEvent);
     });
 
     expect(vi.mocked(updateDoc)).not.toHaveBeenCalled();
-    
+
     // The input should still be visible, not turning back to span yet
     expect(timerInput).toBeInTheDocument();
   });
@@ -716,7 +716,7 @@ describe('Timer Functionality', () => {
     vi.mocked(boardService.startTimer).mockClear();
     vi.mocked(boardService.pauseTimer).mockClear();
     vi.mocked(boardService.resetTimer).mockClear();
-    
+
     vi.mocked(boardService.startTimer).mockResolvedValue();
     vi.mocked(boardService.pauseTimer).mockResolvedValue();
     vi.mocked(boardService.resetTimer).mockResolvedValue();
@@ -816,7 +816,7 @@ describe('Timer Functionality', () => {
 
     // Clear resetTimer mock
     vi.mocked(boardService.resetTimer).mockClear();
-    
+
     const resetButton = screen.getByRole('button', { name: /reset timer/i });
     await act(async () => {
       await user.click(resetButton);

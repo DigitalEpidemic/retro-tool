@@ -965,25 +965,27 @@ export default function Board() {
           <div className="animate-pulse text-gray-500">Loading board...</div>
         </div>
       )}
-      
+
       {!loading && !boardId && (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-red-500">Invalid board ID</div>
         </div>
       )}
-      
+
       {!loading && !board && boardId && (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-red-500">Board not found</div>
         </div>
       )}
-      
+
       {!loading && board && boardId && (
         <>
           {/* Top Board Header */}
           <div className="px-6 py-3 border-b border-gray-200 bg-white flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <h1 className="text-lg font-semibold text-gray-800">{board.name || 'Unnamed Board'}</h1>
+              <h1 className="text-lg font-semibold text-gray-800">
+                {board.name || 'Unnamed Board'}
+              </h1>
               {/* <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
                 Free retrospective
               </span> */}
@@ -994,8 +996,11 @@ export default function Board() {
               {/* Add timer-controls class for blur logic */}
               <div className="flex items-center space-x-1 timer-controls">
                 {/* Conditional Rendering: Input vs Clickable Span */}
-                {board && board.timerIsRunning ? (
-                  <span className="text-gray-700 font-medium w-12 text-right" title="Remaining time">
+                {board?.timerIsRunning ? (
+                  <span
+                    className="text-gray-700 font-medium w-12 text-right"
+                    title="Remaining time"
+                  >
                     {formatTime(remainingTime)}
                   </span>
                 ) : isEditingTimer ? (
@@ -1011,8 +1016,8 @@ export default function Board() {
                     title="Edit time (MM:SS)"
                   />
                 ) : (
-                  <span 
-                    className="text-gray-700 font-medium w-12 text-right cursor-pointer hover:text-blue-500" 
+                  <span
+                    className="text-gray-700 font-medium w-12 text-right cursor-pointer hover:text-blue-500"
                     title="Click to edit time"
                     onClick={handleTimerClick}
                   >
