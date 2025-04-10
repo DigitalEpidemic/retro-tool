@@ -249,8 +249,15 @@ describe('Timer Functionality', () => {
     };
     act(() => boardCallback(pausedBoard));
 
+    // Clear reset timer mock to ensure we can check it's called
+    vi.mocked(boardService.resetTimer).mockClear();
+    
     const resetButton = screen.getByRole('button', { name: /reset timer/i });
-    await user.click(resetButton);
+    await act(async () => {
+      await user.click(resetButton);
+    });
+    
+    // Verify resetTimer was called with the right parameters
     expect(boardService.resetTimer).toHaveBeenCalledWith('test-board-id', 300);
 
     act(() => boardCallback(mockBoard));
@@ -314,6 +321,7 @@ describe('Timer Functionality', () => {
       act(() => callback(runningBoard));
       return vi.fn();
     });
+    vi.mocked(boardService.resetTimer).mockClear();
     vi.mocked(boardService.resetTimer).mockResolvedValue();
 
     await act(async () => {
@@ -326,6 +334,7 @@ describe('Timer Functionality', () => {
       );
     });
 
+    // Verify timer is showing 0:02
     expect(screen.getByText('0:02')).toBeInTheDocument();
 
     await act(async () => {
@@ -343,7 +352,8 @@ describe('Timer Functionality', () => {
     };
     act(() => boardCallback(resetBoard));
 
-    expect(screen.getByDisplayValue('0:02')).toBeInTheDocument();
+    // After reset, we should see the span showing 0:02
+    expect(screen.getByText('0:02')).toBeInTheDocument();
 
     vi.useRealTimers();
   });
@@ -394,6 +404,8 @@ describe('Timer Functionality', () => {
   it('handles resetting timer after running', async () => {
     const user = userEvent.setup();
 
+    // Clear the mock and create a new one
+    vi.mocked(boardService.resetTimer).mockClear();
     const resetTimerMock = vi.fn().mockResolvedValue(undefined);
     vi.mocked(boardService.resetTimer).mockImplementation(resetTimerMock);
 
@@ -433,6 +445,8 @@ describe('Timer Functionality', () => {
     const user = userEvent.setup();
     let boardCallback: (board: BoardType | null) => void;
 
+    // Clear the mock first
+    vi.mocked(boardService.resetTimer).mockClear();
     vi.mocked(boardService.resetTimer).mockResolvedValue();
 
     const pausedBoard = {
@@ -461,8 +475,18 @@ describe('Timer Functionality', () => {
       );
     });
 
+    // First, check that the display shows the time
+    const timerDisplay = screen.getByText('2:00');
+    expect(timerDisplay).toBeInTheDocument();
+    expect(timerDisplay.tagName).toBe('SPAN');
+
+    // Click on the timer to make it editable
+    await user.click(timerDisplay);
+
+    // Now we should have an input
     const timerInput = screen.getByDisplayValue('2:00');
     expect(timerInput).toBeInTheDocument();
+    expect(timerInput.tagName).toBe('INPUT');
 
     await user.clear(timerInput);
     await user.type(timerInput, '3:30');
@@ -490,10 +514,19 @@ describe('Timer Functionality', () => {
     };
     act(() => boardCallback(updatedBoard));
 
+    // After updating, timer should be in display mode with the new value
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    expect(screen.getByText('3:30')).toBeInTheDocument();
+
+    // Make sure resetTimer mock is cleared
+    vi.mocked(boardService.resetTimer).mockClear();
+    
     const resetButton = screen.getByRole('button', { name: /reset timer/i });
     expect(resetButton).toBeInTheDocument();
 
-    await user.click(resetButton);
+    await act(async () => {
+      await user.click(resetButton);
+    });
 
     expect(boardService.resetTimer).toHaveBeenCalledWith('test-board-id', 210);
   });
@@ -520,7 +553,9 @@ describe('Timer Functionality', () => {
     });
 
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
-    expect(screen.getByText('5:00')).toBeInTheDocument();
+    const timerDisplay = screen.getByText('5:00');
+    expect(timerDisplay).toBeInTheDocument();
+    expect(timerDisplay.tagName).toBe('SPAN'); // Ensure it's not an input
 
     expect(vi.mocked(updateDoc)).not.toHaveBeenCalled();
   });
@@ -543,12 +578,18 @@ describe('Timer Functionality', () => {
       );
     });
 
+    // First click on the timer to make it editable
+    const timerDisplay = screen.getByText('2:00');
+    await user.click(timerDisplay);
+    
     const timerInput = screen.getByDisplayValue('2:00');
     await user.clear(timerInput);
     await user.type(timerInput, 'abc');
     fireEvent.keyDown(timerInput, { key: 'Enter' });
 
-    expect(timerInput).toHaveValue('2:00');
+    // After Enter, it should go back to span mode with the last valid value
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    expect(screen.getByText('2:00')).toBeInTheDocument();
     expect(vi.mocked(updateDoc)).not.toHaveBeenCalled();
     expect(vi.mocked(console.warn)).toHaveBeenCalledWith('Invalid time format entered:', 'abc');
   });
@@ -571,6 +612,10 @@ describe('Timer Functionality', () => {
       );
     });
 
+    // First click on the timer to make it editable
+    const timerDisplay = screen.getByText('2:00');
+    await user.click(timerDisplay);
+
     const timerInput = screen.getByDisplayValue('2:00');
     await user.clear(timerInput);
     await user.type(timerInput, '5:60');
@@ -578,7 +623,9 @@ describe('Timer Functionality', () => {
       fireEvent.blur(timerInput);
     });
 
-    expect(timerInput).toHaveValue('2:00');
+    // After blur, it should go back to span mode with the last valid value
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    expect(screen.getByText('2:00')).toBeInTheDocument();
     expect(vi.mocked(updateDoc)).not.toHaveBeenCalled();
     expect(vi.mocked(console.warn)).toHaveBeenCalledWith('Invalid time format entered:', '5:60');
   });
@@ -601,6 +648,10 @@ describe('Timer Functionality', () => {
       );
     });
 
+    // First click on the timer to make it editable
+    const timerDisplay = screen.getByText('2:00');
+    await user.click(timerDisplay);
+
     const timerInput = screen.getByDisplayValue('2:00');
     await user.clear(timerInput);
     await user.type(timerInput, '3:30');
@@ -608,7 +659,9 @@ describe('Timer Functionality', () => {
 
     fireEvent.keyDown(timerInput, { key: 'Escape' });
 
-    expect(timerInput).toHaveValue('2:00');
+    // After Escape, it should go back to span mode with the last valid value
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    expect(screen.getByText('2:00')).toBeInTheDocument();
   });
 
   it('does not save timer on blur if focus moves to a timer control button', async () => {
@@ -629,25 +682,41 @@ describe('Timer Functionality', () => {
       );
     });
 
+    // First click on the timer to make it editable
+    const timerDisplay = screen.getByText('2:00');
+    await user.click(timerDisplay);
+
     const timerInput = screen.getByDisplayValue('2:00');
     const playButton = screen.getByRole('button', { name: /start timer/i });
 
     await user.clear(timerInput);
     await user.type(timerInput, '4:00');
 
+    // Create a proper FocusEvent with relatedTarget
     await act(async () => {
-      playButton.focus();
-      fireEvent.blur(timerInput, { relatedTarget: playButton });
+      const focusEvent = new FocusEvent('blur', {
+        bubbles: true,
+        cancelable: true,
+        relatedTarget: playButton
+      });
+      timerInput.dispatchEvent(focusEvent);
     });
 
     expect(vi.mocked(updateDoc)).not.toHaveBeenCalled();
-    expect(timerInput).toHaveValue('4:00');
+    
+    // The input should still be visible, not turning back to span yet
+    expect(timerInput).toBeInTheDocument();
   });
 
   it('resets timer to the last saved duration', async () => {
     const user = userEvent.setup();
     let boardCallback: (board: BoardType | null) => void = () => {};
 
+    // Clear the mocks
+    vi.mocked(boardService.startTimer).mockClear();
+    vi.mocked(boardService.pauseTimer).mockClear();
+    vi.mocked(boardService.resetTimer).mockClear();
+    
     vi.mocked(boardService.startTimer).mockResolvedValue();
     vi.mocked(boardService.pauseTimer).mockResolvedValue();
     vi.mocked(boardService.resetTimer).mockResolvedValue();
@@ -676,6 +745,10 @@ describe('Timer Functionality', () => {
       );
     });
 
+    // First click on the timer to make it editable
+    const timerDisplay = screen.getByText('5:00');
+    await user.click(timerDisplay);
+
     const timerInput = screen.getByDisplayValue('5:00');
     await user.clear(timerInput);
     await user.type(timerInput, '2:00');
@@ -702,7 +775,9 @@ describe('Timer Functionality', () => {
     };
     act(() => boardCallback(savedBoardState));
 
-    expect(timerInput).toHaveValue('2:00');
+    // Timer should now be in display mode with the new value
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    expect(screen.getByText('2:00')).toBeInTheDocument();
 
     const playButton = screen.getByRole('button', { name: /start timer/i });
     await user.click(playButton);
@@ -717,8 +792,9 @@ describe('Timer Functionality', () => {
     };
     act(() => boardCallback(runningBoardState));
 
+    // Timer should be displaying time without edit mode
     expect(screen.getByText('2:00')).toBeInTheDocument();
-    expect(screen.queryByDisplayValue('2:00')).not.toBeInTheDocument();
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
 
     const pauseButton = screen.getByRole('button', { name: /pause timer/i });
     await user.click(pauseButton);
@@ -734,9 +810,13 @@ describe('Timer Functionality', () => {
     };
     act(() => boardCallback(pausedBoardState));
 
-    const pausedTimerInput = screen.getByDisplayValue('1:40');
-    expect(pausedTimerInput).toBeInTheDocument();
+    // Timer should be in display mode with the paused value
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    expect(screen.getByText('1:40')).toBeInTheDocument();
 
+    // Clear resetTimer mock
+    vi.mocked(boardService.resetTimer).mockClear();
+    
     const resetButton = screen.getByRole('button', { name: /reset timer/i });
     await act(async () => {
       await user.click(resetButton);
@@ -754,16 +834,22 @@ describe('Timer Functionality', () => {
     };
     act(() => boardCallback(resetBoardState));
 
-    expect(screen.getByDisplayValue('2:00')).toBeInTheDocument();
+    // After reset, timer should be in display mode with the reset value
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    expect(screen.getByText('2:00')).toBeInTheDocument();
   });
 
   it('resets timer correctly when paused after running twice', async () => {
     const user = userEvent.setup();
     let boardCallback: (board: BoardType | null) => void = () => {};
 
+    // Clear mocks
+    vi.mocked(boardService.resetTimer).mockClear();
     const resetTimerMock = vi.fn().mockResolvedValue(undefined);
     vi.mocked(boardService.resetTimer).mockImplementation(resetTimerMock);
 
+    vi.mocked(boardService.startTimer).mockClear();
+    vi.mocked(boardService.pauseTimer).mockClear();
     vi.mocked(boardService.startTimer).mockResolvedValue();
     vi.mocked(boardService.pauseTimer).mockResolvedValue();
 
@@ -791,6 +877,10 @@ describe('Timer Functionality', () => {
       );
     });
 
+    // First click on the timer to make it editable
+    const timerDisplay = screen.getByText('5:00');
+    await user.click(timerDisplay);
+
     const timerInput = screen.getByDisplayValue('5:00');
     await user.clear(timerInput);
     await user.type(timerInput, '2:00');
@@ -817,7 +907,9 @@ describe('Timer Functionality', () => {
     };
     act(() => boardCallback(savedBoardState));
 
-    expect(timerInput).toHaveValue('2:00');
+    // Timer should be in display mode with the new value
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    expect(screen.getByText('2:00')).toBeInTheDocument();
 
     const playButton = screen.getByRole('button', { name: /start timer/i });
     await user.click(playButton);
@@ -847,7 +939,9 @@ describe('Timer Functionality', () => {
     };
     act(() => boardCallback(firstPausedState));
 
-    expect(screen.getByDisplayValue('1:58')).toBeInTheDocument();
+    // Timer should be in display mode with the paused value
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    expect(screen.getByText('1:58')).toBeInTheDocument();
 
     await user.click(playButton);
     expect(boardService.startTimer).toHaveBeenCalledWith('test-board-id', firstPausedState);
@@ -877,7 +971,9 @@ describe('Timer Functionality', () => {
 
     resetTimerMock.mockClear();
 
-    expect(screen.getByDisplayValue('1:53')).toBeInTheDocument();
+    // Timer should be in display mode with the new paused value
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    expect(screen.getByText('1:53')).toBeInTheDocument();
 
     const resetButton = screen.getByRole('button', { name: /reset timer/i });
     await act(async () => {
@@ -896,6 +992,8 @@ describe('Timer Functionality', () => {
     };
     act(() => boardCallback(resetBoardState));
 
-    expect(screen.getByDisplayValue('2:00')).toBeInTheDocument();
+    // After reset, timer should be in display mode with the reset value
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    expect(screen.getByText('2:00')).toBeInTheDocument();
   });
 });

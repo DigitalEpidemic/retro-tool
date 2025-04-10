@@ -925,6 +925,7 @@ describe('Board', () => {
   });
 
   it('displays error if resetTimer fails', async () => {
+    const user = userEvent.setup();
     // Setup: Mock the resetTimer function to reject with an error
     const mockTimerError = new Error('Timer reset failed');
     vi.mocked(boardService.resetTimer).mockRejectedValueOnce(mockTimerError);
@@ -937,9 +938,6 @@ describe('Board', () => {
 
     // Find the reset button
     const resetButton = screen.getByRole('button', { name: /reset timer/i });
-
-    // Setup the user event
-    const user = userEvent.setup();
 
     // Click the button
     await user.click(resetButton);
@@ -954,6 +952,7 @@ describe('Board', () => {
   });
 
   it('displays error if updating timer duration fails', async () => {
+    const user = userEvent.setup();
     // Setup: Mock updateDoc to reject with an error
     const mockUpdateError = new Error('Firestore update failed');
     vi.mocked(updateDoc).mockRejectedValueOnce(mockUpdateError);
@@ -975,11 +974,12 @@ describe('Board', () => {
     // Render the component
     await renderBoard();
 
-    // Find the timer input
-    const timerInput = screen.getByDisplayValue('2:00');
+    // Find the timer display and click to activate edit mode
+    const timerDisplay = screen.getByText('2:00');
+    await user.click(timerDisplay);
 
-    // Setup the user event
-    const user = userEvent.setup();
+    // Find the timer input now that it's in edit mode
+    const timerInput = screen.getByDisplayValue('2:00');
 
     // Clear and type in the input
     await user.clear(timerInput);

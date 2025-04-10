@@ -66,6 +66,7 @@ export default function Board() {
   const [error, setError] = useState<string | null>(null);
   const [remainingTime, setRemainingTime] = useState<number | null>(null); // State for countdown display
   const [editableTimeStr, setEditableTimeStr] = useState<string>(''); // State for editable input
+  const [isEditingTimer, setIsEditingTimer] = useState(false); // State to track timer edit mode
   const [columnSortStates, setColumnSortStates] = useState<Record<string, boolean>>({}); // Track sort by votes per column
   const [isPanelOpen, setIsPanelOpen] = useState(false); // State for participants panel
   const [isActionPointsPanelOpen, setIsActionPointsPanelOpen] = useState(false); // State for action points panel
@@ -467,17 +468,25 @@ export default function Board() {
     setEditableTimeStr(e.target.value);
   };
 
+  // Handle click on timer link
+  const handleTimerClick = () => {
+    if (!board?.timerIsRunning) {
+      setIsEditingTimer(true);
+    }
+  };
+
   // Handle saving on Enter key press
   const handleTimeInputKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       handleSaveEditedTime();
-      // inputRef.current?.blur(); // Remove this line - caused double save attempt
+      setIsEditingTimer(false);
     } else if (e.key === 'Escape') {
       // Revert to last known valid time on Escape
       const lastValidTime =
         board?.timerPausedDurationSeconds ?? board?.timerDurationSeconds ?? initialDurationSeconds;
       escapePressedRef.current = true; // Signal that Escape was pressed
       setEditableTimeStr(formatTime(lastValidTime));
+      setIsEditingTimer(false);
       inputRef.current?.blur(); // Remove focus
     }
   };
@@ -487,6 +496,7 @@ export default function Board() {
     // If blur was triggered by Escape key, reset the flag and do nothing else
     if (escapePressedRef.current) {
       escapePressedRef.current = false;
+      setIsEditingTimer(false);
       return;
     }
 
@@ -503,13 +513,12 @@ export default function Board() {
     if (editableTimeStr !== formatTime(lastValidTime)) {
       handleSaveEditedTime();
     }
+    setIsEditingTimer(false);
   };
 
   const handleResetTimer = () => {
-    // Check inputRef.current exists along with boardId
-    if (boardId && inputRef.current) {
-      // REMOVED: Explicit blur call - rely on natural blur and the check in handleTimeInputBlur
-
+    // Check only if boardId is available
+    if (boardId) {
       // Clear any pending delayed reset if resetting manually
       if (resetTimeoutRef.current) {
         clearTimeout(resetTimeoutRef.current);
@@ -822,14 +831,18 @@ export default function Board() {
 
     // Update Firestore
     try {
-      await updateCardPosition(
-        // Await the promise
-        draggableId,
-        destinationColumnId,
-        destinationIndex,
-        sourceColumnId,
-        boardId
-      );
+      // Only update if boardId is available
+      if (boardId) {
+        await updateCardPosition(
+          draggableId,
+          destinationColumnId,
+          destinationIndex,
+          sourceColumnId,
+          boardId
+        );
+      } else {
+        console.error('Cannot update card position: boardId is undefined');
+      }
     } catch (error) {
       console.error('Error updating card position:', error);
       // Revert state if needed
@@ -946,259 +959,289 @@ export default function Board() {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-      {/* Top Board Header */}
-      <div className="px-6 py-3 border-b border-gray-200 bg-white flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <h1 className="text-lg font-semibold text-gray-800">{board.name || 'Unnamed Board'}</h1>
-          {/* <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-            Free retrospective
-          </span> */}
+      {/* Loading/Error state handling */}
+      {loading && (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="animate-pulse text-gray-500">Loading board...</div>
         </div>
-
-        <div className="flex items-center space-x-4">
-          {/* Timer Display and Controls */}
-          {/* Add timer-controls class for blur logic */}
-          <div className="flex items-center space-x-1 timer-controls">
-            {/* Conditional Rendering: Input vs Span */}
-            {board && !board.timerIsRunning ? (
-              <input
-                ref={inputRef}
-                type="text"
-                value={editableTimeStr}
-                onChange={handleTimeInputChange}
-                onKeyDown={handleTimeInputKeyDown}
-                onBlur={handleTimeInputBlur}
-                className="text-gray-700 font-medium w-12 text-right border border-gray-300 rounded px-1 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                // Add pattern for basic validation if desired, though JS handles parsing
-                // pattern="\d{1,2}:\d{2}"
-                title="Edit time (MM:SS)"
-              />
-            ) : (
-              <span className="text-gray-700 font-medium w-12 text-right" title="Remaining time">
-                {formatTime(remainingTime)}
-              </span>
-            )}
-            {/* Play/Pause Button */}
-            <button
-              onClick={handleStartPauseTimer}
-              className={`cursor-pointer ${
-                board?.timerIsRunning
-                  ? 'text-orange-500 hover:text-orange-600' // Style for Pause
-                  : 'text-blue-500 hover:text-blue-600' // Style for Play/Resume
-              }`}
-              aria-label={board?.timerIsRunning ? 'Pause timer' : 'Start timer'} // Add aria-label
-            >
-              {board?.timerIsRunning ? (
-                <Pause className="h-4 w-4" /> // Show Pause icon when running
-              ) : (
-                <Play className="h-4 w-4" /> // Show Play icon when stopped/paused
-              )}
-            </button>
-            {/* Reset Button */}
-            <button
-              onClick={handleResetTimer}
-              aria-label="Reset timer" // Add aria-label
-              // Disable reset if timer is running? Optional UX choice.
-              // disabled={!!board?.timerIsRunning}
-              className="text-gray-400 hover:text-gray-600 cursor-pointer"
-            >
-              <RotateCcw className="h-4 w-4" />
-            </button>
-          </div>
-
-          {/* Other Board Controls */}
-          <div className="flex space-x-5">
-            <button
-              className={`text-gray-700 hover:text-gray-900 flex items-center cursor-pointer ${
-                isPanelOpen ? 'text-blue-500' : ''
-              }`}
-              onClick={toggleParticipantsPanel}
-            >
-              <Users className="h-5 w-5" />
-              <span className="ml-1 text-sm">Participants</span>
-              {participants.length > 0 && (
-                <span className="ml-1 bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full">
-                  {participants.length}
-                </span>
-              )}
-            </button>
-
-            <button
-              className={`text-gray-700 hover:text-gray-900 flex items-center cursor-pointer ${
-                isActionPointsPanelOpen ? 'text-blue-500' : ''
-              }`}
-              onClick={toggleActionPointsPanel}
-            >
-              <TrendingUp className="h-5 w-5" />
-              <span className="ml-1 text-sm">Action points</span>
-              {actionPoints.length > 0 && (
-                <span className="ml-1 bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full">
-                  {actionPoints.length}
-                </span>
-              )}
-            </button>
-
-            <button
-              className="text-gray-700 hover:text-gray-900 flex items-center cursor-pointer"
-              onClick={handleExportClick}
-            >
-              <Download className="h-5 w-5" />
-              <span className="ml-1 text-sm">Export</span>
-            </button>
-
-            <button
-              className="text-gray-700 hover:text-gray-900 flex items-center cursor-pointer"
-              onClick={handleShareClick}
-            >
-              <Share2 className="h-5 w-5" />
-              <span className="ml-1 text-sm">Share</span>
-            </button>
-
-            <button
-              className={`text-gray-700 hover:text-gray-900 flex items-center cursor-pointer ${
-                isOptionsPanelOpen ? 'text-blue-500' : ''
-              }`}
-              onClick={toggleOptionsPanel}
-            >
-              <Settings className="h-5 w-5" />
-              <span className="ml-1 text-sm">Options</span>
-            </button>
-          </div>
+      )}
+      
+      {!loading && !boardId && (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-red-500">Invalid board ID</div>
         </div>
-      </div>
+      )}
+      
+      {!loading && !board && boardId && (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-red-500">Board not found</div>
+        </div>
+      )}
+      
+      {!loading && board && boardId && (
+        <>
+          {/* Top Board Header */}
+          <div className="px-6 py-3 border-b border-gray-200 bg-white flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <h1 className="text-lg font-semibold text-gray-800">{board.name || 'Unnamed Board'}</h1>
+              {/* <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                Free retrospective
+              </span> */}
+            </div>
 
-      {/* Export Modal */}
-      <ExportModal
-        isOpen={isExportModalOpen}
-        onClose={() => setIsExportModalOpen(false)}
-        board={board}
-        cards={cards}
-      />
-
-      {/* Share Modal */}
-      <ShareModal
-        isOpen={isShareModalOpen}
-        onClose={() => setIsShareModalOpen(false)}
-        boardId={boardId ?? ''}
-      />
-
-      {/* Use the participants panel */}
-      <ParticipantsPanel
-        isOpen={isPanelOpen}
-        onClose={() => setIsPanelOpen(false)}
-        participants={participants}
-        currentUserId={user?.uid ?? ''}
-        onUpdateName={handleUpdateParticipantName}
-        onUpdateColor={handleUpdateParticipantColor}
-      />
-
-      {/* Use the action points panel */}
-      <ActionPointsPanel
-        isOpen={isActionPointsPanelOpen}
-        onClose={() => setIsActionPointsPanelOpen(false)}
-        actionPoints={actionPoints}
-        onAddActionPoint={handleAddActionPoint}
-        onToggleActionPoint={handleToggleActionPoint}
-        onDeleteActionPoint={handleDeleteActionPoint}
-      />
-
-      {/* Use the options panel */}
-      <OptionsPanel
-        isOpen={isOptionsPanelOpen}
-        onClose={() => setIsOptionsPanelOpen(false)}
-        onDeleteBoard={handleDeleteBoard}
-        isBoardCreator={user?.uid === board.facilitatorId}
-        showAddColumnPlaceholder={showAddColumnPlaceholder}
-        onToggleAddColumnPlaceholder={handleToggleAddColumnPlaceholder}
-      />
-
-      <DragDropContext onDragEnd={handleDragEnd}>
-        <div className="flex-1 px-6 py-4 overflow-hidden">
-          <div
-            className="grid h-full gap-6"
-            style={{
-              gridTemplateColumns: `repeat(${
-                board.facilitatorId === user?.uid && showAddColumnPlaceholder
-                  ? Math.min(Object.keys(board.columns).length + 1, 4)
-                  : Math.min(Object.keys(board.columns).length, 4)
-              }, minmax(0, 1fr))`,
-              gridAutoFlow: 'column dense',
-            }}
-          >
-            {Object.values(board.columns)
-              .sort((a: ColumnType, b: ColumnType) => a.order - b.order)
-              .map((column: ColumnType) => (
-                <div
-                  key={column.id}
-                  className="border-r border-l border-gray-200 bg-white rounded shadow-sm h-full flex flex-col overflow-hidden"
-                  data-testid={`column-${column.id}`}
-                  data-title={column.title}
-                >
-                  <Column
-                    id={column.id}
-                    title={column.title}
-                    boardId={boardId}
-                    sortByVotes={columnSortStates[column.id] || false}
-                    isBoardOwner={board.facilitatorId === user?.uid}
-                    onSortToggle={async () => {
-                      const newSortState = !columnSortStates[column.id];
-                      try {
-                        await updateColumnSortState(boardId, column.id, newSortState);
-                        setColumnSortStates(prev => ({
-                          ...prev,
-                          [column.id]: newSortState,
-                        }));
-                      } catch (error) {
-                        console.error('Error updating sort state:', error);
-                      }
-                    }}
+            <div className="flex items-center space-x-4">
+              {/* Timer Display and Controls */}
+              {/* Add timer-controls class for blur logic */}
+              <div className="flex items-center space-x-1 timer-controls">
+                {/* Conditional Rendering: Input vs Clickable Span */}
+                {board && board.timerIsRunning ? (
+                  <span className="text-gray-700 font-medium w-12 text-right" title="Remaining time">
+                    {formatTime(remainingTime)}
+                  </span>
+                ) : isEditingTimer ? (
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={editableTimeStr}
+                    onChange={handleTimeInputChange}
+                    onKeyDown={handleTimeInputKeyDown}
+                    onBlur={handleTimeInputBlur}
+                    autoFocus
+                    className="text-gray-700 font-medium w-12 text-right border border-gray-300 rounded px-1 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    title="Edit time (MM:SS)"
+                  />
+                ) : (
+                  <span 
+                    className="text-gray-700 font-medium w-12 text-right cursor-pointer hover:text-blue-500" 
+                    title="Click to edit time"
+                    onClick={handleTimerClick}
                   >
-                    <Droppable droppableId={column.id}>
-                      {provided => (
-                        <div
-                          {...provided.droppableProps}
-                          ref={provided.innerRef}
-                          className="h-full overflow-y-scroll scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400"
-                        >
-                          {cards
-                            .filter(card => card.columnId === column.id)
-                            .sort((a, b) =>
-                              columnSortStates[column.id]
-                                ? b.votes - a.votes
-                                : a.position - b.position
-                            )
-                            .map((card, index) => (
-                              <Draggable key={card.id} draggableId={card.id} index={index}>
-                                {provided => (
-                                  <CardComponent
-                                    provided={provided}
-                                    card={card}
-                                    isOwner={card.authorId === user?.uid}
-                                  />
-                                )}
-                              </Draggable>
-                            ))}
-                          {provided.placeholder}
-                        </div>
-                      )}
-                    </Droppable>
-                  </Column>
-                </div>
-              ))}
+                    {formatTime(remainingTime)}
+                  </span>
+                )}
+                {/* Play/Pause Button */}
+                <button
+                  onClick={handleStartPauseTimer}
+                  className={`cursor-pointer ${
+                    board?.timerIsRunning
+                      ? 'text-orange-500 hover:text-orange-600' // Style for Pause
+                      : 'text-blue-500 hover:text-blue-600' // Style for Play/Resume
+                  }`}
+                  aria-label={board?.timerIsRunning ? 'Pause timer' : 'Start timer'} // Add aria-label
+                >
+                  {board?.timerIsRunning ? (
+                    <Pause className="h-4 w-4" /> // Show Pause icon when running
+                  ) : (
+                    <Play className="h-4 w-4" /> // Show Play icon when stopped/paused
+                  )}
+                </button>
+                {/* Reset Button */}
+                <button
+                  onClick={handleResetTimer}
+                  aria-label="Reset timer" // Add aria-label
+                  // Disable reset if timer is running? Optional UX choice.
+                  // disabled={!!board?.timerIsRunning}
+                  className="text-gray-400 hover:text-gray-600 cursor-pointer"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </button>
+              </div>
 
-            {/* Add Column Placeholder - only visible to board owner and when showAddColumnPlaceholder is true */}
-            {board.facilitatorId === user?.uid && showAddColumnPlaceholder && (
-              <AddColumnPlaceholder
-                boardId={boardId}
-                onColumnAdded={() => {
-                  // Optional callback when a new column is added
-                  // Could refresh data or show notification
-                }}
-              />
-            )}
+              {/* Other Board Controls */}
+              <div className="flex space-x-5">
+                <button
+                  className={`text-gray-700 hover:text-gray-900 flex items-center cursor-pointer ${
+                    isPanelOpen ? 'text-blue-500' : ''
+                  }`}
+                  onClick={toggleParticipantsPanel}
+                >
+                  <Users className="h-5 w-5" />
+                  <span className="ml-1 text-sm">Participants</span>
+                  {participants.length > 0 && (
+                    <span className="ml-1 bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full">
+                      {participants.length}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  className={`text-gray-700 hover:text-gray-900 flex items-center cursor-pointer ${
+                    isActionPointsPanelOpen ? 'text-blue-500' : ''
+                  }`}
+                  onClick={toggleActionPointsPanel}
+                >
+                  <TrendingUp className="h-5 w-5" />
+                  <span className="ml-1 text-sm">Action points</span>
+                  {actionPoints.length > 0 && (
+                    <span className="ml-1 bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full">
+                      {actionPoints.length}
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  className="text-gray-700 hover:text-gray-900 flex items-center cursor-pointer"
+                  onClick={handleExportClick}
+                >
+                  <Download className="h-5 w-5" />
+                  <span className="ml-1 text-sm">Export</span>
+                </button>
+
+                <button
+                  className="text-gray-700 hover:text-gray-900 flex items-center cursor-pointer"
+                  onClick={handleShareClick}
+                >
+                  <Share2 className="h-5 w-5" />
+                  <span className="ml-1 text-sm">Share</span>
+                </button>
+
+                <button
+                  className={`text-gray-700 hover:text-gray-900 flex items-center cursor-pointer ${
+                    isOptionsPanelOpen ? 'text-blue-500' : ''
+                  }`}
+                  onClick={toggleOptionsPanel}
+                >
+                  <Settings className="h-5 w-5" />
+                  <span className="ml-1 text-sm">Options</span>
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
-      </DragDropContext>
+
+          {/* Export Modal */}
+          <ExportModal
+            isOpen={isExportModalOpen}
+            onClose={() => setIsExportModalOpen(false)}
+            board={board}
+            cards={cards}
+          />
+
+          {/* Share Modal */}
+          <ShareModal
+            isOpen={isShareModalOpen}
+            onClose={() => setIsShareModalOpen(false)}
+            boardId={boardId ?? ''}
+          />
+
+          {/* Use the participants panel */}
+          <ParticipantsPanel
+            isOpen={isPanelOpen}
+            onClose={() => setIsPanelOpen(false)}
+            participants={participants}
+            currentUserId={user?.uid ?? ''}
+            onUpdateName={handleUpdateParticipantName}
+            onUpdateColor={handleUpdateParticipantColor}
+          />
+
+          {/* Use the action points panel */}
+          <ActionPointsPanel
+            isOpen={isActionPointsPanelOpen}
+            onClose={() => setIsActionPointsPanelOpen(false)}
+            actionPoints={actionPoints}
+            onAddActionPoint={handleAddActionPoint}
+            onToggleActionPoint={handleToggleActionPoint}
+            onDeleteActionPoint={handleDeleteActionPoint}
+          />
+
+          {/* Use the options panel */}
+          <OptionsPanel
+            isOpen={isOptionsPanelOpen}
+            onClose={() => setIsOptionsPanelOpen(false)}
+            onDeleteBoard={handleDeleteBoard}
+            isBoardCreator={user?.uid === board?.facilitatorId}
+            showAddColumnPlaceholder={showAddColumnPlaceholder}
+            onToggleAddColumnPlaceholder={handleToggleAddColumnPlaceholder}
+          />
+
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <div className="flex-1 px-6 py-4 overflow-hidden">
+              <div
+                className="grid h-full gap-6"
+                style={{
+                  gridTemplateColumns: `repeat(${
+                    board?.facilitatorId === user?.uid && showAddColumnPlaceholder
+                      ? Math.min(Object.keys(board?.columns || {}).length + 1, 4)
+                      : Math.min(Object.keys(board?.columns || {}).length, 4)
+                  }, minmax(0, 1fr))`,
+                  gridAutoFlow: 'column dense',
+                }}
+              >
+                {Object.values(board?.columns || {})
+                  .sort((a: ColumnType, b: ColumnType) => a.order - b.order)
+                  .map((column: ColumnType) => (
+                    <div
+                      key={column.id}
+                      className="border-r border-l border-gray-200 bg-white rounded shadow-sm h-full flex flex-col overflow-hidden"
+                      data-testid={`column-${column.id}`}
+                      data-title={column.title}
+                    >
+                      <Column
+                        id={column.id}
+                        title={column.title}
+                        boardId={boardId || ''}
+                        sortByVotes={columnSortStates[column.id] || false}
+                        isBoardOwner={board?.facilitatorId === user?.uid}
+                        onSortToggle={async () => {
+                          const newSortState = !columnSortStates[column.id];
+                          try {
+                            await updateColumnSortState(boardId, column.id, newSortState);
+                            setColumnSortStates(prev => ({
+                              ...prev,
+                              [column.id]: newSortState,
+                            }));
+                          } catch (error) {
+                            console.error('Error updating sort state:', error);
+                          }
+                        }}
+                      >
+                        <Droppable droppableId={column.id}>
+                          {provided => (
+                            <div
+                              {...provided.droppableProps}
+                              ref={provided.innerRef}
+                              className="h-full overflow-y-scroll scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400"
+                            >
+                              {cards
+                                .filter(card => card.columnId === column.id)
+                                .sort((a, b) =>
+                                  columnSortStates[column.id]
+                                    ? b.votes - a.votes
+                                    : a.position - b.position
+                                )
+                                .map((card, index) => (
+                                  <Draggable key={card.id} draggableId={card.id} index={index}>
+                                    {provided => (
+                                      <CardComponent
+                                        provided={provided}
+                                        card={card}
+                                        isOwner={card.authorId === user?.uid}
+                                      />
+                                    )}
+                                  </Draggable>
+                                ))}
+                              {provided.placeholder}
+                            </div>
+                          )}
+                        </Droppable>
+                      </Column>
+                    </div>
+                  ))}
+
+                {/* Add Column Placeholder - only visible to board owner and when showAddColumnPlaceholder is true */}
+                {board?.facilitatorId === user?.uid && showAddColumnPlaceholder && (
+                  <AddColumnPlaceholder
+                    boardId={boardId ?? ''}
+                    onColumnAdded={() => {
+                      // Optional callback when a new column is added
+                      // Could refresh data or show notification
+                    }}
+                  />
+                )}
+              </div>
+            </div>
+          </DragDropContext>
+        </>
+      )}
     </div>
   );
 }
