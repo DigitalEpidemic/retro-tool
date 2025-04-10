@@ -317,6 +317,58 @@ describe('Card', () => {
     expect(screen.queryByText('5')).not.toBeInTheDocument();
   });
 
+  it('calls updateCard and exits edit mode when Enter key is pressed', async () => {
+    const { updateCard } = await import('../../services/boardService');
+    render(<Card provided={provided} card={mockCard} isOwner={true} />);
+
+    // Enter edit mode
+    const editButton = screen.getByRole('button', { name: 'Edit' });
+    expect(editButton).toBeInTheDocument();
+    fireEvent.click(editButton!);
+
+    // Change content
+    const textarea = screen.getByRole('textbox');
+    fireEvent.change(textarea, { target: { value: 'Updated Content' } });
+
+    // Press Enter key
+    fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter' });
+
+    // Assertions
+    expect(updateCard).toHaveBeenCalledTimes(1);
+    expect(updateCard).toHaveBeenCalledWith('card-1', {
+      content: 'Updated Content',
+    });
+
+    // Wait for the state update to hide the textarea
+    await waitFor(() => {
+      expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    });
+    // Check if the original content display is back (though it will show old content until prop updates)
+    expect(screen.getByText('Test Card Content')).toBeInTheDocument();
+  });
+
+  it('does not submit update when Shift+Enter is pressed', async () => {
+    const { updateCard } = await import('../../services/boardService');
+    render(<Card provided={provided} card={mockCard} isOwner={true} />);
+
+    // Enter edit mode
+    const editButton = screen.getByRole('button', { name: 'Edit' });
+    fireEvent.click(editButton!);
+
+    // Change content
+    const textarea = screen.getByRole('textbox');
+    fireEvent.change(textarea, { target: { value: 'Updated Content' } });
+
+    // Press Shift+Enter key
+    fireEvent.keyDown(textarea, { key: 'Enter', code: 'Enter', shiftKey: true });
+
+    // Assertions - should not call updateCard
+    expect(updateCard).not.toHaveBeenCalled();
+
+    // Should still be in edit mode
+    expect(screen.getByRole('textbox')).toBeInTheDocument();
+  });
+
   // 4. Firestore Integration (Mocked) - Covered by interaction tests calling mocked service functions
 
   // 5. Edge Cases

@@ -47,6 +47,14 @@ export default function Card({ provided, card, isOwner }: CardProps) {
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // If Enter is pressed without Shift key, save the card
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault(); // Prevent default to avoid adding a new line
+      handleSave();
+    }
+  };
+
   const handleEdit = () => {
     if (cardRef.current) {
       const height = cardRef.current.clientHeight;
@@ -82,6 +90,7 @@ export default function Card({ provided, card, isOwner }: CardProps) {
           <textarea
             value={content}
             onChange={e => setContent(e.target.value)}
+            onKeyDown={handleKeyDown}
             className="w-full h-[calc(100%-40px)] rounded border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm p-2 resize-none"
             autoFocus
           />
