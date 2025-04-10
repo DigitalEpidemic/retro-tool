@@ -1,7 +1,41 @@
 import { Timestamp } from 'firebase/firestore';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import * as boardService from './boardService';
 import { Board } from './firebase';
+
+interface MockDoc {
+  id?: string;
+  data?: () => { [key: string]: unknown };
+  exists?: () => boolean;
+  forEach?: (fn: (doc: CardDoc) => void) => void;
+}
+
+interface BatchUpdate {
+  update: ReturnType<typeof vi.fn>;
+  commit: () => Promise<void>;
+  set: ReturnType<typeof vi.fn>;
+  delete: ReturnType<typeof vi.fn>;
+}
+
+interface TimerUpdate {
+  timerPausedDurationSeconds: number;
+}
+
+type CardDoc = {
+  id: string;
+  ref?: { id: string };
+  data: () => { content: string; boardId: string; columnId: string; position: number };
+};
+
+interface DeleteBoardData {
+  facilitatorId: string;
+  name: string;
+}
+
+interface BoardSnapshot {
+  exists: ReturnType<typeof vi.fn>;
+  data: ReturnType<typeof vi.fn>;
+}
 
 // Mock Firebase
 vi.mock('./firebase', () => ({
@@ -13,9 +47,11 @@ vi.mock('./firebase', () => ({
 // Mock Firestore
 const mockDoc = vi.fn(() => ({}));
 const mockCollection = vi.fn(() => ({}));
-const mockAddDoc = vi.fn(() => Promise.resolve({ id: 'mock-doc-id' }));
+const mockAddDoc = vi.fn().mockImplementation(() => Promise.resolve({ id: 'mock-doc-id' }));
 const mockSetDoc = vi.fn(() => Promise.resolve());
-const mockUpdateDoc = vi.fn(() => Promise.resolve());
+const mockUpdateDoc = vi.fn(() => Promise.resolve()) as Mock<
+  (ref: unknown, data: TimerUpdate) => Promise<void>
+>;
 const mockDeleteDoc = vi.fn(() => Promise.resolve());
 const mockQuery = vi.fn(() => ({}));
 const mockWhere = vi.fn(() => ({}));
@@ -28,18 +64,18 @@ const mockWriteBatch = vi.fn();
 
 vi.mock('firebase/firestore', () => {
   return {
-    doc: (...args: any[]) => mockDoc(...args),
-    collection: (...args: any[]) => mockCollection(...args),
-    addDoc: (...args: any[]) => mockAddDoc(...args),
-    setDoc: (...args: any[]) => mockSetDoc(...args),
-    updateDoc: (...args: any[]) => mockUpdateDoc(...args),
-    deleteDoc: (...args: any[]) => mockDeleteDoc(...args),
-    query: (...args: any[]) => mockQuery(...args),
-    where: (...args: any[]) => mockWhere(...args),
-    onSnapshot: (...args: any[]) => mockOnSnapshot(...args),
-    getDocs: (...args: any[]) => mockGetDocs(...args),
-    getDoc: (...args: any[]) => mockGetDoc(...args),
-    writeBatch: (...args: any[]) => mockWriteBatch(...args),
+    doc: (...args: Parameters<typeof mockDoc>) => mockDoc(...args),
+    collection: (...args: Parameters<typeof mockCollection>) => mockCollection(...args),
+    addDoc: (...args: Parameters<typeof mockAddDoc>) => mockAddDoc(...args),
+    setDoc: (...args: Parameters<typeof mockSetDoc>) => mockSetDoc(...args),
+    updateDoc: (...args: Parameters<typeof mockUpdateDoc>) => mockUpdateDoc(...args),
+    deleteDoc: (...args: Parameters<typeof mockDeleteDoc>) => mockDeleteDoc(...args),
+    query: (...args: Parameters<typeof mockQuery>) => mockQuery(...args),
+    where: (...args: Parameters<typeof mockWhere>) => mockWhere(...args),
+    onSnapshot: (...args: Parameters<typeof mockOnSnapshot>) => mockOnSnapshot(...args),
+    getDocs: (...args: Parameters<typeof mockGetDocs>) => mockGetDocs(...args),
+    getDoc: (...args: Parameters<typeof mockGetDoc>) => mockGetDoc(...args),
+    writeBatch: (...args: Parameters<typeof mockWriteBatch>) => mockWriteBatch(...args),
     serverTimestamp: () => mockServerTimestamp(),
     increment: (val: number) => mockIncrement(val),
     Timestamp: {
@@ -58,8 +94,8 @@ vi.mock('firebase/firestore', () => {
 });
 
 describe('boardService', () => {
-  let onSnapshotCallback: Function;
-  let batchUpdateMock: any;
+  let onSnapshotCallback: (doc: MockDoc) => void;
+  let batchUpdateMock: BatchUpdate;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -112,15 +148,27 @@ describe('boardService', () => {
     });
 
     it('should create a board with default columns', async () => {
-      await boardService.createBoard('Test Board');
-
-      const boardData = mockAddDoc.mock.calls[0][1];
-
-      expect(boardData.columns).toEqual({
-        col1: { id: 'col1', title: 'What went well', order: 0 },
-        col2: { id: 'col2', title: 'What can be improved', order: 1 },
-        col3: { id: 'col3', title: 'Action items', order: 2 },
+      // Instead of accessing mock.calls directly, set up expectations
+      mockAddDoc.mockImplementation((ref, data) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { columns } = data;
+        // This will be checked by the expect statements below
+        return Promise.resolve({ id: 'mock-doc-id' });
       });
+      
+      await boardService.createBoard('Test Board');
+      
+      // Test that mockAddDoc was called with correct columns data
+      expect(mockAddDoc).toHaveBeenCalledWith(
+        {},
+        expect.objectContaining({
+          columns: {
+            col1: { id: 'col1', title: 'What went well', order: 0 },
+            col2: { id: 'col2', title: 'What can be improved', order: 1 },
+            col3: { id: 'col3', title: 'Action items', order: 2 },
+          }
+        })
+      );
     });
   });
 
@@ -229,7 +277,7 @@ describe('boardService', () => {
 
       // Trigger the onSnapshot callback
       onSnapshotCallback({
-        forEach: (fn: (doc: any) => void) => cardsData.forEach(fn),
+        forEach: (fn: (doc: CardDoc) => void) => cardsData.forEach(fn),
       });
 
       expect(callback).toHaveBeenCalledTimes(1);
@@ -293,14 +341,14 @@ describe('boardService', () => {
 
       // Mock cards in the column
       const cards = [
-        { id: 'card1', columnId, position: 1000, boardId },
-        { id: cardId, columnId, position: 2000, boardId },
-        { id: 'card3', columnId, position: 3000, boardId },
-        { id: 'card4', columnId, position: 4000, boardId },
+        { id: 'card1', columnId, position: 1000, boardId, content: '' },
+        { id: cardId, columnId, position: 2000, boardId, content: '' },
+        { id: 'card3', columnId, position: 3000, boardId, content: '' },
+        { id: 'card4', columnId, position: 4000, boardId, content: '' },
       ];
 
       mockGetDocs.mockResolvedValueOnce({
-        forEach: (fn: (doc: any) => void) => {
+        forEach: (fn: (doc: CardDoc) => void) => {
           cards.forEach(card => {
             fn({
               id: card.id,
@@ -334,15 +382,15 @@ describe('boardService', () => {
 
       // Mock cards in both columns
       const cards = [
-        { id: 'card1', columnId: sourceColumnId, position: 1000, boardId },
-        { id: cardId, columnId: sourceColumnId, position: 2000, boardId },
-        { id: 'card3', columnId: sourceColumnId, position: 3000, boardId },
-        { id: 'card4', columnId: destColumnId, position: 1000, boardId },
-        { id: 'card5', columnId: destColumnId, position: 2000, boardId },
+        { id: 'card1', columnId: sourceColumnId, position: 1000, boardId, content: '' },
+        { id: cardId, columnId: sourceColumnId, position: 2000, boardId, content: '' },
+        { id: 'card3', columnId: sourceColumnId, position: 3000, boardId, content: '' },
+        { id: 'card4', columnId: destColumnId, position: 1000, boardId, content: '' },
+        { id: 'card5', columnId: destColumnId, position: 2000, boardId, content: '' },
       ];
 
       mockGetDocs.mockResolvedValueOnce({
-        forEach: (fn: (doc: any) => void) => {
+        forEach: (fn: (doc: CardDoc) => void) => {
           cards.forEach(card => {
             fn({
               id: card.id,
@@ -401,12 +449,12 @@ describe('boardService', () => {
 
       // Mock cards without the target card
       const cards = [
-        { id: 'card1', columnId, position: 1000, boardId },
-        { id: 'card2', columnId, position: 2000, boardId },
+        { id: 'card1', columnId, position: 1000, boardId, content: '' },
+        { id: 'card2', columnId, position: 2000, boardId, content: '' },
       ];
 
       mockGetDocs.mockResolvedValueOnce({
-        forEach: (fn: (doc: any) => void) => {
+        forEach: (fn: (doc: CardDoc) => void) => {
           cards.forEach(card => {
             fn({
               id: card.id,
@@ -548,9 +596,10 @@ describe('boardService', () => {
       );
 
       // Get the actual value sent to Firestore
-      const updateArgs = mockUpdateDoc.mock.calls[0][1];
-      expect(updateArgs.timerPausedDurationSeconds).toBeGreaterThanOrEqual(269);
-      expect(updateArgs.timerPausedDurationSeconds).toBeLessThanOrEqual(271);
+      const updateArgs = mockUpdateDoc.mock.calls[0]?.[1];
+      expect(updateArgs).toBeDefined();
+      expect(updateArgs?.timerPausedDurationSeconds).toBeGreaterThanOrEqual(269);
+      expect(updateArgs?.timerPausedDurationSeconds).toBeLessThanOrEqual(271);
     });
 
     it('should handle invalid timer state gracefully', async () => {
@@ -634,8 +683,8 @@ describe('boardService', () => {
   });
 
   describe('deleteBoard', () => {
-    let mockBoardData: any;
-    let mockBoardSnap: any;
+    let mockBoardData: DeleteBoardData;
+    let mockBoardSnap: BoardSnapshot;
 
     beforeEach(() => {
       mockBoardData = {
@@ -650,33 +699,25 @@ describe('boardService', () => {
 
       mockDoc.mockReturnValue({ id: 'board-id' });
       mockGetDocs.mockImplementation(() => {
-        // Check the latest mockQuery call to determine which query is being executed
-        if (
-          mockCollection.mock.calls.length > 0 &&
-          mockCollection.mock.calls[mockCollection.mock.calls.length - 1][1] === 'cards'
-        ) {
-          // This is a cards query
-          return Promise.resolve({
-            size: 2,
-            docs: [
-              { id: 'card1', ref: { id: 'card1' } },
-              { id: 'card2', ref: { id: 'card2' } },
-            ],
-            forEach: fn => {
-              fn({ id: 'card1', ref: { id: 'card1' } });
-              fn({ id: 'card2', ref: { id: 'card2' } });
-            },
-          });
-        } else {
-          // This is a users query
-          return Promise.resolve({
-            size: 1,
-            docs: [{ id: 'user1', ref: { id: 'user1' } }],
-            forEach: fn => {
-              fn({ id: 'user1', ref: { id: 'user1' } });
-            },
-          });
-        }
+        return Promise.resolve({
+          size: 2,
+          docs: [
+            { id: 'card1', ref: { id: 'card1' } },
+            { id: 'card2', ref: { id: 'card2' } },
+          ],
+          forEach: (fn: (doc: CardDoc) => void) => {
+            fn({
+              id: 'card1',
+              ref: { id: 'card1' },
+              data: () => ({ content: '', boardId: '', columnId: '', position: 0 }),
+            });
+            fn({
+              id: 'card2',
+              ref: { id: 'card2' },
+              data: () => ({ content: '', boardId: '', columnId: '', position: 0 }),
+            });
+          },
+        });
       });
     });
 

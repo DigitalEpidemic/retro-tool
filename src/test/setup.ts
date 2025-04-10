@@ -20,7 +20,13 @@ vi.mock('../services/firebase', () => {
 vi.mock('react-beautiful-dnd', () => {
   return {
     DragDropContext: ({ children }: { children: React.ReactNode }) => children,
-    Droppable: ({ children }: any) =>
+    Droppable: ({ children }: { 
+      children: (provided: {
+        droppableProps: Record<string, string>;
+        innerRef: ReturnType<typeof vi.fn>;
+        placeholder: null;
+      }) => React.ReactNode 
+    }) =>
       children({
         droppableProps: {
           'data-rbd-droppable-id': 'test-droppable-id',
@@ -29,7 +35,13 @@ vi.mock('react-beautiful-dnd', () => {
         innerRef: vi.fn(),
         placeholder: null,
       }),
-    Draggable: ({ children }: any) =>
+    Draggable: ({ children }: { 
+      children: (provided: {
+        draggableProps: Record<string, string>;
+        innerRef: ReturnType<typeof vi.fn>;
+        dragHandleProps: Record<string, string>;
+      }) => React.ReactNode 
+    }) =>
       children({
         draggableProps: {
           'data-rbd-draggable-id': 'test-draggable-id',

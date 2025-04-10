@@ -71,7 +71,7 @@ window['__react-beautiful-dnd-disable-dev-warnings'] = true;
 
 // Suppress console errors during tests
 const originalConsoleError = console.error;
-console.error = (...args: any[]) => {
+console.error = (...args: unknown[]) => {
   // Ignore certain errors that are expected in test environment
   const ignoredErrors = [
     'Error: Not implemented: navigation',
