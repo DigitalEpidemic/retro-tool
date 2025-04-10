@@ -149,9 +149,7 @@ describe('boardService', () => {
 
     it('should create a board with default columns', async () => {
       // Instead of accessing mock.calls directly, set up expectations
-      mockAddDoc.mockImplementation((ref, data) => {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { columns } = data;
+      mockAddDoc.mockImplementation(() => {
         // This will be checked by the expect statements below
         return Promise.resolve({ id: 'mock-doc-id' });
       });
