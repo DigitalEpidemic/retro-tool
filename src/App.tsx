@@ -26,7 +26,7 @@ function Home() {
 
   // Set initial username from Firebase user when available
   useEffect(() => {
-    if (user && user.displayName) {
+    if (user?.displayName) {
       setUsername(user.displayName);
     }
   }, [user]);

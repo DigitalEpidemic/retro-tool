@@ -5,7 +5,7 @@ import { Board } from './firebase';
 
 interface MockDoc {
   id?: string;
-  data?: () => { [key: string]: unknown };
+  data?: () => Record<string, unknown>;
   exists?: () => boolean;
   forEach?: (fn: (doc: CardDoc) => void) => void;
 }
@@ -21,11 +21,11 @@ interface TimerUpdate {
   timerPausedDurationSeconds: number;
 }
 
-type CardDoc = {
+interface CardDoc {
   id: string;
   ref?: { id: string };
   data: () => { content: string; boardId: string; columnId: string; position: number };
-};
+}
 
 interface DeleteBoardData {
   facilitatorId: string;
@@ -40,8 +40,12 @@ interface BoardSnapshot {
 // Mock Firebase
 vi.mock('./firebase', () => ({
   db: {},
-  Board: class {},
-  Card: class {},
+  Board: function Board() {
+    return {};
+  },
+  Card: function Card() {
+    return {};
+  },
 }));
 
 // Mock Firestore

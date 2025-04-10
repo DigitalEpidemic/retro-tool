@@ -130,10 +130,8 @@ vi.mock('../Column', () => ({
   default: props => (
     <div data-testid={`column-${props.id}`} data-title={props.title}>
       <div>Column: {props.title}</div>
-      <div>Cards: {props.cards?.length || 0}</div>
-      <button onClick={() => props.onCardAdd && props.onCardAdd(props.id, 'New Card')}>
-        Add Card
-      </button>
+      <div>Cards: {props.cards?.length ?? 0}</div>
+      <button onClick={() => props.onCardAdd?.(props.id, 'New Card')}>Add Card</button>
     </div>
   ),
 }));
@@ -141,13 +139,13 @@ vi.mock('../Column', () => ({
 interface ParticipantsPanelProps {
   isOpen: boolean;
   onClose: () => void;
-  participants: Array<{
+  participants: {
     id: string;
     name: string;
     color: string;
     boardId: string;
     lastOnline: number;
-  }>;
+  }[];
   currentUserId: string;
   onUpdateName: (userId: string, newName: string) => void;
   onUpdateColor: (userId: string, newColor: string) => void;
@@ -229,7 +227,7 @@ vi.mock('../Board', async importOriginal => {
     React.useEffect(() => {
       // Mock the behavior in the component useEffect
       presenceService.setupPresence(
-        props.match?.params?.boardId || 'test-board-id',
+        props.match?.params?.boardId ?? 'test-board-id',
         'Current User'
       );
 

@@ -2,7 +2,6 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { Timestamp, updateDoc } from 'firebase/firestore';
-import React from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useFirebase } from '../../contexts/useFirebase';
@@ -17,7 +16,7 @@ const createMockDocSnap = (exists = true, data: Record<string, unknown> = {}) =>
 });
 
 const createMockTimestamp = (milliseconds?: number) => {
-  const timestamp = milliseconds || Date.now();
+  const timestamp = milliseconds ?? Date.now();
   return {
     seconds: Math.floor(timestamp / 1000),
     nanoseconds: (timestamp % 1000) * 1000000,

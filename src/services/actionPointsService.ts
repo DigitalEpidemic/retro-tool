@@ -27,7 +27,7 @@ export const addActionPoint = async (boardId: string, text: string): Promise<Act
 
     // Get the current action points
     const boardData = boardSnap.data();
-    const currentActionPoints = boardData.actionPoints || [];
+    const currentActionPoints = boardData.actionPoints ?? [];
 
     // Add the new action point to the array
     const updatedActionPoints = [...currentActionPoints, newActionPoint];
@@ -60,7 +60,7 @@ export const toggleActionPoint = async (boardId: string, actionPointId: string):
     }
 
     const boardData = boardSnap.data();
-    const actionPoints = boardData.actionPoints || [];
+    const actionPoints = boardData.actionPoints ?? [];
 
     // Find the action point to toggle
     const actionPointIndex = actionPoints.findIndex((ap: ActionPoint) => ap.id === actionPointId);
@@ -104,7 +104,7 @@ export const deleteActionPoint = async (boardId: string, actionPointId: string):
     }
 
     const boardData = boardSnap.data();
-    const actionPoints = boardData.actionPoints || [];
+    const actionPoints = boardData.actionPoints ?? [];
 
     // Filter out the action point to delete
     const updatedActionPoints = actionPoints.filter((ap: ActionPoint) => ap.id !== actionPointId);
@@ -142,7 +142,7 @@ export const getActionPoints = async (boardId: string): Promise<ActionPoint[]> =
     const boardData = boardSnap.data();
 
     // Return the action points array, or an empty array if none exist
-    return boardData.actionPoints || [];
+    return boardData.actionPoints ?? [];
   } catch (error) {
     console.error('Error getting action points:', error);
     throw error;

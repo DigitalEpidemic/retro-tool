@@ -38,7 +38,7 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
             displayName:
               userDoc.exists() && userDoc.data()?.name
                 ? userDoc.data().name
-                : firebaseUser.displayName || 'Anonymous User',
+                : (firebaseUser.displayName ?? 'Anonymous User'),
           } as ExtendedUser;
 
           setUser(extendedUser);

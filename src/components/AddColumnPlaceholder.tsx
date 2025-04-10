@@ -31,7 +31,7 @@ export default function AddColumnPlaceholder({
         setIsAddingColumn(false);
         if (onColumnAdded) onColumnAdded();
       } else {
-        setError(result.error || 'Failed to add column');
+        setError(result.error ?? 'Failed to add column');
       }
     } catch (err) {
       setError('An unexpected error occurred');

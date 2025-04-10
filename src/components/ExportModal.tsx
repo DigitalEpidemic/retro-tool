@@ -62,7 +62,7 @@ export default function ExportModal({ isOpen, onClose, board, cards }: ExportMod
     // Add action points section
     markdownContent += `## Action Points\n\n`;
 
-    const actionPoints = board.actionPoints || [];
+    const actionPoints = board.actionPoints ?? [];
 
     if (actionPoints.length === 0) {
       markdownContent += '_No action points_\n\n';

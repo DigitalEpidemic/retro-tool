@@ -206,7 +206,7 @@ describe('Column', () => {
       mockColumnId,
       'A valid card content', // Content should be trimmed
       mockUser.uid,
-      mockUser.displayName || 'Anonymous User', // Include displayName parameter
+      mockUser.displayName ?? 'Anonymous User', // Include displayName parameter
       'bg-blue-100' // Include the color parameter
     );
 
@@ -527,7 +527,7 @@ describe('Column', () => {
       mockColumnId,
       'New card via Enter key',
       mockUser.uid,
-      mockUser.displayName || 'Anonymous User',
+      mockUser.displayName ?? 'Anonymous User',
       'bg-blue-100' // Default light blue color
     );
 

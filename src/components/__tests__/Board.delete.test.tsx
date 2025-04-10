@@ -28,7 +28,7 @@ const createMockDocSnap = (exists = true, data: Record<string, unknown> = {}) =>
 });
 
 const createMockTimestamp = (milliseconds?: number) => {
-  const timestamp = milliseconds || Date.now();
+  const timestamp = milliseconds ?? Date.now();
   return {
     seconds: Math.floor(timestamp / 1000),
     nanoseconds: (timestamp % 1000) * 1000000,

@@ -169,7 +169,7 @@ export default function Board() {
           const joinResult = await joinBoard(
             boardId,
             user.uid,
-            user.displayName || 'Anonymous User'
+            user.displayName ?? 'Anonymous User'
           );
 
           // If join was successful and we have a name that's different from the current user's displayName,
@@ -185,7 +185,7 @@ export default function Board() {
             cleanupPresence = await setupPresence(boardId, joinResult.name);
           } else {
             // Setup real-time presence tracking with the current display name
-            cleanupPresence = await setupPresence(boardId, user.displayName || 'Anonymous User');
+            cleanupPresence = await setupPresence(boardId, user.displayName ?? 'Anonymous User');
           }
 
           // No need to update localStorage - we'll rely on Firestore for color preference
@@ -828,7 +828,7 @@ export default function Board() {
         destinationColumnId,
         destinationIndex,
         sourceColumnId,
-        boardId!
+        boardId
       );
     } catch (error) {
       console.error('Error updating card position:', error);
@@ -1079,7 +1079,7 @@ export default function Board() {
       <ShareModal
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
-        boardId={boardId || ''}
+        boardId={boardId ?? ''}
       />
 
       {/* Use the participants panel */}
@@ -1087,7 +1087,7 @@ export default function Board() {
         isOpen={isPanelOpen}
         onClose={() => setIsPanelOpen(false)}
         participants={participants}
-        currentUserId={user?.uid || ''}
+        currentUserId={user?.uid ?? ''}
         onUpdateName={handleUpdateParticipantName}
         onUpdateColor={handleUpdateParticipantColor}
       />
@@ -1137,13 +1137,13 @@ export default function Board() {
                   <Column
                     id={column.id}
                     title={column.title}
-                    boardId={boardId!}
+                    boardId={boardId}
                     sortByVotes={columnSortStates[column.id] || false}
                     isBoardOwner={board.facilitatorId === user?.uid}
                     onSortToggle={async () => {
                       const newSortState = !columnSortStates[column.id];
                       try {
-                        await updateColumnSortState(boardId!, column.id, newSortState);
+                        await updateColumnSortState(boardId, column.id, newSortState);
                         setColumnSortStates(prev => ({
                           ...prev,
                           [column.id]: newSortState,
@@ -1189,7 +1189,7 @@ export default function Board() {
             {/* Add Column Placeholder - only visible to board owner and when showAddColumnPlaceholder is true */}
             {board.facilitatorId === user?.uid && showAddColumnPlaceholder && (
               <AddColumnPlaceholder
-                boardId={boardId!}
+                boardId={boardId}
                 onColumnAdded={() => {
                   // Optional callback when a new column is added
                   // Could refresh data or show notification

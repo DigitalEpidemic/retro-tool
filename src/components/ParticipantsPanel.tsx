@@ -92,7 +92,7 @@ const ParticipantsPanel = memo(
     if (!isOpen) return null;
 
     // Filter out any invalid participants (shouldn't happen, but just in case)
-    const validParticipants = participants.filter(p => p && p.id && p.name);
+    const validParticipants = participants.filter(p => p?.id && p.name);
 
     return (
       <div

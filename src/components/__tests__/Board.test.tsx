@@ -33,7 +33,7 @@ const createMockDocSnap = (
 });
 
 const createMockTimestamp = (milliseconds?: number) => {
-  const timestamp = milliseconds || Date.now();
+  const timestamp = milliseconds ?? Date.now();
   return {
     seconds: Math.floor(timestamp / 1000),
     nanoseconds: (timestamp % 1000) * 1000000,
@@ -145,7 +145,7 @@ vi.mock('../AddColumnPlaceholder', () => ({
 
 vi.mock('../../services/boardService', () => {
   return {
-    subscribeToBoard: vi.fn((boardId, callback) => {
+    subscribeToBoard: vi.fn((_boardId, callback) => {
       setTimeout(() => {
         callback({
           id: 'test-board-id',
@@ -188,7 +188,7 @@ vi.mock('../../services/boardService', () => {
 
       return vi.fn();
     }),
-    subscribeToCards: vi.fn((boardId, callback) => {
+    subscribeToCards: vi.fn((_boardId, callback) => {
       setTimeout(() => {
         callback([
           {
@@ -302,7 +302,7 @@ vi.mock('../Card', () => ({
     const cardId = (card as { id: string }).id;
     const cardContent = (card as { content: string }).content;
     const draggableProps =
-      (provided as { draggableProps?: Record<string, unknown> })?.draggableProps || {};
+      (provided as { draggableProps?: Record<string, unknown> })?.draggableProps ?? {};
 
     return (
       <div data-testid={`card-${cardId}`} data-card-data={JSON.stringify(card)} {...draggableProps}>
@@ -401,7 +401,7 @@ vi.mock('../../services/presenceService', () => {
       return cleanupFn; // Just return the function directly
     }),
 
-    subscribeToParticipants: vi.fn((boardId, callback) => {
+    subscribeToParticipants: vi.fn((_boardId, callback) => {
       setTimeout(() => {
         callback([
           {
@@ -470,14 +470,14 @@ describe('Board', () => {
       error: null,
     });
 
-    vi.mocked(boardService.subscribeToBoard).mockImplementation((boardId, callback) => {
+    vi.mocked(boardService.subscribeToBoard).mockImplementation((_boardId, callback) => {
       act(() => {
         callback(mockBoard);
       });
       return vi.fn();
     });
 
-    vi.mocked(boardService.subscribeToCards).mockImplementation((boardId, callback) => {
+    vi.mocked(boardService.subscribeToCards).mockImplementation((_boardId, callback) => {
       act(() => {
         callback(mockCards);
       });
@@ -1039,7 +1039,7 @@ describe('Board', () => {
 
     vi.mocked(boardService.updateCardPosition).mockResolvedValue();
 
-    vi.mocked(boardService.subscribeToBoard).mockImplementation((boardId, callback) => {
+    vi.mocked(boardService.subscribeToBoard).mockImplementation((_boardId, callback) => {
       setTimeout(() => {
         callback({
           id: 'test-board-id',
@@ -1078,7 +1078,7 @@ describe('Board', () => {
       return vi.fn();
     });
 
-    vi.mocked(boardService.subscribeToCards).mockImplementation((boardId, callback) => {
+    vi.mocked(boardService.subscribeToCards).mockImplementation((_boardId, callback) => {
       setTimeout(() => {
         callback([
           {
@@ -1195,7 +1195,7 @@ describe('Board', () => {
     // Mock board subscription to return a board with a matching facilitatorId and showAddColumnPlaceholder enabled
     const mockUnsubscribe = vi.fn();
 
-    vi.spyOn(boardService, 'subscribeToBoard').mockImplementation((boardId, callback) => {
+    vi.spyOn(boardService, 'subscribeToBoard').mockImplementation((_boardId, callback) => {
       setTimeout(() => {
         callback({
           id: 'test-board-id',

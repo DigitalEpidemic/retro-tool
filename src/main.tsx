@@ -5,7 +5,9 @@ import App from './App.tsx';
 import { FirebaseProvider } from './contexts/FirebaseContext.tsx'; // Import the provider
 import './index.css';
 
-createRoot(document.getElementById('root')!).render(
+const rootElement = document.getElementById('root');
+if (!rootElement) throw new Error('Failed to find the root element');
+createRoot(rootElement).render(
   <StrictMode>
     <BrowserRouter>
       {' '}

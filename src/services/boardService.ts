@@ -35,7 +35,7 @@ export const createBoard = async (
     createdAt: serverTimestamp(),
     isActive: true,
     columns,
-    facilitatorId: creatorId || null, // Store creator if provided
+    facilitatorId: creatorId ?? null, // Store creator if provided
     showAddColumnPlaceholder: false, // Default to hiding the add column placeholder
   };
 
@@ -95,7 +95,7 @@ export const addCard = async (
   columnId: string,
   content: string,
   authorId: string,
-  authorName: string = 'Anonymous',
+  authorName = 'Anonymous',
   authorColor?: string // Tailwind class name (e.g., 'bg-red-200')
 ) => {
   const cardData = {
@@ -283,7 +283,7 @@ export const pauseTimer = async (
 };
 
 // Reset the timer for a board
-export const resetTimer = async (boardId: string, initialDuration: number = 300) => {
+export const resetTimer = async (boardId: string, initialDuration = 300) => {
   const boardRef = doc(db, 'boards', boardId);
 
   // Just use the provided initialDuration directly
@@ -333,10 +333,10 @@ export const subscribeToBoardParticipants = (
           const data = doc.data();
           const user = {
             id: doc.id,
-            name: data.name || 'Anonymous',
-            color: data.color || 'bg-blue-200',
-            boardId: data.boardId || boardId,
-            lastActive: data.lastActive || null,
+            name: data.name ?? 'Anonymous',
+            color: data.color ?? 'bg-blue-200',
+            boardId: data.boardId ?? boardId,
+            lastActive: data.lastActive ?? null,
             isViewingPage: data.isViewingPage !== false, // Default to true if not set
           } as User;
 
@@ -345,7 +345,7 @@ export const subscribeToBoardParticipants = (
           // 2. They had activity in the last 20 seconds (for backwards compatibility)
           const lastActive = user.lastActive ? user.lastActive.toMillis() : 0;
           const recentlyActive = now - lastActive < inactiveThreshold;
-          const isActive = user.isViewingPage || recentlyActive;
+          const isActive = user.isViewingPage ?? recentlyActive;
 
           // Only include active users
           if (isActive) {
@@ -411,11 +411,7 @@ export const updateParticipantName = async (userId: string, newName: string) => 
 };
 
 // Join a board (create or update participant)
-export const joinBoard = async (
-  boardId: string,
-  userId: string,
-  userName: string = 'Anonymous User'
-) => {
+export const joinBoard = async (boardId: string, userId: string, userName = 'Anonymous User') => {
   try {
     // Check if user document exists
     const userRef = doc(db, 'users', userId);
@@ -652,8 +648,7 @@ export const deleteColumn = async (boardId: string, columnId: string) => {
     const columns = boardData.columns || {};
 
     // Create a new columns object without the deleted column
-    const updatedColumns = { ...columns };
-    delete updatedColumns[columnId];
+    const { [columnId]: deletedColumn, ...updatedColumns } = columns;
 
     // 3. Update the board document with the modified columns
     await updateDoc(boardRef, {

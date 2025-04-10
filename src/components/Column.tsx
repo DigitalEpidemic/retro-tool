@@ -82,7 +82,7 @@ export default function Column({
         id,
         newCardContent.trim(),
         user.uid,
-        user.displayName || 'Anonymous User',
+        user.displayName ?? 'Anonymous User',
         userColor
       );
       setNewCardContent(''); // Clear input after adding

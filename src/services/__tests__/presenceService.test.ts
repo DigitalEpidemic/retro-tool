@@ -220,13 +220,13 @@ describe('presenceService', () => {
   describe('subscribeToParticipants', () => {
     it('should subscribe to participants for a board', () => {
       const mockCallback = vi.fn();
-      type MockSnapshotData = {
+      interface MockSnapshotData {
         id: string;
         name: string;
         color: string;
         boardId: string;
         lastOnline: number;
-      };
+      }
 
       const mockSnapshot = {
         exists: () => true,
