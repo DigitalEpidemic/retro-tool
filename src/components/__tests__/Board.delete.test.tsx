@@ -4,6 +4,7 @@ import { Timestamp } from 'firebase/firestore';
 import React from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { useFirebase } from '../../contexts/useFirebase';
 import * as boardService from '../../services/boardService';
 import type { Board as BoardType } from '../../services/firebase';
 import * as presenceService from '../../services/presenceService';
@@ -18,9 +19,6 @@ vi.mock('../../contexts/useFirebase', () => ({
     updateUserDisplayName: vi.fn(),
   }),
 }));
-
-// Import the mocked useFirebase to control its behavior in tests
-import { useFirebase } from '../../contexts/useFirebase';
 
 // Mock helper functions
 const createMockDocSnap = (exists = true, data: Record<string, unknown> = {}) => ({
