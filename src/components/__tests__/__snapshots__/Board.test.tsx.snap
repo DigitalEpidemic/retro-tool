@@ -12,7 +12,9 @@ exports[`Board > creates a snapshot of the component 1`] = `
         class="flex items-center space-x-3"
       >
         <h1
-          class="text-lg font-semibold text-gray-800"
+          class="text-lg font-semibold text-gray-800 "
+          data-testid="board-name"
+          title=""
         >
           Test Board
         </h1>

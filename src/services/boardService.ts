@@ -820,3 +820,20 @@ export const updateUserCardsColor = async (
     };
   }
 };
+
+// Update board name in Firestore
+export const updateBoardName = async (boardId: string, newName: string) => {
+  try {
+    const boardRef = doc(db, 'boards', boardId);
+    await updateDoc(boardRef, {
+      name: newName,
+    });
+    return { success: true };
+  } catch (error) {
+    console.error('Error updating board name:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+};

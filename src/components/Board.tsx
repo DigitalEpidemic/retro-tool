@@ -1,4 +1,12 @@
-import { ChangeEvent, FocusEvent, KeyboardEvent, useEffect, useRef, useState } from 'react'; // Remove memo import
+import {
+  ChangeEvent,
+  FocusEvent,
+  KeyboardEvent,
+  useEffect,
+  useRef,
+  useState,
+  useMemo,
+} from 'react'; // Remove memo import
 import { useNavigate, useParams } from 'react-router-dom';
 // Use @hello-pangea/dnd instead of react-beautiful-dnd
 import { DragDropContext, Draggable, Droppable, DropResult } from '@hello-pangea/dnd';
@@ -12,6 +20,7 @@ import {
   Share2,
   TrendingUp,
   Users,
+  Edit2,
 } from 'lucide-react';
 import { useFirebase } from '../contexts/useFirebase';
 import {
@@ -33,6 +42,7 @@ import {
   updateParticipantName as updateParticipantNameFirestore,
   updateShowAddColumnPlaceholder,
   updateUserCardsColor,
+  updateBoardName,
 } from '../services/boardService';
 import { Board as BoardType, Card as CardType, db } from '../services/firebase';
 import ActionPointsPanel, { ActionPoint } from './ActionPointsPanel'; // Import ActionPointsPanel
@@ -85,6 +95,12 @@ export default function Board() {
 
   // Track if user's cards have been updated with the current color
   const cardColorsUpdatedRef = useRef(false);
+
+  // Board name editing states
+  const [isEditingBoardName, setIsEditingBoardName] = useState(false);
+  const [editableBoardName, setEditableBoardName] = useState('');
+  const boardNameInputRef = useRef<HTMLInputElement>(null);
+  const boardNameEscapePressedRef = useRef(false);
 
   useEffect(() => {
     // Don't proceed if auth is still loading or if there's no boardId
@@ -371,6 +387,13 @@ export default function Board() {
     board?.timerPausedDurationSeconds,
     boardId,
   ]); // Re-run when timer state changes in Firestore
+
+  // Update editableBoardName when board data changes
+  useEffect(() => {
+    if (board) {
+      setEditableBoardName(board.name ?? 'Unnamed Board');
+    }
+  }, [board, board?.name]);
 
   // Helper function to format time
   const formatTime = (totalSeconds: number | null): string => {
@@ -917,6 +940,89 @@ export default function Board() {
     }
   };
 
+  // Check if the current user is the board owner/facilitator
+  const isBoardOwner = useMemo(() => {
+    return board?.facilitatorId === user?.uid;
+  }, [board?.facilitatorId, user?.uid]);
+
+  // Handle board name click to start editing
+  const handleBoardNameClick = () => {
+    if (isBoardOwner && !isEditingBoardName) {
+      setIsEditingBoardName(true);
+    }
+  };
+
+  // Add effect to select all text when editing starts
+  useEffect(() => {
+    if (isEditingBoardName && boardNameInputRef.current) {
+      // Focus and select all text after the input is rendered
+      setTimeout(() => {
+        if (boardNameInputRef.current) {
+          boardNameInputRef.current.select();
+        }
+      }, 10);
+    }
+  }, [isEditingBoardName]);
+
+  // Handle saving board name
+  const handleSaveBoardName = async () => {
+    if (!boardId || !isBoardOwner) return;
+
+    const trimmedName = editableBoardName.trim();
+    if (!trimmedName) {
+      // Don't allow empty names, revert to previous name or default
+      setEditableBoardName(board?.name ?? 'Unnamed Board');
+      setIsEditingBoardName(false);
+      return;
+    }
+
+    // Only save if the name has changed
+    if (trimmedName !== board?.name) {
+      try {
+        const result = await updateBoardName(boardId, trimmedName);
+        if (!result.success) {
+          // Revert to original name if update failed
+          setEditableBoardName(board?.name ?? 'Unnamed Board');
+          console.error('Failed to update board name:', result.error);
+        }
+      } catch (error) {
+        console.error('Error updating board name:', error);
+        setEditableBoardName(board?.name ?? 'Unnamed Board'); // Revert on error
+      }
+    }
+
+    setIsEditingBoardName(false);
+  };
+
+  // Handle input change
+  const handleBoardNameInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setEditableBoardName(e.target.value);
+  };
+
+  // Handle key press in input
+  const handleBoardNameInputKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSaveBoardName();
+    } else if (e.key === 'Escape') {
+      boardNameEscapePressedRef.current = true;
+      setEditableBoardName(board?.name ?? 'Unnamed Board'); // Revert to original name
+      setIsEditingBoardName(false);
+      boardNameInputRef.current?.blur();
+    }
+  };
+
+  // Handle input blur
+  const handleBoardNameInputBlur = () => {
+    // If blur was triggered by Escape key, reset the flag and do nothing else
+    if (boardNameEscapePressedRef.current) {
+      boardNameEscapePressedRef.current = false;
+      return;
+    }
+
+    handleSaveBoardName();
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -984,9 +1090,31 @@ export default function Board() {
           {/* Top Board Header */}
           <div className="px-6 py-3 border-b border-gray-200 bg-white flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <h1 className="text-lg font-semibold text-gray-800">
-                {board.name || 'Unnamed Board'}
-              </h1>
+              {isEditingBoardName ? (
+                <input
+                  ref={boardNameInputRef}
+                  type="text"
+                  value={editableBoardName}
+                  onChange={handleBoardNameInputChange}
+                  onKeyDown={handleBoardNameInputKeyDown}
+                  onBlur={handleBoardNameInputBlur}
+                  autoFocus
+                  className="text-lg font-semibold text-gray-800 border border-gray-300 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 min-w-[200px]"
+                  data-testid="board-name-input"
+                />
+              ) : (
+                <h1
+                  className={`text-lg font-semibold text-gray-800 ${isBoardOwner ? 'cursor-pointer hover:text-blue-600 group' : ''}`}
+                  onClick={handleBoardNameClick}
+                  data-testid="board-name"
+                  title={isBoardOwner ? 'Click to edit board name' : ''}
+                >
+                  {board.name ?? 'Unnamed Board'}
+                  {isBoardOwner && (
+                    <Edit2 className="h-3.5 w-3.5 ml-1.5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity inline-block" />
+                  )}
+                </h1>
+              )}
               {/* <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
                 Free retrospective
               </span> */}
@@ -1166,13 +1294,13 @@ export default function Board() {
                 style={{
                   gridTemplateColumns: `repeat(${
                     board?.facilitatorId === user?.uid && showAddColumnPlaceholder
-                      ? Math.min(Object.keys(board?.columns || {}).length + 1, 4)
-                      : Math.min(Object.keys(board?.columns || {}).length, 4)
+                      ? Math.min(Object.keys(board?.columns ?? {}).length + 1, 4)
+                      : Math.min(Object.keys(board?.columns ?? {}).length, 4)
                   }, minmax(0, 1fr))`,
                   gridAutoFlow: 'column dense',
                 }}
               >
-                {Object.values(board?.columns || {})
+                {Object.values(board?.columns ?? {})
                   .sort((a: ColumnType, b: ColumnType) => a.order - b.order)
                   .map((column: ColumnType) => (
                     <div
@@ -1184,8 +1312,8 @@ export default function Board() {
                       <Column
                         id={column.id}
                         title={column.title}
-                        boardId={boardId || ''}
-                        sortByVotes={columnSortStates[column.id] || false}
+                        boardId={boardId ?? ''}
+                        sortByVotes={columnSortStates[column.id] ?? false}
                         isBoardOwner={board?.facilitatorId === user?.uid}
                         onSortToggle={async () => {
                           const newSortState = !columnSortStates[column.id];

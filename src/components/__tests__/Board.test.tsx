@@ -249,13 +249,24 @@ vi.mock('../../services/boardService', () => {
     updateParticipantNameRTDB: vi.fn(() => Promise.resolve()),
     joinBoard: vi.fn(() => Promise.resolve({ success: true, name: 'Test User' })),
     deleteBoard: vi.fn(() => Promise.resolve(true)),
-    testFirestoreWrite: vi.fn(() => Promise.resolve()),
-    cleanupInactiveUsers: vi.fn(() => Promise.resolve()),
+    updateBoardName: vi.fn(() => Promise.resolve({ success: true })),
+    addActionPoint: vi.fn(() => Promise.resolve()),
+    toggleActionPoint: vi.fn(() => Promise.resolve()),
+    deleteActionPoint: vi.fn(() => Promise.resolve()),
+    updateParticipantName: vi.fn(() => Promise.resolve()),
+    updateParticipantColor: vi.fn(() => Promise.resolve()),
+    addCard: vi.fn(() => Promise.resolve()),
+    updateCard: vi.fn(() => Promise.resolve()),
+    voteForCard: vi.fn(() => Promise.resolve()),
+    updateColumnTitle: vi.fn(() => Promise.resolve({ success: true })),
+    deleteColumn: vi.fn(() => Promise.resolve({ success: true })),
     updateShowAddColumnPlaceholder: vi.fn(() => Promise.resolve({ success: true })),
-    addColumn: vi.fn().mockResolvedValue({
-      success: true,
-      columnId: 'new-column-id',
-    }),
+    addColumn: vi.fn(() =>
+      Promise.resolve({
+        success: true,
+        columnId: 'new-column-id',
+      })
+    ),
   };
 });
 
@@ -441,9 +452,10 @@ vi.mock('react-router-dom', async () => {
 
 describe('Board', () => {
   const renderBoard = async (boardId = 'test-board-id') => {
-    let result;
+    const user = userEvent.setup();
+    let renderResult;
     await act(async () => {
-      result = render(
+      renderResult = render(
         <MemoryRouter initialEntries={[`/boards/${boardId}`]}>
           <Routes>
             <Route path="/boards/:boardId" element={<Board />} />
@@ -451,7 +463,7 @@ describe('Board', () => {
         </MemoryRouter>
       );
     });
-    return result;
+    return { renderResult, user };
   };
 
   beforeEach(() => {
@@ -1325,5 +1337,100 @@ describe('Board', () => {
     });
 
     // ... existing code ...
+  });
+
+  it('allows board owner to edit board name', async () => {
+    // Set mock user as the board facilitator
+    const facilitatorUser = {
+      ...mockUser,
+      uid: mockBoard.facilitatorId ?? 'test-user-id',
+    };
+
+    vi.mocked(useFirebase).mockReturnValue({
+      user: facilitatorUser as FirebaseUser,
+      loading: false,
+      error: null,
+    });
+
+    // Make sure the board has the user as the facilitator
+    const ownerBoard = {
+      ...mockBoard,
+      facilitatorId: facilitatorUser.uid,
+    };
+
+    vi.mocked(boardService.subscribeToBoard).mockImplementation((_boardId, callback) => {
+      act(() => {
+        callback(ownerBoard);
+      });
+      return vi.fn();
+    });
+
+    // Render the board
+    const { user } = await renderBoard();
+
+    // Find and click the board name
+    const boardNameElement = screen.getByTestId('board-name');
+    await user.click(boardNameElement);
+
+    // Verify input appears
+    const boardNameInput = screen.getByTestId('board-name-input');
+    expect(boardNameInput).toBeInTheDocument();
+    expect(boardNameInput).toHaveValue('Test Board');
+
+    // Change the value
+    await user.clear(boardNameInput);
+    await user.type(boardNameInput, 'Updated Board Name');
+
+    // Submit by pressing Enter
+    await user.keyboard('{Enter}');
+
+    // Verify update was called
+    expect(boardService.updateBoardName).toHaveBeenCalledWith(
+      'test-board-id',
+      'Updated Board Name'
+    );
+  });
+
+  it('does not allow non-owner to edit board name', async () => {
+    // Set mock user as NOT the board facilitator
+    const nonOwnerUser = {
+      ...mockUser,
+      uid: 'different-user-id', // Different from board facilitator
+    };
+
+    vi.mocked(useFirebase).mockReturnValue({
+      user: nonOwnerUser as FirebaseUser,
+      loading: false,
+      error: null,
+    });
+
+    // Set board facilitator as different from current user
+    const nonOwnerBoard = {
+      ...mockBoard,
+      facilitatorId: 'test-facilitator-id', // Different from current user
+    };
+
+    vi.mocked(boardService.subscribeToBoard).mockImplementation((_boardId, callback) => {
+      act(() => {
+        callback(nonOwnerBoard);
+      });
+      return vi.fn();
+    });
+
+    // Render the board
+    const { user } = await renderBoard();
+
+    // Find the board name
+    const boardNameElement = screen.getByTestId('board-name');
+
+    // Click it
+    await user.click(boardNameElement);
+
+    // Verify input does NOT appear - still showing the regular board name
+    expect(screen.queryByTestId('board-name-input')).not.toBeInTheDocument();
+    expect(boardNameElement).toBeInTheDocument();
+
+    // Verify update was not called
+    expect(boardService.updateBoardName).not.toHaveBeenCalled();
   });
 });
