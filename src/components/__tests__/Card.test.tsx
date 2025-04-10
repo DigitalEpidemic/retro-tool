@@ -1,3 +1,4 @@
+import React from 'react';
 import { DraggableProvided } from '@hello-pangea/dnd';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { Timestamp } from 'firebase/firestore'; // Import Timestamp
@@ -5,21 +6,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Card as CardType } from '../../services/firebase';
 import Card from '../Card';
 
-// Mock the boardService functions
+// Mock Firebase context
+vi.mock('../../contexts/useFirebase', () => ({
+  useFirebase: vi.fn(),
+}));
+
+// lucide-react icons are mocked in src/test/setup.ts
+
+// Mock boardService
 vi.mock('../../services/boardService', () => ({
   updateCard: vi.fn(),
   deleteCard: vi.fn(),
   voteForCard: vi.fn().mockResolvedValue(undefined), // Mock vote to resolve successfully
-}));
-
-// Mock icons to avoid SVG rendering issues in tests
-vi.mock('lucide-react', () => ({
-  Edit2: () => <div data-testid="edit-icon">Edit</div>,
-  Trash2: () => <div data-testid="trash-icon">Delete</div>,
-  Check: () => <div data-testid="check-icon">Save</div>,
-  X: () => <div data-testid="x-icon">Cancel</div>,
-  ThumbsUp: () => <div data-testid="thumbs-up-icon">Upvote</div>,
-  ThumbsDown: () => <div data-testid="thumbs-down-icon">Downvote</div>,
 }));
 
 // Mock window.confirm

@@ -1,19 +1,9 @@
+import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import ActionPointsPanel, { ActionPoint } from '../ActionPointsPanel';
-// Mock Lucide React icons
-vi.mock('lucide-react', () => {
-  const mockIcon = (name: string) =>
-    function MockIcon() {
-      return <span data-testid={`${name.toLowerCase()}-icon`}>{name}</span>;
-    };
 
-  return {
-    X: mockIcon('X'),
-    Plus: mockIcon('Plus'),
-    Check: mockIcon('Check'),
-  };
-});
+// lucide-react icons are mocked in src/test/setup.ts
 
 describe('ActionPointsPanel', () => {
   const mockActionPoints: ActionPoint[] = [

@@ -4,13 +4,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { OnlineUser } from '../../services/firebase';
 import ParticipantsPanel from '../ParticipantsPanel';
 
-// Mock lucide-react icons used in ParticipantsPanel
-vi.mock('lucide-react', () => ({
-  X: () => <div data-testid="x-icon">X</div>,
-  Edit2: () => <div data-testid="edit-icon">Edit</div>,
-  Check: () => <div data-testid="check-icon">Check</div>,
-  Users: () => <div data-testid="users-icon">Users</div>,
-}));
+// lucide-react icons are mocked in src/test/setup.ts
+
+// Mock the presenceService function
 
 // Mock participants data
 const mockParticipants: OnlineUser[] = [

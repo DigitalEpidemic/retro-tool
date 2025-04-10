@@ -1,17 +1,9 @@
 import React from 'react';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import OptionsPanel from '../OptionsPanel';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
-// Mock lucide-react icons
-vi.mock('lucide-react', () => ({
-  X: () => <div data-testid="x-icon">X</div>,
-  Trash2: () => <div data-testid="trash-icon">Trash</div>,
-  AlertCircle: () => <div data-testid="alert-icon">Alert</div>,
-  Plus: () => <div data-testid="plus-icon">Plus</div>,
-  Eye: () => <div data-testid="eye-icon">Eye</div>,
-  EyeOff: () => <div data-testid="eye-off-icon">EyeOff</div>,
-}));
+// lucide-react icons are mocked in src/test/setup.ts
 
 describe('OptionsPanel', () => {
   const mockOnClose = vi.fn();

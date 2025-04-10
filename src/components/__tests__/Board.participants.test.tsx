@@ -118,27 +118,7 @@ vi.mock('firebase/auth', () => ({
   signInAnonymously: vi.fn(),
 }));
 
-// Mock all the lucide-react icons to avoid issues with them
-vi.mock('lucide-react', () => {
-  const mockIcon = (name: string) =>
-    function MockIcon() {
-      return <span data-testid={`${name.toLowerCase()}-icon`}>{name}</span>;
-    };
-
-  return {
-    Users: mockIcon('Users'),
-    TrendingUp: mockIcon('TrendingUp'),
-    Share2: mockIcon('Share2'),
-    Settings: mockIcon('Settings'),
-    Play: mockIcon('Play'),
-    Pause: mockIcon('Pause'),
-    RotateCcw: mockIcon('RotateCcw'),
-    Download: mockIcon('Download'),
-    X: mockIcon('X'),
-    Edit2: mockIcon('Edit2'),
-    Check: mockIcon('Check'),
-  };
-});
+// lucide-react icons are mocked in src/test/setup.ts
 
 // Mock the Card component
 vi.mock('../Card', () => ({

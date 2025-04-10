@@ -31,19 +31,7 @@ vi.mock('firebase/firestore', async () => {
   };
 });
 
-// Mock lucide-react icons
-vi.mock('lucide-react', () => {
-  return {
-    ArrowUpDown: (props: React.SVGProps<SVGSVGElement>) => (
-      <svg data-testid="arrow-up-down-icon" {...props} />
-    ),
-    MoreVertical: (props: React.SVGProps<SVGSVGElement>) => (
-      <svg data-testid="more-vertical-icon" {...props} />
-    ),
-    // Add any other icons used by the real Column component
-    Plus: (props: React.SVGProps<SVGSVGElement>) => <svg data-testid="plus-icon" {...props} />,
-  };
-});
+// lucide-react icons are mocked in src/test/setup.ts
 
 // Mock firebase services
 vi.mock('../../services/firebase', () => ({
@@ -115,8 +103,9 @@ describe('Column', () => {
     await act(async () => {
       renderColumn();
     });
-    expect(screen.getByTestId('arrow-up-down-icon')).toBeInTheDocument();
-    expect(screen.getByTestId('more-vertical-icon')).toBeInTheDocument();
+    // Look for the SVG elements with the specific classes instead of data-testid
+    expect(screen.getByRole('button', { name: 'Sort' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'More options' })).toBeInTheDocument();
   });
 
   it('renders "Add a card" button initially', async () => {
