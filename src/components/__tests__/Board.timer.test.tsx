@@ -144,7 +144,7 @@ vi.mock('../../services/presenceService', () => {
     setupPresence: vi.fn(() => {
       return cleanupFn; // Just return the function directly
     }),
-    subscribeToParticipants: vi.fn((boardId, callback) => {
+    subscribeToParticipants: vi.fn((_boardId, callback) => {
       act(() => {
         callback([
           {
@@ -188,14 +188,14 @@ describe('Timer Functionality', () => {
       error: null,
     });
 
-    vi.mocked(boardService.subscribeToBoard).mockImplementation((boardId, callback) => {
+    vi.mocked(boardService.subscribeToBoard).mockImplementation((_boardId, callback) => {
       act(() => {
         callback(mockBoard);
       });
       return vi.fn();
     });
 
-    vi.mocked(boardService.subscribeToCards).mockImplementation((boardId, callback) => {
+    vi.mocked(boardService.subscribeToCards).mockImplementation((_boardId, callback) => {
       act(() => {
         callback([]);
       });

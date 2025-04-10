@@ -108,7 +108,7 @@ vi.mock('../Card', () => ({
     <div
       data-testid={`card-${card.id}`}
       data-card-data={JSON.stringify(card)}
-      {...provided?.draggableProps}
+      {...(provided?.draggableProps as object)}
     >
       {card.content}
     </div>
@@ -245,9 +245,9 @@ const mockBoard: BoardType = {
     'column-2': { id: 'column-2', title: 'What could be improved', order: 1 },
   },
   timerStartTime: undefined,
-  timerDuration: 300, // 5 minutes,
-  timerPaused: true,
-  timerRemainingTime: 300,
+  timerDurationSeconds: 300, // 5 minutes,
+  timerIsRunning: false,
+  timerPausedDurationSeconds: 300,
 };
 
 const mockCards = [
@@ -382,7 +382,7 @@ describe('Board Deletion', () => {
     // Setup other subscriptions
     vi.mocked(boardService.subscribeToCards).mockReturnValue(vi.fn());
     vi.mocked(presenceService.subscribeToParticipants).mockReturnValue(vi.fn());
-    vi.mocked(boardService.joinBoard).mockResolvedValue({ success: true });
+    vi.mocked(boardService.joinBoard).mockResolvedValue({ success: true, name: 'Test User' });
 
     // Mock deleteBoard
     const deleteBoard = vi.spyOn(boardService, 'deleteBoard');
@@ -433,7 +433,7 @@ describe('Board Deletion', () => {
     // Setup other subscriptions
     vi.mocked(boardService.subscribeToCards).mockReturnValue(vi.fn());
     vi.mocked(presenceService.subscribeToParticipants).mockReturnValue(vi.fn());
-    vi.mocked(boardService.joinBoard).mockResolvedValue({ success: true });
+    vi.mocked(boardService.joinBoard).mockResolvedValue({ success: true, name: 'Test User' });
 
     // Mock deleteBoard to fail
     vi.mocked(boardService.deleteBoard).mockResolvedValue(false);

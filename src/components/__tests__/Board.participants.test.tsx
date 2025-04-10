@@ -56,7 +56,7 @@ vi.mock('firebase/firestore', () => {
     orderBy: vi.fn(),
     updateDoc: vi.fn().mockResolvedValue({}),
     serverTimestamp: vi.fn(() => ({ toMillis: () => Date.now() })),
-    onSnapshot: vi.fn((ref, callback) => {
+    onSnapshot: vi.fn((_ref, callback) => {
       callback({
         docs: [],
       });
@@ -79,7 +79,7 @@ vi.mock('firebase/firestore', () => {
 vi.mock('firebase/database', () => ({
   getDatabase: vi.fn(() => ({})),
   ref: vi.fn(() => ({})),
-  onValue: vi.fn((ref, callback) => {
+  onValue: vi.fn((_ref, callback) => {
     callback({
       val: () => ({
         boards: {
@@ -122,12 +122,19 @@ vi.mock('firebase/auth', () => ({
 
 // Mock the Card component
 vi.mock('../Card', () => ({
-  default: props => <div data-testid={`card-${props.card.id}`}>{props.card.content}</div>,
+  default: (props: { card: { id: string; content: string } }) => (
+    <div data-testid={`card-${props.card.id}`}>{props.card.content}</div>
+  ),
 }));
 
 // Mock the Column component
 vi.mock('../Column', () => ({
-  default: props => (
+  default: (props: {
+    id: string;
+    title: string;
+    cards?: unknown[];
+    onCardAdd?: (columnId: string, content: string) => void;
+  }) => (
     <div data-testid={`column-${props.id}`} data-title={props.title}>
       <div>Column: {props.title}</div>
       <div>Cards: {props.cards?.length ?? 0}</div>
@@ -202,7 +209,7 @@ const mockParticipantsPanel = (props: ParticipantsPanelProps) => {
 vi.mock('../Board', async importOriginal => {
   await importOriginal();
 
-  const MockedBoard = props => {
+  const MockedBoard = (props: { match?: { params?: { boardId?: string } } }) => {
     const [isPanelOpen, setIsPanelOpen] = React.useState(false);
     const [participants, setParticipants] = React.useState([
       {
@@ -240,17 +247,17 @@ vi.mock('../Board', async importOriginal => {
 
     const togglePanel = () => setIsPanelOpen(!isPanelOpen);
 
-    const handleUpdateName = (userId, newName) => {
+    const handleUpdateName = (userId: string, newName: string) => {
       boardService.updateParticipantName(userId, newName);
       presenceService.updateParticipantName(userId, 'test-board-id', newName);
 
       // Call the context method when updating current user's name
-      if (userId === 'current-user-id') {
+      if (userId === 'current-user-id' && updateUserDisplayName) {
         updateUserDisplayName(newName);
       }
     };
 
-    const handleUpdateColor = (userId, newColor) => {
+    const handleUpdateColor = (userId: string, newColor: string) => {
       // Update in Firestore and RTDB
       presenceService.updateParticipantColor(userId, 'test-board-id', newColor);
     };
@@ -293,7 +300,7 @@ vi.mock('../Board', async importOriginal => {
 
 // Mock the board service
 vi.mock('../../services/boardService', () => ({
-  subscribeToBoard: vi.fn((boardId, callback) => {
+  subscribeToBoard: vi.fn((_boardId, callback) => {
     callback({
       id: 'test-board-id',
       name: 'Test Board',
@@ -312,7 +319,7 @@ vi.mock('../../services/boardService', () => ({
     });
     return vi.fn();
   }),
-  subscribeToCards: vi.fn((boardId, callback) => {
+  subscribeToCards: vi.fn((_boardId, callback) => {
     callback([
       {
         id: 'card1',
@@ -353,7 +360,7 @@ vi.mock('../../services/presenceService', () => {
     setupPresence: vi.fn(() => {
       return cleanupFn; // Just return the function directly
     }),
-    subscribeToParticipants: vi.fn((boardId, callback) => {
+    subscribeToParticipants: vi.fn((_boardId, callback) => {
       callback([
         {
           id: 'user1',
@@ -379,12 +386,20 @@ vi.mock('../../services/presenceService', () => {
 
 // Mock the db object
 vi.mock('../../services/firebase', () => {
-  function OnlineUser(id, name, color, boardId) {
-    this.id = id;
-    this.name = name;
-    this.color = color;
-    this.boardId = boardId;
-    this.lastOnline = Date.now();
+  class OnlineUser {
+    id: string;
+    name: string;
+    color: string;
+    boardId: string;
+    lastOnline: number;
+
+    constructor(id: string, name: string, color: string, boardId: string) {
+      this.id = id;
+      this.name = name;
+      this.color = color;
+      this.boardId = boardId;
+      this.lastOnline = Date.now();
+    }
   }
 
   return {
@@ -408,6 +423,20 @@ describe('Board Component - Participants Integration', () => {
     uid: 'current-user-id',
     displayName: 'Current User',
     isAnonymous: true,
+    emailVerified: false,
+    metadata: {},
+    providerData: [],
+    refreshToken: '',
+    tenantId: null,
+    photoURL: null,
+    phoneNumber: null,
+    email: null,
+    delete: vi.fn(),
+    getIdToken: vi.fn(),
+    getIdTokenResult: vi.fn(),
+    reload: vi.fn(),
+    toJSON: vi.fn(),
+    providerId: 'anonymous',
   };
 
   // Setup for tests
@@ -538,7 +567,7 @@ describe('Board Component - Participants Integration', () => {
   it('shows empty state when there are no participants', async () => {
     // Mock subscribeToParticipants to return empty array
     vi.mocked(presenceService.subscribeToParticipants).mockImplementationOnce(
-      (boardId, callback) => {
+      (_boardId, callback) => {
         callback([]);
         return vi.fn();
       }

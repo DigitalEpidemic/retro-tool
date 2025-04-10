@@ -40,11 +40,27 @@ interface BoardSnapshot {
 // Mock Firebase
 vi.mock('./firebase', () => ({
   db: {},
-  Board: function Board() {
-    return {};
+  Board: class Board {
+    id = '';
+    name = '';
+    facilitatorId = '';
+    isActive = true;
+    columns = {};
+    timerIsRunning?: boolean;
+    timerStartTime?: unknown;
+    timerDurationSeconds?: number;
+    timerPausedDurationSeconds?: number;
+    timerOriginalDurationSeconds?: number;
   },
-  Card: function Card() {
-    return {};
+  Card: class Card {
+    id = '';
+    content = '';
+    boardId = '';
+    columnId = '';
+    position = 0;
+    votes = 0;
+    authorId?: string;
+    authorName?: string;
   },
 }));
 

@@ -1,4 +1,3 @@
-import React from 'react';
 import { DraggableProvided } from '@hello-pangea/dnd';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { Timestamp } from 'firebase/firestore'; // Import Timestamp
@@ -10,8 +9,6 @@ import Card from '../Card';
 vi.mock('../../contexts/useFirebase', () => ({
   useFirebase: vi.fn(),
 }));
-
-// lucide-react icons are mocked in src/test/setup.ts
 
 // Mock boardService
 vi.mock('../../services/boardService', () => ({

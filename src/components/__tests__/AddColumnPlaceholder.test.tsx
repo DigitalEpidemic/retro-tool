@@ -1,8 +1,7 @@
-import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import AddColumnPlaceholder from '../AddColumnPlaceholder';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { addColumn } from '../../services/boardService';
-import { vi, describe, it, expect, beforeEach, Mock } from 'vitest';
+import AddColumnPlaceholder from '../AddColumnPlaceholder';
 
 // Mock the boardService
 vi.mock('../../services/boardService', () => ({

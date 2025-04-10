@@ -1,12 +1,10 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { User } from 'firebase/auth'; // Import User type
-import { getDoc } from 'firebase/firestore'; // Import getDoc from firebase/firestore
-import React from 'react';
+import { DocumentSnapshot, getDoc } from 'firebase/firestore'; // Import getDoc from firebase/firestore
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useFirebase } from '../../contexts/useFirebase'; // Adjust the import path
 import { addCard } from '../../services/boardService'; // Adjust the import path
 import Column from '../Column'; // This is the real component
-import { DocumentSnapshot } from 'firebase/firestore';
 
 // Mock dependencies
 vi.mock('../../contexts/useFirebase', () => ({
