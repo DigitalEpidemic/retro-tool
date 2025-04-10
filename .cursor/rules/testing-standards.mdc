@@ -42,3 +42,16 @@ alwaysApply: false
   - To run a specific test, use the full test name: `npm test -- -t "renders correctly"`
   - For file path filtering, use `npm test -- src/components/__tests__/Column.test.tsx`
   - To combine filters, use multiple flags: `npm test -- src/components/__tests__/Column.test.tsx -t "renders"`
+
+## Test Preservation
+
+- NEVER delete existing tests without explicit instructions to do so
+- When modifying test files:
+  - Make targeted changes to specific functions/sections only
+  - Use small, focused edits rather than replacing large blocks of code
+  - Check the diff after edits to confirm no tests are being deleted
+  - Be especially careful when using large text replacements
+- Before submitting changes to test files:
+  - Verify that all previously existing tests are still present
+  - Run the tests to ensure the test count remains the same or increases
+  - If modifying UI components, update the tests to match the new behavior without removing test cases
