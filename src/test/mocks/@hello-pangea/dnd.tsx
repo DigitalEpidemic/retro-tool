@@ -43,7 +43,7 @@ type DraggableProvided = {
 
 type DraggableProps = {
   children: (
-    provided: DraggableProvided, 
+    provided: DraggableProvided,
     snapshot: Record<string, unknown>,
     rubric: Record<string, unknown>
   ) => React.ReactNode;

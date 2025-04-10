@@ -22,7 +22,7 @@ const createMockTimestamp = () => {
     nanoseconds: 0,
     isEqual: () => false,
     toJSON: () => ({ seconds: 0, nanoseconds: 0 }),
-    valueOf: () => 0
+    valueOf: () => 0,
   } as unknown as Timestamp;
 };
 
@@ -220,7 +220,7 @@ describe('formatExportFilename', () => {
   const originalDate = global.Date;
 
   interface CustomDateConstructor extends DateConstructor {
-    new(): Date & { toISOString(): string };
+    new (): Date & { toISOString(): string };
   }
 
   beforeEach(() => {
@@ -260,7 +260,7 @@ describe('formatExportFilename', () => {
 
 describe('createAndDownloadMarkdownFile', () => {
   let mockElement: HTMLAnchorElement;
-  
+
   beforeEach(() => {
     // Mock DOM APIs
     global.URL.createObjectURL = vi.fn().mockReturnValue('blob:mockurl');
@@ -268,7 +268,7 @@ describe('createAndDownloadMarkdownFile', () => {
     global.Blob = vi.fn().mockImplementation((content, options) => {
       return { content, options };
     }) as unknown as typeof Blob;
-    
+
     // Mock the document methods
     mockElement = document.createElement('a');
     mockElement.click = vi.fn();

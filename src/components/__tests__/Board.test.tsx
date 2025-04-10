@@ -12,8 +12,13 @@ import * as boardService from '../../services/boardService';
 import type { Board as BoardType } from '../../services/firebase';
 import Board from '../Board';
 
-const createMockDocSnap = (exists = true, data: Record<string, unknown> = {}): firestore.DocumentSnapshot<unknown> => ({
-  exists: function(this: firestore.DocumentSnapshot<unknown>): this is firestore.QueryDocumentSnapshot<unknown> {
+const createMockDocSnap = (
+  exists = true,
+  data: Record<string, unknown> = {}
+): firestore.DocumentSnapshot<unknown> => ({
+  exists: function (
+    this: firestore.DocumentSnapshot<unknown>
+  ): this is firestore.QueryDocumentSnapshot<unknown> {
     return exists;
   },
   data: () => data,
@@ -122,48 +127,40 @@ vi.mock('../ExportModal', () => ({
 }));
 
 vi.mock('../OptionsPanel', () => ({
-  default: vi
-    .fn()
-    .mockImplementation(
-      ({
-        isOpen,
-        onDeleteBoard,
-        isBoardCreator,
-      }) => {
-        // Using useState within the mock to track deletion confirmation state
-        const [isConfirmingDelete, setIsConfirmingDelete] = React.useState(false);
+  default: vi.fn().mockImplementation(({ isOpen, onDeleteBoard, isBoardCreator }) => {
+    // Using useState within the mock to track deletion confirmation state
+    const [isConfirmingDelete, setIsConfirmingDelete] = React.useState(false);
 
-        if (!isOpen) return null;
+    if (!isOpen) return null;
 
-        return (
-          <div data-testid="options-panel">
-            <div>Options Panel</div>
+    return (
+      <div data-testid="options-panel">
+        <div>Options Panel</div>
 
-            {isConfirmingDelete ? (
-              <div>
-                <p>Are you sure you want to delete this board?</p>
-                <button data-testid="cancel-delete" onClick={() => setIsConfirmingDelete(false)}>
-                  Cancel
-                </button>
-                <button data-testid="confirm-delete" onClick={() => onDeleteBoard()}>
-                  Yes, Delete Board
-                </button>
-              </div>
-            ) : (
-              <button
-                data-testid="delete-board-button"
-                disabled={!isBoardCreator}
-                onClick={() => isBoardCreator && setIsConfirmingDelete(true)}
-              >
-                Delete Board
-              </button>
-            )}
-
-            {!isBoardCreator && <div>Only the board creator can delete this board</div>}
+        {isConfirmingDelete ? (
+          <div>
+            <p>Are you sure you want to delete this board?</p>
+            <button data-testid="cancel-delete" onClick={() => setIsConfirmingDelete(false)}>
+              Cancel
+            </button>
+            <button data-testid="confirm-delete" onClick={() => onDeleteBoard()}>
+              Yes, Delete Board
+            </button>
           </div>
-        );
-      }
-    ),
+        ) : (
+          <button
+            data-testid="delete-board-button"
+            disabled={!isBoardCreator}
+            onClick={() => isBoardCreator && setIsConfirmingDelete(true)}
+          >
+            Delete Board
+          </button>
+        )}
+
+        {!isBoardCreator && <div>Only the board creator can delete this board</div>}
+      </div>
+    );
+  }),
 }));
 
 vi.mock('../AddColumnPlaceholder', () => ({
@@ -333,14 +330,11 @@ vi.mock('../Card', () => ({
   default: ({ card, provided }: { card: unknown; provided: unknown }) => {
     const cardId = (card as { id: string }).id;
     const cardContent = (card as { content: string }).content;
-    const draggableProps = (provided as { draggableProps?: Record<string, unknown> })?.draggableProps || {};
-    
+    const draggableProps =
+      (provided as { draggableProps?: Record<string, unknown> })?.draggableProps || {};
+
     return (
-      <div
-        data-testid={`card-${cardId}`}
-        data-card-data={JSON.stringify(card)}
-        {...draggableProps}
-      >
+      <div data-testid={`card-${cardId}`} data-card-data={JSON.stringify(card)} {...draggableProps}>
         {cardContent}
       </div>
     );

@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAndDownloadMarkdownFile, formatExportFilename } from '../exportUtils';
 
 interface CustomDateConstructor extends DateConstructor {
-  new(): Date & { toISOString(): string };
+  new (): Date & { toISOString(): string };
 }
 
 describe('formatExportFilename', () => {
@@ -49,12 +49,12 @@ describe('formatExportFilename', () => {
 
 describe('createAndDownloadMarkdownFile', () => {
   type MockBlob = Record<string, unknown>;
-  
+
   beforeEach(() => {
     // Mock DOM APIs
     global.URL.createObjectURL = vi.fn().mockReturnValue('mock-url');
     global.URL.revokeObjectURL = vi.fn();
-    
+
     document.body.appendChild = vi.fn();
     document.body.removeChild = vi.fn();
   });
@@ -62,25 +62,25 @@ describe('createAndDownloadMarkdownFile', () => {
   it('should create a Blob with correct content type', () => {
     const mockBlob: MockBlob = {};
     global.Blob = vi.fn().mockReturnValue(mockBlob) as unknown as typeof Blob;
-    
+
     createAndDownloadMarkdownFile('Test Content', 'test.md');
-    
+
     expect(global.Blob).toHaveBeenCalledWith(['Test Content'], { type: 'text/markdown' });
     expect(global.URL.createObjectURL).toHaveBeenCalledWith(mockBlob);
   });
 
   it('should create and click a download link', () => {
     const linkClickMock = vi.fn();
-    const mockLink = { 
+    const mockLink = {
       href: '',
       download: '',
-      click: linkClickMock 
+      click: linkClickMock,
     };
-    
+
     global.document.createElement = vi.fn().mockReturnValue(mockLink);
-    
+
     createAndDownloadMarkdownFile('Test Content', 'test-filename.md');
-    
+
     expect(document.createElement).toHaveBeenCalledWith('a');
     expect(mockLink.href).toBe('mock-url');
     expect(mockLink.download).toBe('test-filename.md');
@@ -91,7 +91,7 @@ describe('createAndDownloadMarkdownFile', () => {
 
   it('should clean up by revoking the object URL', () => {
     createAndDownloadMarkdownFile('Test Content', 'test.md');
-    
+
     expect(global.URL.revokeObjectURL).toHaveBeenCalledWith('mock-url');
   });
-}); 
+});

@@ -155,9 +155,9 @@ describe('boardService', () => {
         // This will be checked by the expect statements below
         return Promise.resolve({ id: 'mock-doc-id' });
       });
-      
+
       await boardService.createBoard('Test Board');
-      
+
       // Test that mockAddDoc was called with correct columns data
       expect(mockAddDoc).toHaveBeenCalledWith(
         {},
@@ -166,7 +166,7 @@ describe('boardService', () => {
             col1: { id: 'col1', title: 'What went well', order: 0 },
             col2: { id: 'col2', title: 'What can be improved', order: 1 },
             col3: { id: 'col3', title: 'Action items', order: 2 },
-          }
+          },
         })
       );
     });

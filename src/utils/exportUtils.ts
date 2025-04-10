@@ -21,4 +21,4 @@ export function formatExportFilename(boardName: string): string {
 
   const dateStr = new Date().toISOString().split('T')[0];
   return `${dateStr}-${cleanedBoardName.replace(/\s+/g, '-').toLowerCase()}.md`;
-} 
+}

@@ -1,8 +1,4 @@
-import {
-  getAuth,
-  onAuthStateChanged,
-  signInAnonymously,
-} from 'firebase/auth';
+import { getAuth, onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { ReactNode, useEffect, useState } from 'react';
 import { db } from '../services/firebase';

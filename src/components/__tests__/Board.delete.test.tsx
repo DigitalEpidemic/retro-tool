@@ -100,7 +100,13 @@ vi.mock('firebase/firestore', () => {
 
 // Mock the Card component
 vi.mock('../Card', () => ({
-  default: ({ card, provided }: { card: { id: string; content: string }; provided?: { draggableProps: unknown } }) => (
+  default: ({
+    card,
+    provided,
+  }: {
+    card: { id: string; content: string };
+    provided?: { draggableProps: unknown };
+  }) => (
     <div
       data-testid={`card-${card.id}`}
       data-card-data={JSON.stringify(card)}
@@ -313,13 +319,15 @@ describe('Board Deletion', () => {
     const unsubscribeParticipants = vi.fn();
     vi.mocked(presenceService.subscribeToParticipants).mockImplementation((_, callback) => {
       act(() => {
-        callback([{
-          id: 'test-creator-id',
-          name: 'Test Creator',
-          color: '#FF5733',
-          boardId: 'test-board-id',
-          lastOnline: Date.now(),
-        }]);
+        callback([
+          {
+            id: 'test-creator-id',
+            name: 'Test Creator',
+            color: '#FF5733',
+            boardId: 'test-board-id',
+            lastOnline: Date.now(),
+          },
+        ]);
       });
       return unsubscribeParticipants;
     });
@@ -341,7 +349,7 @@ describe('Board Deletion', () => {
     // Open the options panel and click delete
     // (In a real test, we'd find and click these buttons, but we'll simulate for now)
     const handleDeleteBoardMock = vi.spyOn(boardService, 'deleteBoard');
-    
+
     // Directly call deleteBoard as if the UI flow had happened
     await act(async () => {
       await boardService.deleteBoard('test-board-id', 'test-creator-id');
@@ -457,7 +465,7 @@ describe('Board Deletion', () => {
   });
 
   it('should navigate to home page if board does not exist', async () => {
-    // Set up with a user 
+    // Set up with a user
     vi.mocked(useFirebase).mockReturnValue({
       user: mockUser as FirebaseUser,
       loading: false,

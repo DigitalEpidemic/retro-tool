@@ -15,4 +15,3 @@ vi.mock('../services/firebase', () => {
     signInAnonymousUser: vi.fn(() => Promise.resolve({ uid: 'test-user-id' })),
   };
 });
-

@@ -21,4 +21,4 @@ export const defaultContextValue: FirebaseContextType = {
 };
 
 // Create context
-export const FirebaseContext = createContext<FirebaseContextType>(defaultContextValue); 
+export const FirebaseContext = createContext<FirebaseContextType>(defaultContextValue);
