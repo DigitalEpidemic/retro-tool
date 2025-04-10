@@ -3,7 +3,7 @@ import { User } from 'firebase/auth'; // Import User type
 import { DocumentSnapshot, getDoc } from 'firebase/firestore'; // Import getDoc from firebase/firestore
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useFirebase } from '../../contexts/useFirebase'; // Adjust the import path
-import { addCard } from '../../services/boardService'; // Adjust the import path
+import { addCard, deleteColumn, updateColumnTitle } from '../../services/boardService'; // Adjust the import path
 import Column from '../Column'; // This is the real component
 
 // Mock dependencies
@@ -14,6 +14,7 @@ vi.mock('../../contexts/useFirebase', () => ({
 vi.mock('../../services/boardService', () => ({
   addCard: vi.fn(),
   deleteColumn: vi.fn(),
+  updateColumnTitle: vi.fn(),
 }));
 
 // Mock firebase/firestore
@@ -758,6 +759,163 @@ describe('Column', () => {
 
       // Now the dropdown should be hidden
       expect(screen.queryByText('Delete column')).not.toBeInTheDocument();
+    });
+  });
+
+  // --- Title Editing Tests ---
+  describe('Column title editing', () => {
+    beforeEach(() => {
+      // Reset the updateColumnTitle mock before each test
+      vi.mocked(addCard).mockClear();
+      vi.mocked(deleteColumn).mockClear();
+      vi.mocked(updateColumnTitle).mockClear();
+      vi.mocked(updateColumnTitle).mockResolvedValue({ success: true });
+    });
+
+    it('makes title editable when clicked by board owner', async () => {
+      renderColumn({ isBoardOwner: true });
+
+      // Title should initially be in view mode
+      expect(screen.queryByTestId('column-title-input-column-1')).not.toBeInTheDocument();
+      expect(screen.getByTestId('column-title-column-1')).toBeInTheDocument();
+
+      // Click the title
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-title-column-1'));
+      });
+
+      // Title should now be in edit mode
+      expect(screen.getByTestId('column-title-input-column-1')).toBeInTheDocument();
+      expect(screen.queryByTestId('column-title-column-1')).not.toBeInTheDocument();
+    });
+
+    it('does not make title editable when clicked by non-board owner', async () => {
+      renderColumn({ isBoardOwner: false });
+
+      // Title should be in view mode
+      expect(screen.queryByTestId('column-title-input-column-1')).not.toBeInTheDocument();
+      expect(screen.getByTestId('column-title-column-1')).toBeInTheDocument();
+
+      // Click the title
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-title-column-1'));
+      });
+
+      // Title should still be in view mode
+      expect(screen.queryByTestId('column-title-input-column-1')).not.toBeInTheDocument();
+      expect(screen.getByTestId('column-title-column-1')).toBeInTheDocument();
+    });
+
+    it('saves title when Enter is pressed', async () => {
+      renderColumn({ isBoardOwner: true });
+
+      // Click the title to enter edit mode
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-title-column-1'));
+      });
+
+      const titleInput = screen.getByTestId('column-title-input-column-1') as HTMLInputElement;
+
+      // Change the title
+      await act(async () => {
+        fireEvent.change(titleInput, { target: { value: 'New Column Title' } });
+      });
+
+      // Press Enter to save
+      await act(async () => {
+        fireEvent.keyDown(titleInput, { key: 'Enter', code: 'Enter' });
+      });
+
+      // Input should be gone, back to view mode
+      expect(screen.queryByTestId('column-title-input-column-1')).not.toBeInTheDocument();
+      expect(screen.getByTestId('column-title-column-1')).toBeInTheDocument();
+
+      // Check if updateColumnTitle was called correctly
+      expect(updateColumnTitle).toHaveBeenCalledWith(mockBoardId, mockColumnId, 'New Column Title');
+    });
+
+    it('reverts title when Escape is pressed', async () => {
+      renderColumn({ isBoardOwner: true });
+
+      // Click the title to enter edit mode
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-title-column-1'));
+      });
+
+      const titleInput = screen.getByTestId('column-title-input-column-1') as HTMLInputElement;
+
+      // Change the title
+      await act(async () => {
+        fireEvent.change(titleInput, { target: { value: 'New Column Title' } });
+      });
+
+      // Press Escape to cancel
+      await act(async () => {
+        fireEvent.keyDown(titleInput, { key: 'Escape', code: 'Escape' });
+      });
+
+      // Input should be gone, back to view mode
+      expect(screen.queryByTestId('column-title-input-column-1')).not.toBeInTheDocument();
+      expect(screen.getByTestId('column-title-column-1')).toBeInTheDocument();
+
+      // updateColumnTitle should not have been called
+      expect(updateColumnTitle).not.toHaveBeenCalled();
+    });
+
+    it('saves title on blur', async () => {
+      renderColumn({ isBoardOwner: true });
+
+      // Click the title to enter edit mode
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-title-column-1'));
+      });
+
+      const titleInput = screen.getByTestId('column-title-input-column-1') as HTMLInputElement;
+
+      // Change the title
+      await act(async () => {
+        fireEvent.change(titleInput, { target: { value: 'New Column Title' } });
+      });
+
+      // Blur the input to save
+      await act(async () => {
+        fireEvent.blur(titleInput);
+      });
+
+      // Input should be gone, back to view mode
+      expect(screen.queryByTestId('column-title-input-column-1')).not.toBeInTheDocument();
+      expect(screen.getByTestId('column-title-column-1')).toBeInTheDocument();
+
+      // Check if updateColumnTitle was called correctly
+      expect(updateColumnTitle).toHaveBeenCalledWith(mockBoardId, mockColumnId, 'New Column Title');
+    });
+
+    it('does not save empty title', async () => {
+      renderColumn({ isBoardOwner: true });
+
+      // Click the title to enter edit mode
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-title-column-1'));
+      });
+
+      const titleInput = screen.getByTestId('column-title-input-column-1') as HTMLInputElement;
+
+      // Change the title to empty
+      await act(async () => {
+        fireEvent.change(titleInput, { target: { value: '' } });
+      });
+
+      // Press Enter to save
+      await act(async () => {
+        fireEvent.keyDown(titleInput, { key: 'Enter', code: 'Enter' });
+      });
+
+      // Input should be gone, back to view mode
+      expect(screen.queryByTestId('column-title-input-column-1')).not.toBeInTheDocument();
+      expect(screen.getByTestId('column-title-column-1')).toBeInTheDocument();
+
+      // updateColumnTitle should not have been called
+      expect(updateColumnTitle).not.toHaveBeenCalled();
     });
   });
 });

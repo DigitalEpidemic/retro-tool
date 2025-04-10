@@ -6,15 +6,21 @@ exports[`Column > matches snapshot 1`] = `
     class="w-full h-full bg-white flex flex-col overflow-hidden"
   >
     <div
-      class="flex justify-between items-center px-4 py-3 border-b border-gray-200 flex-shrink-0"
+      class="flex justify-between items-center px-4 py-3 border-b border-gray-200 flex-shrink-0 h-[52px]"
     >
-      <h2
-        class="text-lg font-medium text-gray-800"
-      >
-        Mad
-      </h2>
       <div
-        class="flex items-center space-x-2"
+        class="h-[28px] flex items-center flex-grow overflow-hidden mr-2"
+      >
+        <h2
+          class="text-lg font-medium text-gray-800 leading-[28px] flex items-center transition-colors duration-200 overflow-hidden text-ellipsis whitespace-nowrap "
+          data-testid="column-title-column-1"
+          title=""
+        >
+          Mad
+        </h2>
+      </div>
+      <div
+        class="flex items-center space-x-2 flex-shrink-0"
       >
         <button
           class="flex items-center text-blue-600 hover:text-blue-700 cursor-pointer"
@@ -121,15 +127,21 @@ exports[`Column > matches snapshot when adding card 1`] = `
     class="w-full h-full bg-white flex flex-col overflow-hidden"
   >
     <div
-      class="flex justify-between items-center px-4 py-3 border-b border-gray-200 flex-shrink-0"
+      class="flex justify-between items-center px-4 py-3 border-b border-gray-200 flex-shrink-0 h-[52px]"
     >
-      <h2
-        class="text-lg font-medium text-gray-800"
-      >
-        Mad
-      </h2>
       <div
-        class="flex items-center space-x-2"
+        class="h-[28px] flex items-center flex-grow overflow-hidden mr-2"
+      >
+        <h2
+          class="text-lg font-medium text-gray-800 leading-[28px] flex items-center transition-colors duration-200 overflow-hidden text-ellipsis whitespace-nowrap "
+          data-testid="column-title-column-1"
+          title=""
+        >
+          Mad
+        </h2>
+      </div>
+      <div
+        class="flex items-center space-x-2 flex-shrink-0"
       >
         <button
           class="flex items-center text-blue-600 hover:text-blue-700 cursor-pointer"
@@ -255,15 +267,21 @@ exports[`Column > matches snapshot when sorted by votes 1`] = `
     class="w-full h-full bg-white flex flex-col overflow-hidden"
   >
     <div
-      class="flex justify-between items-center px-4 py-3 border-b border-gray-200 flex-shrink-0"
+      class="flex justify-between items-center px-4 py-3 border-b border-gray-200 flex-shrink-0 h-[52px]"
     >
-      <h2
-        class="text-lg font-medium text-gray-800"
-      >
-        Mad
-      </h2>
       <div
-        class="flex items-center space-x-2"
+        class="h-[28px] flex items-center flex-grow overflow-hidden mr-2"
+      >
+        <h2
+          class="text-lg font-medium text-gray-800 leading-[28px] flex items-center transition-colors duration-200 overflow-hidden text-ellipsis whitespace-nowrap "
+          data-testid="column-title-column-1"
+          title=""
+        >
+          Mad
+        </h2>
+      </div>
+      <div
+        class="flex items-center space-x-2 flex-shrink-0"
       >
         <button
           class="flex items-center text-blue-600 hover:text-blue-700 cursor-pointer"

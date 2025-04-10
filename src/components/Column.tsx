@@ -1,8 +1,8 @@
 import { doc, getDoc } from 'firebase/firestore';
-import { ArrowUpDown, MoreVertical } from 'lucide-react'; // Import icons
-import React, { useRef, useState } from 'react';
+import { ArrowUpDown, Edit2, MoreVertical } from 'lucide-react'; // Import icons
+import React, { KeyboardEvent, useRef, useState } from 'react';
 import { useFirebase } from '../contexts/useFirebase'; // To get user ID
-import { addCard, deleteColumn } from '../services/boardService'; // To add new cards and delete columns
+import { addCard, deleteColumn, updateColumnTitle } from '../services/boardService'; // Add updateColumnTitle
 import { db } from '../services/firebase';
 
 interface ColumnProps {
@@ -13,6 +13,7 @@ interface ColumnProps {
   onSortToggle: () => void;
   isBoardOwner: boolean; // Add prop to check if the current user is the board owner
   children: React.ReactNode; // To render Droppable content from Board.tsx
+  onTitleUpdate?: (newTitle: string) => void; // Optional callback for title updates
 }
 
 export default function Column({
@@ -23,6 +24,7 @@ export default function Column({
   onSortToggle,
   isBoardOwner,
   children,
+  onTitleUpdate,
 }: ColumnProps) {
   const { user } = useFirebase();
   const [newCardContent, setNewCardContent] = React.useState('');
@@ -30,6 +32,12 @@ export default function Column({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false); // Track if a submission is in progress
+
+  // Title editing states
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editableTitle, setEditableTitle] = useState(title);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const escapePressedRef = useRef(false);
 
   // Close menu when clicking outside
   React.useEffect(() => {
@@ -45,8 +53,14 @@ export default function Column({
     };
   }, []);
 
+  // Update editableTitle when title prop changes
+  React.useEffect(() => {
+    setEditableTitle(title);
+  }, [title]);
+
   // Map column titles to RetroTool style titles based on the id
   const getMappedTitle = () => {
+    // Don't use this function during editing - that's handled separately
     const titleMap: Record<string, string> = {
       'column-1': 'Mad',
       'column-2': 'Sad',
@@ -109,12 +123,122 @@ export default function Column({
     }
   };
 
+  // Handle title click to start editing
+  const handleTitleClick = () => {
+    if (isBoardOwner && !isEditingTitle) {
+      setIsEditingTitle(true);
+      // Selection of text will happen in useEffect after render
+    }
+  };
+
+  // Add effect to select all text when editing starts
+  React.useEffect(() => {
+    if (isEditingTitle && titleInputRef.current) {
+      // Focus and select all text after the input is rendered
+      setTimeout(() => {
+        if (titleInputRef.current) {
+          titleInputRef.current.select();
+        }
+      }, 10);
+    }
+  }, [isEditingTitle]);
+
+  // Handle saving title
+  const handleSaveTitle = async () => {
+    if (!boardId || !isBoardOwner) return;
+
+    const trimmedTitle = editableTitle.trim();
+    if (!trimmedTitle) {
+      // Don't allow empty titles
+      setEditableTitle(title);
+      setIsEditingTitle(false);
+      return;
+    }
+
+    // Only save if the title has changed
+    if (trimmedTitle !== title) {
+      try {
+        const result = await updateColumnTitle(boardId, id, trimmedTitle);
+        if (result.success) {
+          // Notify parent component if callback exists
+          if (onTitleUpdate) {
+            onTitleUpdate(trimmedTitle);
+          }
+        } else {
+          // Revert to original title if update failed
+          setEditableTitle(title);
+          console.error('Failed to update column title:', result.error);
+        }
+      } catch (error) {
+        console.error('Error updating column title:', error);
+        setEditableTitle(title); // Revert on error
+      }
+    }
+
+    setIsEditingTitle(false);
+  };
+
+  // Handle input change
+  const handleTitleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditableTitle(e.target.value);
+  };
+
+  // Handle key press in input
+  const handleTitleInputKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSaveTitle();
+    } else if (e.key === 'Escape') {
+      escapePressedRef.current = true;
+      setEditableTitle(title); // Revert to original title
+      setIsEditingTitle(false);
+      titleInputRef.current?.blur();
+    }
+  };
+
+  // Handle input blur
+  const handleTitleInputBlur = () => {
+    // If blur was triggered by Escape key, reset the flag and do nothing else
+    if (escapePressedRef.current) {
+      escapePressedRef.current = false;
+      return;
+    }
+
+    handleSaveTitle();
+  };
+
   return (
     <div className="w-full h-full bg-white flex flex-col overflow-hidden">
       {/* Column header */}
-      <div className="flex justify-between items-center px-4 py-3 border-b border-gray-200 flex-shrink-0">
-        <h2 className="text-lg font-medium text-gray-800">{getMappedTitle()}</h2>
-        <div className="flex items-center space-x-2">
+      <div className="flex justify-between items-center px-4 py-3 border-b border-gray-200 flex-shrink-0 h-[52px]">
+        <div className="h-[28px] flex items-center flex-grow overflow-hidden mr-2">
+          {isEditingTitle ? (
+            <input
+              ref={titleInputRef}
+              type="text"
+              value={editableTitle}
+              onChange={handleTitleInputChange}
+              onKeyDown={handleTitleInputKeyDown}
+              onBlur={handleTitleInputBlur}
+              autoFocus
+              className="text-lg font-medium text-gray-800 border border-gray-300 rounded px-2 leading-[28px] focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 h-[28px] w-full box-border"
+              data-testid={`column-title-input-${id}`}
+            />
+          ) : (
+            <h2
+              className={`text-lg font-medium text-gray-800 leading-[28px] flex items-center transition-colors duration-200 overflow-hidden text-ellipsis whitespace-nowrap ${isBoardOwner ? 'cursor-pointer hover:text-blue-600 group' : ''}`}
+              onClick={handleTitleClick}
+              data-testid={`column-title-${id}`}
+              title={isBoardOwner ? 'Click to edit column title' : ''}
+            >
+              {getMappedTitle()}
+              {isBoardOwner && (
+                <Edit2 className="h-3.5 w-3.5 ml-1.5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+              )}
+            </h2>
+          )}
+        </div>
+        <div className="flex items-center space-x-2 flex-shrink-0">
           <button
             className="flex items-center text-blue-600 hover:text-blue-700 cursor-pointer"
             onClick={onSortToggle}

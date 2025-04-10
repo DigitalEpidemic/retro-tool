@@ -282,15 +282,21 @@ exports[`Board > creates a snapshot of the component 1`] = `
               class="w-full h-full bg-white flex flex-col overflow-hidden"
             >
               <div
-                class="flex justify-between items-center px-4 py-3 border-b border-gray-200 flex-shrink-0"
+                class="flex justify-between items-center px-4 py-3 border-b border-gray-200 flex-shrink-0 h-[52px]"
               >
-                <h2
-                  class="text-lg font-medium text-gray-800"
-                >
-                  What went well
-                </h2>
                 <div
-                  class="flex items-center space-x-2"
+                  class="h-[28px] flex items-center flex-grow overflow-hidden mr-2"
+                >
+                  <h2
+                    class="text-lg font-medium text-gray-800 leading-[28px] flex items-center transition-colors duration-200 overflow-hidden text-ellipsis whitespace-nowrap "
+                    data-testid="column-title-col1"
+                    title=""
+                  >
+                    What went well
+                  </h2>
+                </div>
+                <div
+                  class="flex items-center space-x-2 flex-shrink-0"
                 >
                   <button
                     class="flex items-center text-blue-600 hover:text-blue-700 cursor-pointer"
@@ -406,15 +412,21 @@ exports[`Board > creates a snapshot of the component 1`] = `
               class="w-full h-full bg-white flex flex-col overflow-hidden"
             >
               <div
-                class="flex justify-between items-center px-4 py-3 border-b border-gray-200 flex-shrink-0"
+                class="flex justify-between items-center px-4 py-3 border-b border-gray-200 flex-shrink-0 h-[52px]"
               >
-                <h2
-                  class="text-lg font-medium text-gray-800"
-                >
-                  What can be improved
-                </h2>
                 <div
-                  class="flex items-center space-x-2"
+                  class="h-[28px] flex items-center flex-grow overflow-hidden mr-2"
+                >
+                  <h2
+                    class="text-lg font-medium text-gray-800 leading-[28px] flex items-center transition-colors duration-200 overflow-hidden text-ellipsis whitespace-nowrap "
+                    data-testid="column-title-col2"
+                    title=""
+                  >
+                    What can be improved
+                  </h2>
+                </div>
+                <div
+                  class="flex items-center space-x-2 flex-shrink-0"
                 >
                   <button
                     class="flex items-center text-blue-600 hover:text-blue-700 cursor-pointer"
@@ -530,15 +542,21 @@ exports[`Board > creates a snapshot of the component 1`] = `
               class="w-full h-full bg-white flex flex-col overflow-hidden"
             >
               <div
-                class="flex justify-between items-center px-4 py-3 border-b border-gray-200 flex-shrink-0"
+                class="flex justify-between items-center px-4 py-3 border-b border-gray-200 flex-shrink-0 h-[52px]"
               >
-                <h2
-                  class="text-lg font-medium text-gray-800"
-                >
-                  Action items
-                </h2>
                 <div
-                  class="flex items-center space-x-2"
+                  class="h-[28px] flex items-center flex-grow overflow-hidden mr-2"
+                >
+                  <h2
+                    class="text-lg font-medium text-gray-800 leading-[28px] flex items-center transition-colors duration-200 overflow-hidden text-ellipsis whitespace-nowrap "
+                    data-testid="column-title-col3"
+                    title=""
+                  >
+                    Action items
+                  </h2>
+                </div>
+                <div
+                  class="flex items-center space-x-2 flex-shrink-0"
                 >
                   <button
                     class="flex items-center text-blue-600 hover:text-blue-700 cursor-pointer"

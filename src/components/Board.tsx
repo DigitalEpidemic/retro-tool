@@ -29,6 +29,7 @@ import {
   subscribeToCards,
   updateCardPosition,
   updateColumnSortState,
+  updateColumnTitle,
   updateParticipantName as updateParticipantNameFirestore,
   updateShowAddColumnPlaceholder,
   updateUserCardsColor,
@@ -1196,6 +1197,16 @@ export default function Board() {
                             }));
                           } catch (error) {
                             console.error('Error updating sort state:', error);
+                          }
+                        }}
+                        onTitleUpdate={async newTitle => {
+                          try {
+                            if (boardId) {
+                              await updateColumnTitle(boardId, column.id, newTitle);
+                              // No need to update local state - Firestore listener will handle it
+                            }
+                          } catch (error) {
+                            console.error('Error updating column title:', error);
                           }
                         }}
                       >

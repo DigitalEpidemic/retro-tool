@@ -309,6 +309,23 @@ export const updateColumnSortState = async (
   });
 };
 
+// Update column title in Firestore
+export const updateColumnTitle = async (boardId: string, columnId: string, newTitle: string) => {
+  try {
+    const boardRef = doc(db, 'boards', boardId);
+    await updateDoc(boardRef, {
+      [`columns.${columnId}.title`]: newTitle,
+    });
+    return { success: true };
+  } catch (error) {
+    console.error('Error updating column title:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+};
+
 // Subscribe to board participants with optimized loading
 export const subscribeToBoardParticipants = (
   boardId: string,
