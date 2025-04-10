@@ -1,5 +1,5 @@
 import { act, render, screen, waitFor } from '@testing-library/react'; // Import act
-import { User } from 'firebase/auth';
+import { Auth, NextOrObserver, Unsubscribe, User, UserCredential } from 'firebase/auth';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FirebaseProvider } from './FirebaseContext'; // Adjust the import path as needed
 import { useFirebase } from './useFirebase';
@@ -9,24 +9,40 @@ vi.mock('firebase/app', () => ({
   initializeApp: vi.fn(() => ({})),
 }));
 
-// Keep track of the auth state callback
-let authStateCallback: any = null;
-let unsubscribeSpy = vi.fn();
+// Create mock implementations first
+const unsubscribeSpy = vi.fn();
+type AuthStateCallback = (user: User | null) => void;
+let authStateCallback: AuthStateCallback | null = null;
 
-// Mock Firebase Auth
+// Mock Firebase Auth module
 vi.mock('firebase/auth', () => {
-  const mockUser = { uid: 'test-user-123', displayName: null };
+  const mockUser: User = { uid: 'test-user-123', displayName: null } as User;
+
+  const mockOnAuthStateChanged = (
+    _auth: Auth,
+    nextOrObserver: NextOrObserver<User | null>
+  ): Unsubscribe => {
+    if (typeof nextOrObserver === 'function') {
+      authStateCallback = (user: User | null) => nextOrObserver(user);
+    } else {
+      authStateCallback = (user: User | null) => nextOrObserver.next?.(user);
+    }
+    return unsubscribeSpy;
+  };
+
   return {
     getAuth: vi.fn(() => ({
       currentUser: null,
-      onAuthStateChanged: vi.fn(),
+      onAuthStateChanged: vi.fn(mockOnAuthStateChanged),
     })),
-    onAuthStateChanged: vi.fn((auth, callback) => {
-      authStateCallback = callback;
-      setTimeout(() => callback(null), 0);
-      return unsubscribeSpy;
-    }),
-    signInAnonymously: vi.fn(() => Promise.resolve({ user: mockUser })),
+    onAuthStateChanged: vi.fn(mockOnAuthStateChanged),
+    signInAnonymously: vi.fn(() =>
+      Promise.resolve({
+        user: mockUser,
+        operationType: 'signIn',
+        providerId: null,
+      } as UserCredential)
+    ),
   };
 });
 
@@ -43,16 +59,18 @@ vi.mock('firebase/firestore', () => ({
 }));
 
 // Import the mocked services
-import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
-import { auth } from '../services/firebase';
+import { signInAnonymously } from 'firebase/auth';
 
 // Mock Firebase services
 vi.mock('../services/firebase', () => ({
   auth: {
     currentUser: null,
-    onAuthStateChanged: vi.fn(callback => {
-      authStateCallback = callback;
-      setTimeout(() => callback(null), 0);
+    onAuthStateChanged: vi.fn((nextOrObserver: NextOrObserver<User | null>): Unsubscribe => {
+      if (typeof nextOrObserver === 'function') {
+        authStateCallback = (user: User | null) => nextOrObserver(user);
+      } else {
+        authStateCallback = (user: User | null) => nextOrObserver.next?.(user);
+      }
       return unsubscribeSpy;
     }),
   },
@@ -81,18 +99,7 @@ const TestConsumer = () => {
 describe('FirebaseProvider', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    unsubscribeSpy = vi.fn(); // Reset the unsubscribe spy
-
-    // Set up the mocks for each test
-    vi.mocked(onAuthStateChanged).mockImplementation((auth, callback) => {
-      authStateCallback = callback;
-      return unsubscribeSpy;
-    });
-
-    vi.mocked(auth.onAuthStateChanged).mockImplementation(callback => {
-      authStateCallback = callback;
-      return unsubscribeSpy;
-    });
+    authStateCallback = null;
   });
 
   afterEach(() => {
@@ -112,7 +119,9 @@ describe('FirebaseProvider', () => {
     const mockUser = { uid: 'test-user-123', displayName: null } as User;
     vi.mocked(signInAnonymously).mockResolvedValueOnce({
       user: mockUser,
-    } as any);
+      operationType: 'signIn',
+      providerId: null,
+    } as UserCredential);
 
     render(
       <FirebaseProvider>
