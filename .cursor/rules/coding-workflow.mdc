@@ -11,4 +11,5 @@ alwaysApply: true
 - Do not touch code that is unrelated to the task
 - Write thorough tests for all major functionality
 - Avoid making major changes to the patterns and architecture of how a feature works after it was shown to work well, unless explicitly instructed
-- When editing a file, NEVER leave a comment like "//... (rest of the code remains unchanged) or // ... existing code ..." or // ... existing code ... or any equivalent
+- When editing a file, NEVER add or leave comments like "//... (rest of the code remains unchanged)" or "// ... existing code ..." or any variation. Always include the exact code changes and DO NOT use any placeholders for existing code.
+- Never suggest running the development server with "npm run dev" or similar commands, as I always have the development server running already
