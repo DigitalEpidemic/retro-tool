@@ -12,10 +12,19 @@ import * as boardService from '../../services/boardService';
 import type { Board as BoardType } from '../../services/firebase';
 import Board from '../Board';
 
-const createMockDocSnap = (exists = true, data: Record<string, unknown> = {}) => ({
-  exists: () => exists,
+const createMockDocSnap = (exists = true, data: Record<string, unknown> = {}): firestore.DocumentSnapshot<unknown> => ({
+  exists: function(this: firestore.DocumentSnapshot<unknown>): this is firestore.QueryDocumentSnapshot<unknown> {
+    return exists;
+  },
   data: () => data,
   id: 'test-doc-id',
+  metadata: {
+    hasPendingWrites: false,
+    isEqual: () => false,
+    fromCache: false,
+  },
+  get: () => undefined,
+  ref: {} as firestore.DocumentReference<unknown>,
 });
 
 const createMockTimestamp = (milliseconds?: number) => {
@@ -613,7 +622,7 @@ describe('Board', () => {
 
   it('displays error when board is not found and creation fails', async () => {
     // Mock getDoc to simulate a non-existent board
-    vi.spyOn(firestore, 'getDoc').mockResolvedValueOnce(createMockDocSnap(false) as unknown as ReturnType<typeof firestore.getDoc>);
+    vi.spyOn(firestore, 'getDoc').mockResolvedValueOnce(createMockDocSnap(false));
 
     // Mock createBoard to simulate a failure
     vi.spyOn(boardService, 'createBoard').mockRejectedValueOnce(
@@ -651,7 +660,7 @@ describe('Board', () => {
   it('displays error when board subscription returns null', async () => {
     // Mock getDoc to simulate a board that exists
     vi.spyOn(firestore, 'getDoc').mockResolvedValueOnce(
-      createMockDocSnap(true, { id: 'non-existent-board' }) as any
+      createMockDocSnap(true, { id: 'non-existent-board' })
     );
 
     // Mock subscribeToBoard to return null in the callback
@@ -724,7 +733,7 @@ describe('Board', () => {
     // We need to mock the component behavior when a board doesn't exist
 
     // Mock getDoc to return that the board doesn't exist
-    vi.spyOn(firestore, 'getDoc').mockResolvedValueOnce(createMockDocSnap(false) as any);
+    vi.spyOn(firestore, 'getDoc').mockResolvedValueOnce(createMockDocSnap(false));
 
     // Clear the navigate mock to track navigation
     mockNavigate.mockClear();
@@ -828,7 +837,7 @@ describe('Board', () => {
   it('displays error if board subscription fails after initial load', async () => {
     // Mock getDoc to simulate an existing board
     vi.spyOn(firestore, 'getDoc').mockResolvedValueOnce(
-      createMockDocSnap(true, { id: 'test-board-id' }) as any
+      createMockDocSnap(true, { id: 'test-board-id' })
     );
 
     // Mock subscribeToBoard to simulate initial success, then a failure
