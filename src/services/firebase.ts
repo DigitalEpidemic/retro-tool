@@ -30,6 +30,7 @@ export interface Column {
   title: string;
   order: number;
   sortByVotes?: boolean;
+  description?: string;
 }
 
 // Type for a board

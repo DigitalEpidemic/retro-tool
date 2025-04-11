@@ -1,8 +1,13 @@
 import { doc, getDoc } from 'firebase/firestore';
-import { ArrowUpDown, Edit2, MoreVertical } from 'lucide-react'; // Import icons
+import { ArrowUpDown, Edit2, MoreVertical, AlignLeft } from 'lucide-react'; // Added AlignLeft icon
 import React, { KeyboardEvent, useRef, useState } from 'react';
 import { useFirebase } from '../contexts/useFirebase'; // To get user ID
-import { addCard, deleteColumn, updateColumnTitle } from '../services/boardService'; // Add updateColumnTitle
+import {
+  addCard,
+  deleteColumn,
+  updateColumnTitle,
+  updateColumnDescription,
+} from '../services/boardService'; // Added updateColumnDescription
 import { db } from '../services/firebase';
 
 interface ColumnProps {
@@ -10,10 +15,12 @@ interface ColumnProps {
   title: string;
   boardId: string;
   sortByVotes: boolean;
+  description?: string;
   onSortToggle: () => void;
   isBoardOwner: boolean; // Add prop to check if the current user is the board owner
   children: React.ReactNode; // To render Droppable content from Board.tsx
   onTitleUpdate?: (newTitle: string) => void; // Optional callback for title updates
+  onDescriptionUpdate?: (description: string) => void; // Optional callback for description updates
 }
 
 export default function Column({
@@ -21,10 +28,12 @@ export default function Column({
   title,
   boardId,
   sortByVotes,
+  description,
   onSortToggle,
   isBoardOwner,
   children,
   onTitleUpdate,
+  onDescriptionUpdate,
 }: ColumnProps) {
   const { user } = useFirebase();
   const [newCardContent, setNewCardContent] = React.useState('');
@@ -38,6 +47,13 @@ export default function Column({
   const [editableTitle, setEditableTitle] = useState(title);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const escapePressedRef = useRef(false);
+
+  // Description editing states
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [editableDescription, setEditableDescription] = useState(description ?? '');
+  const descriptionInputRef = useRef<HTMLTextAreaElement>(null);
+  const descriptionEscapePressedRef = useRef(false);
+  const [isDescriptionVisible, setIsDescriptionVisible] = useState(false);
 
   // Close menu when clicking outside
   React.useEffect(() => {
@@ -57,6 +73,11 @@ export default function Column({
   React.useEffect(() => {
     setEditableTitle(title);
   }, [title]);
+
+  // Update editableDescription when description prop changes
+  React.useEffect(() => {
+    setEditableDescription(description ?? '');
+  }, [description]);
 
   // Map column titles to RetroTool style titles based on the id
   const getMappedTitle = () => {
@@ -207,6 +228,89 @@ export default function Column({
     handleSaveTitle();
   };
 
+  // Handle description click to start editing
+  const handleDescriptionClick = () => {
+    if (isBoardOwner && !isEditingDescription) {
+      setIsEditingDescription(true);
+      // Selection of text will happen in useEffect after render
+    }
+  };
+
+  // Add effect to focus description textarea when editing starts
+  React.useEffect(() => {
+    if (isEditingDescription && descriptionInputRef.current) {
+      // Focus and select all text after the textarea is rendered
+      setTimeout(() => {
+        if (descriptionInputRef.current) {
+          descriptionInputRef.current.select();
+        }
+      }, 10);
+    }
+  }, [isEditingDescription]);
+
+  // Handle saving description
+  const handleSaveDescription = async () => {
+    if (!boardId || !isBoardOwner) return;
+
+    const trimmedDescription = editableDescription.trim();
+
+    // Even if description is empty, we still want to save it (allows clearing description)
+    if (trimmedDescription !== description) {
+      try {
+        const result = await updateColumnDescription(boardId, id, trimmedDescription);
+        if (result.success) {
+          // Notify parent component if callback exists
+          if (onDescriptionUpdate) {
+            onDescriptionUpdate(trimmedDescription);
+          }
+        } else {
+          // Revert to original description if update failed
+          setEditableDescription(description ?? '');
+          console.error('Failed to update column description:', result.error);
+        }
+      } catch (error) {
+        console.error('Error updating column description:', error);
+        setEditableDescription(description ?? ''); // Revert on error
+      }
+    }
+
+    setIsEditingDescription(false);
+  };
+
+  // Handle description input change
+  const handleDescriptionInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setEditableDescription(e.target.value);
+  };
+
+  // Handle key press in description textarea
+  const handleDescriptionInputKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSaveDescription();
+    } else if (e.key === 'Escape') {
+      descriptionEscapePressedRef.current = true;
+      setEditableDescription(description ?? ''); // Revert to original description
+      setIsEditingDescription(false);
+      descriptionInputRef.current?.blur();
+    }
+  };
+
+  // Handle description textarea blur
+  const handleDescriptionInputBlur = () => {
+    // If blur was triggered by Escape key, reset the flag and do nothing else
+    if (descriptionEscapePressedRef.current) {
+      descriptionEscapePressedRef.current = false;
+      return;
+    }
+
+    handleSaveDescription();
+  };
+
+  // Toggle description visibility
+  const toggleDescriptionVisibility = () => {
+    setIsDescriptionVisible(!isDescriptionVisible);
+  };
+
   return (
     <div className="w-full h-full bg-white flex flex-col overflow-hidden">
       {/* Column header */}
@@ -239,6 +343,15 @@ export default function Column({
           )}
         </div>
         <div className="flex items-center space-x-2 flex-shrink-0">
+          <button
+            className={`flex items-center ${isDescriptionVisible ? 'text-blue-600' : 'text-gray-600'} hover:text-blue-700 cursor-pointer`}
+            onClick={toggleDescriptionVisibility}
+            title={isDescriptionVisible ? 'Hide description' : 'Show description'}
+            data-testid={`column-description-toggle-${id}`}
+          >
+            <AlignLeft className="h-4 w-4" />
+            <span className="sr-only">Toggle Description</span>
+          </button>
           <button
             className="flex items-center text-blue-600 hover:text-blue-700 cursor-pointer"
             onClick={onSortToggle}
@@ -277,6 +390,47 @@ export default function Column({
           </div>
         </div>
       </div>
+
+      {/* Column Description Section */}
+      {isDescriptionVisible && (
+        <div className="px-4 py-2 border-b border-gray-200 flex-shrink-0 bg-gray-50">
+          {isEditingDescription ? (
+            <textarea
+              ref={descriptionInputRef}
+              value={editableDescription}
+              onChange={handleDescriptionInputChange}
+              onKeyDown={handleDescriptionInputKeyDown}
+              onBlur={handleDescriptionInputBlur}
+              autoFocus
+              placeholder="Add a description for this column..."
+              className="w-full p-2 text-gray-700 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 min-h-[60px] resize-y"
+              data-testid={`column-description-input-${id}`}
+            />
+          ) : (
+            <div
+              className={`text-sm text-gray-700 py-1 italic ${isBoardOwner ? 'cursor-pointer hover:text-blue-600 group' : ''}`}
+              onClick={isBoardOwner ? handleDescriptionClick : undefined}
+              data-testid={`column-description-${id}`}
+            >
+              {editableDescription ? (
+                <p className="whitespace-pre-wrap flex items-center">
+                  {editableDescription}
+                  {isBoardOwner && (
+                    <Edit2 className="h-3.5 w-3.5 ml-1.5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                  )}
+                </p>
+              ) : (
+                isBoardOwner && (
+                  <p className="text-gray-400 flex items-center">
+                    <Edit2 className="h-3.5 w-3.5 mr-1" />
+                    Add a description...
+                  </p>
+                )
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Cards container - allow scrolling */}
       <div className="flex-grow overflow-y-auto p-3 space-y-3">{children}</div>

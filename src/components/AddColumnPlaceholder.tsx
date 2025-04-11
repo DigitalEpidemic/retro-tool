@@ -13,6 +13,7 @@ export default function AddColumnPlaceholder({
 }: AddColumnPlaceholderProps) {
   const [isAddingColumn, setIsAddingColumn] = useState(false);
   const [columnTitle, setColumnTitle] = useState('');
+  const [columnDescription, setColumnDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,10 +25,11 @@ export default function AddColumnPlaceholder({
     setError(null);
 
     try {
-      const result = await addColumn(boardId, columnTitle.trim());
+      const result = await addColumn(boardId, columnTitle.trim(), columnDescription.trim());
 
       if (result.success) {
         setColumnTitle('');
+        setColumnDescription('');
         setIsAddingColumn(false);
         if (onColumnAdded) onColumnAdded();
       } else {
@@ -65,6 +67,22 @@ export default function AddColumnPlaceholder({
                 className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 autoFocus
                 required
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="columnDescription"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Description (Optional)
+              </label>
+              <textarea
+                id="columnDescription"
+                value={columnDescription}
+                onChange={e => setColumnDescription(e.target.value)}
+                placeholder="Add a description for this column"
+                className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[80px] resize-y"
               />
             </div>
 

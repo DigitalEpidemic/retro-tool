@@ -3,7 +3,12 @@ import { User } from 'firebase/auth'; // Import User type
 import { DocumentSnapshot, getDoc } from 'firebase/firestore'; // Import getDoc from firebase/firestore
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useFirebase } from '../../contexts/useFirebase'; // Adjust the import path
-import { addCard, deleteColumn, updateColumnTitle } from '../../services/boardService'; // Adjust the import path
+import {
+  addCard,
+  deleteColumn,
+  updateColumnTitle,
+  updateColumnDescription,
+} from '../../services/boardService'; // Add updateColumnDescription
 import Column from '../Column'; // This is the real component
 
 // Mock dependencies
@@ -15,6 +20,7 @@ vi.mock('../../services/boardService', () => ({
   addCard: vi.fn(),
   deleteColumn: vi.fn(),
   updateColumnTitle: vi.fn(),
+  updateColumnDescription: vi.fn(),
 }));
 
 // Mock firebase/firestore
@@ -916,6 +922,249 @@ describe('Column', () => {
 
       // updateColumnTitle should not have been called
       expect(updateColumnTitle).not.toHaveBeenCalled();
+    });
+  });
+
+  // --- Description Editing Tests ---
+  describe('Column description editing', () => {
+    beforeEach(() => {
+      // Reset the mocks before each test
+      vi.mocked(updateColumnDescription).mockClear();
+      vi.mocked(updateColumnDescription).mockResolvedValue({ success: true });
+    });
+
+    it('renders description toggle button', async () => {
+      renderColumn({ isBoardOwner: true });
+
+      expect(screen.getByTestId('column-description-toggle-column-1')).toBeInTheDocument();
+    });
+
+    it('toggles description visibility when button is clicked', async () => {
+      renderColumn({ isBoardOwner: true, description: 'Test description' });
+
+      // Description should be hidden initially
+      expect(screen.queryByTestId('column-description-column-1')).not.toBeInTheDocument();
+
+      // Click the toggle button
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-description-toggle-column-1'));
+      });
+
+      // Description should now be visible
+      expect(screen.getByTestId('column-description-column-1')).toBeInTheDocument();
+      expect(screen.getByText('Test description')).toBeInTheDocument();
+
+      // Click toggle button again
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-description-toggle-column-1'));
+      });
+
+      // Description should be hidden again
+      expect(screen.queryByTestId('column-description-column-1')).not.toBeInTheDocument();
+    });
+
+    it('allows board owner to edit description when clicked', async () => {
+      renderColumn({ isBoardOwner: true, description: 'Test description' });
+
+      // Toggle description visibility
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-description-toggle-column-1'));
+      });
+
+      // Description should be in view mode
+      expect(screen.queryByTestId('column-description-input-column-1')).not.toBeInTheDocument();
+      expect(screen.getByTestId('column-description-column-1')).toBeInTheDocument();
+
+      // Click the description to edit
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-description-column-1'));
+      });
+
+      // Description should now be in edit mode
+      expect(screen.getByTestId('column-description-input-column-1')).toBeInTheDocument();
+      expect(screen.queryByTestId('column-description-column-1')).not.toBeInTheDocument();
+    });
+
+    it('does not allow non-board owner to edit description', async () => {
+      renderColumn({ isBoardOwner: false, description: 'Test description' });
+
+      // Toggle description visibility
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-description-toggle-column-1'));
+      });
+
+      // Description should be visible but not editable
+      expect(screen.getByTestId('column-description-column-1')).toBeInTheDocument();
+
+      // Click the description
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-description-column-1'));
+      });
+
+      // Description should still be in view mode
+      expect(screen.queryByTestId('column-description-input-column-1')).not.toBeInTheDocument();
+      expect(screen.getByTestId('column-description-column-1')).toBeInTheDocument();
+    });
+
+    it('saves description when Enter is pressed', async () => {
+      renderColumn({ isBoardOwner: true, description: 'Test description' });
+
+      // Toggle description visibility
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-description-toggle-column-1'));
+      });
+
+      // Click the description to edit
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-description-column-1'));
+      });
+
+      const descriptionInput = screen.getByTestId(
+        'column-description-input-column-1'
+      ) as HTMLTextAreaElement;
+
+      // Change the description
+      await act(async () => {
+        fireEvent.change(descriptionInput, { target: { value: 'Updated description' } });
+      });
+
+      // Press Enter to save
+      await act(async () => {
+        fireEvent.keyDown(descriptionInput, { key: 'Enter', code: 'Enter' });
+      });
+
+      // Textarea should be gone, back to view mode
+      expect(screen.queryByTestId('column-description-input-column-1')).not.toBeInTheDocument();
+      expect(screen.getByTestId('column-description-column-1')).toBeInTheDocument();
+
+      // Check if updateColumnDescription was called correctly
+      expect(updateColumnDescription).toHaveBeenCalledWith(
+        mockBoardId,
+        mockColumnId,
+        'Updated description'
+      );
+    });
+
+    it('reverts description when Escape is pressed', async () => {
+      renderColumn({ isBoardOwner: true, description: 'Test description' });
+
+      // Toggle description visibility
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-description-toggle-column-1'));
+      });
+
+      // Click the description to edit
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-description-column-1'));
+      });
+
+      const descriptionInput = screen.getByTestId(
+        'column-description-input-column-1'
+      ) as HTMLTextAreaElement;
+
+      // Change the description
+      await act(async () => {
+        fireEvent.change(descriptionInput, { target: { value: 'Updated description' } });
+      });
+
+      // Press Escape to cancel
+      await act(async () => {
+        fireEvent.keyDown(descriptionInput, { key: 'Escape', code: 'Escape' });
+      });
+
+      // Textarea should be gone, back to view mode
+      expect(screen.queryByTestId('column-description-input-column-1')).not.toBeInTheDocument();
+      expect(screen.getByTestId('column-description-column-1')).toBeInTheDocument();
+      expect(screen.getByText('Test description')).toBeInTheDocument();
+
+      // updateColumnDescription should not have been called
+      expect(updateColumnDescription).not.toHaveBeenCalled();
+    });
+
+    it('saves description on blur', async () => {
+      renderColumn({ isBoardOwner: true, description: 'Test description' });
+
+      // Toggle description visibility
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-description-toggle-column-1'));
+      });
+
+      // Click the description to edit
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-description-column-1'));
+      });
+
+      const descriptionInput = screen.getByTestId(
+        'column-description-input-column-1'
+      ) as HTMLTextAreaElement;
+
+      // Change the description
+      await act(async () => {
+        fireEvent.change(descriptionInput, { target: { value: 'Updated description' } });
+      });
+
+      // Blur the textarea to save
+      await act(async () => {
+        fireEvent.blur(descriptionInput);
+      });
+
+      // Textarea should be gone, back to view mode
+      expect(screen.queryByTestId('column-description-input-column-1')).not.toBeInTheDocument();
+      expect(screen.getByTestId('column-description-column-1')).toBeInTheDocument();
+
+      // Check if updateColumnDescription was called correctly
+      expect(updateColumnDescription).toHaveBeenCalledWith(
+        mockBoardId,
+        mockColumnId,
+        'Updated description'
+      );
+    });
+
+    it('shows add description placeholder for board owner when no description exists', async () => {
+      renderColumn({ isBoardOwner: true });
+
+      // Toggle description visibility
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-description-toggle-column-1'));
+      });
+
+      // Should see "Add a description..." placeholder
+      expect(screen.getByText('Add a description...')).toBeInTheDocument();
+    });
+
+    it('does not save description when Shift+Enter is pressed', async () => {
+      renderColumn({ isBoardOwner: true, description: 'Test description' });
+
+      // Toggle description visibility
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-description-toggle-column-1'));
+      });
+
+      // Click the description to edit
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-description-column-1'));
+      });
+
+      const descriptionInput = screen.getByTestId(
+        'column-description-input-column-1'
+      ) as HTMLTextAreaElement;
+
+      // Change the description
+      await act(async () => {
+        fireEvent.change(descriptionInput, { target: { value: 'Updated description' } });
+      });
+
+      // Press Shift+Enter to add a new line
+      await act(async () => {
+        fireEvent.keyDown(descriptionInput, { key: 'Enter', code: 'Enter', shiftKey: true });
+      });
+
+      // Textarea should still be visible in edit mode
+      expect(screen.getByTestId('column-description-input-column-1')).toBeInTheDocument();
+      expect(screen.queryByTestId('column-description-column-1')).not.toBeInTheDocument();
+
+      // updateColumnDescription should not have been called
+      expect(updateColumnDescription).not.toHaveBeenCalled();
     });
   });
 });

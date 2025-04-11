@@ -3,9 +3,9 @@ import {
   FocusEvent,
   KeyboardEvent,
   useEffect,
+  useMemo,
   useRef,
   useState,
-  useMemo,
 } from 'react'; // Remove memo import
 import { useNavigate, useParams } from 'react-router-dom';
 // Use @hello-pangea/dnd instead of react-beautiful-dnd
@@ -13,6 +13,7 @@ import { DragDropContext, Draggable, Droppable, DropResult } from '@hello-pangea
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import {
   Download,
+  Edit2,
   Pause,
   Play, // Import Pause icon
   RotateCcw,
@@ -20,7 +21,6 @@ import {
   Share2,
   TrendingUp,
   Users,
-  Edit2,
 } from 'lucide-react';
 import { useFirebase } from '../contexts/useFirebase';
 import {
@@ -36,13 +36,14 @@ import {
   startTimer,
   subscribeToBoard,
   subscribeToCards,
+  updateBoardName,
   updateCardPosition,
+  updateColumnDescription,
   updateColumnSortState,
   updateColumnTitle,
-  updateParticipantName as updateParticipantNameFirestore,
+  updateParticipantName,
   updateShowAddColumnPlaceholder,
   updateUserCardsColor,
-  updateBoardName,
 } from '../services/boardService';
 import { Board as BoardType, Card as CardType, db } from '../services/firebase';
 import ActionPointsPanel, { ActionPoint } from './ActionPointsPanel'; // Import ActionPointsPanel
@@ -574,7 +575,7 @@ export default function Board() {
 
     try {
       // Update in Firestore for backwards compatibility with cards
-      await updateParticipantNameFirestore(userId, newName);
+      await updateParticipantName(userId, newName);
 
       // Update in Realtime Database for real-time presence
       await updateParticipantNameRTDB(userId, boardId, newName);
@@ -1314,6 +1315,7 @@ export default function Board() {
                         title={column.title}
                         boardId={boardId ?? ''}
                         sortByVotes={columnSortStates[column.id] ?? false}
+                        description={column.description}
                         isBoardOwner={board?.facilitatorId === user?.uid}
                         onSortToggle={async () => {
                           const newSortState = !columnSortStates[column.id];
@@ -1335,6 +1337,16 @@ export default function Board() {
                             }
                           } catch (error) {
                             console.error('Error updating column title:', error);
+                          }
+                        }}
+                        onDescriptionUpdate={async newDescription => {
+                          try {
+                            if (boardId) {
+                              await updateColumnDescription(boardId, column.id, newDescription);
+                              // No need to update local state - Firestore listener will handle it
+                            }
+                          } catch (error) {
+                            console.error('Error updating column description:', error);
                           }
                         }}
                       >

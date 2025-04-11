@@ -326,6 +326,27 @@ export const updateColumnTitle = async (boardId: string, columnId: string, newTi
   }
 };
 
+// Update column description in Firestore
+export const updateColumnDescription = async (
+  boardId: string,
+  columnId: string,
+  description: string
+) => {
+  try {
+    const boardRef = doc(db, 'boards', boardId);
+    await updateDoc(boardRef, {
+      [`columns.${columnId}.description`]: description,
+    });
+    return { success: true };
+  } catch (error) {
+    console.error('Error updating column description:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+};
+
 // Subscribe to board participants with optimized loading
 export const subscribeToBoardParticipants = (
   boardId: string,
@@ -700,7 +721,7 @@ export const deleteColumn = async (boardId: string, columnId: string) => {
 };
 
 // Add a new column to a board
-export const addColumn = async (boardId: string, title: string) => {
+export const addColumn = async (boardId: string, title: string, description?: string) => {
   try {
     // 1. Get the board document
     const boardRef = doc(db, 'boards', boardId);
@@ -726,6 +747,7 @@ export const addColumn = async (boardId: string, title: string) => {
       title,
       order: highestOrder + 1,
       sortByVotes: false,
+      description: description ?? '', // Add description support
     };
 
     // 6. Add the new column to the columns object
