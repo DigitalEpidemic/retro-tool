@@ -9,6 +9,7 @@ import {
   updateColumnDescription,
 } from '../services/boardService'; // Added updateColumnDescription
 import { db } from '../services/firebase';
+import Tooltip from '../components/Tooltip'; // Use absolute path for component
 
 interface ColumnProps {
   id: string;
@@ -333,58 +334,73 @@ export default function Column({
               className={`text-lg font-medium text-gray-800 leading-[28px] flex items-center transition-colors duration-200 overflow-hidden text-ellipsis whitespace-nowrap ${isBoardOwner ? 'cursor-pointer hover:text-blue-600 group' : ''}`}
               onClick={handleTitleClick}
               data-testid={`column-title-${id}`}
-              title={isBoardOwner ? 'Click to edit column title' : ''}
             >
               {getMappedTitle()}
               {isBoardOwner && (
-                <Edit2 className="h-3.5 w-3.5 ml-1.5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                <Tooltip content="Click to edit column title">
+                  <Edit2 className="h-3.5 w-3.5 ml-1.5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                </Tooltip>
               )}
             </h2>
           )}
         </div>
         <div className="flex items-center space-x-2 flex-shrink-0">
-          <button
-            className="flex items-center text-blue-600 hover:text-blue-700 cursor-pointer"
-            onClick={onSortToggle}
-            data-testid={`sort-toggle-${id}`}
-          >
-            {sortByVotes && <span className="text-xs mr-1">Votes</span>}
-            <ArrowUpDown className="h-4 w-4" />
-            <span className="sr-only">Sort</span>
-          </button>
-          <button
-            className={`flex items-center ${isDescriptionVisible ? 'text-blue-600' : 'text-gray-600'} hover:text-blue-700 cursor-pointer`}
-            onClick={toggleDescriptionVisibility}
-            title={isDescriptionVisible ? 'Hide description' : 'Show description'}
-            data-testid={`column-description-toggle-${id}`}
-          >
-            <AlignLeft className="h-4 w-4" />
-            <span className="sr-only">Toggle Description</span>
-          </button>
-          <div className="relative" ref={menuRef}>
+          <Tooltip content={sortByVotes ? 'Sort by position' : 'Sort by votes'}>
             <button
-              className="text-blue-600 hover:text-blue-700 cursor-pointer"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              data-testid={`column-menu-${id}`}
+              className="flex items-center text-blue-600 hover:text-blue-700 cursor-pointer"
+              onClick={onSortToggle}
+              data-testid={`sort-toggle-${id}`}
             >
-              <MoreVertical className="h-4 w-4" />
-              <span className="sr-only">More options</span>
+              {sortByVotes && <span className="text-xs mr-1">Votes</span>}
+              <ArrowUpDown className="h-4 w-4" />
+              <span className="sr-only">Sort</span>
             </button>
+          </Tooltip>
+
+          <Tooltip content={isDescriptionVisible ? 'Hide description' : 'Show description'}>
+            <button
+              className={`flex items-center ${isDescriptionVisible ? 'text-blue-600' : 'text-gray-600'} hover:text-blue-700 cursor-pointer`}
+              onClick={toggleDescriptionVisibility}
+              data-testid={`column-description-toggle-${id}`}
+            >
+              <AlignLeft className="h-4 w-4" />
+              <span className="sr-only">Toggle Description</span>
+            </button>
+          </Tooltip>
+
+          <div className="relative" ref={menuRef}>
+            <Tooltip content="Column options">
+              <button
+                className="text-blue-600 hover:text-blue-700 cursor-pointer"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                data-testid={`column-menu-${id}`}
+              >
+                <MoreVertical className="h-4 w-4" />
+                <span className="sr-only">More options</span>
+              </button>
+            </Tooltip>
 
             {isMenuOpen && (
               <div className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
-                <button
-                  className={`w-full text-left px-4 py-2 text-sm ${
-                    isBoardOwner
-                      ? 'text-red-600 hover:bg-gray-100 cursor-pointer'
-                      : 'text-gray-400 cursor-not-allowed'
-                  }`}
-                  onClick={handleDeleteColumn}
-                  disabled={!isBoardOwner}
-                  data-testid={`delete-column-${id}`}
+                <Tooltip
+                  content={
+                    isBoardOwner ? 'Delete this column' : 'Only board owners can delete columns'
+                  }
+                  className="right-0 left-auto transform-none"
                 >
-                  Delete column
-                </button>
+                  <button
+                    className={`w-full text-left px-4 py-2 text-sm ${
+                      isBoardOwner
+                        ? 'text-red-600 hover:bg-gray-100 cursor-pointer'
+                        : 'text-gray-400 cursor-not-allowed'
+                    }`}
+                    onClick={handleDeleteColumn}
+                    disabled={!isBoardOwner}
+                    data-testid={`delete-column-${id}`}
+                  >
+                    Delete column
+                  </button>
+                </Tooltip>
               </div>
             )}
           </div>
@@ -413,18 +429,22 @@ export default function Column({
               data-testid={`column-description-${id}`}
             >
               {editableDescription ? (
-                <p className="whitespace-pre-wrap flex items-center">
+                <span className="whitespace-pre-wrap flex items-center">
                   {editableDescription}
                   {isBoardOwner && (
-                    <Edit2 className="h-3.5 w-3.5 ml-1.5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                    <Tooltip content="Click to edit description">
+                      <Edit2 className="h-3.5 w-3.5 ml-1.5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                    </Tooltip>
                   )}
-                </p>
+                </span>
               ) : (
                 isBoardOwner && (
-                  <p className="text-gray-400 flex items-center">
-                    <Edit2 className="h-3.5 w-3.5 mr-1" />
+                  <span className="text-gray-400 flex items-center">
+                    <Tooltip content="Add a description for this column">
+                      <Edit2 className="h-3.5 w-3.5 mr-1" />
+                    </Tooltip>
                     Add a description...
-                  </p>
+                  </span>
                 )
               )}
             </div>
@@ -483,12 +503,15 @@ export default function Column({
         </form>
       ) : (
         <div className="p-3 border-t border-gray-200 flex-shrink-0">
-          <button
-            onClick={() => setIsAddingCard(true)}
-            className="w-full p-2 text-sm text-blue-600 bg-gray-50 hover:bg-gray-100 rounded flex items-center justify-center cursor-pointer"
-          >
-            + Add a card
-          </button>
+          <Tooltip content="Add a new card to this column">
+            <button
+              onClick={() => setIsAddingCard(true)}
+              className="w-full p-2 text-sm text-blue-600 bg-gray-50 hover:bg-gray-100 rounded flex items-center justify-center cursor-pointer"
+              data-testid="add-column-button"
+            >
+              + Add a card
+            </button>
+          </Tooltip>
         </div>
       )}
     </div>
