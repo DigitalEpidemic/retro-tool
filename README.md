@@ -1,4 +1,6 @@
 # Retro Tool
+[![Netlify Status](https://api.netlify.com/api/v1/badges/5d75592a-9511-424e-b781-94e37f96d465/deploy-status)](https://app.netlify.com/sites/retro-tool/deploys)
+
 Deployed at: https://retro-tool.netlify.app/
 
 ## React + TypeScript + Vite
