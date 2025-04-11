@@ -1,5 +1,5 @@
 import { doc, getDoc } from 'firebase/firestore';
-import { ArrowUpDown, Edit2, MoreVertical, AlignLeft } from 'lucide-react'; // Added AlignLeft icon
+import { ArrowUpDown, Edit2, MoreVertical, AlignLeft, Trash2 } from 'lucide-react'; // Added Trash2 icon
 import React, { KeyboardEvent, useRef, useState } from 'react';
 import { useFirebase } from '../contexts/useFirebase'; // To get user ID
 import {
@@ -382,25 +382,19 @@ export default function Column({
 
             {isMenuOpen && (
               <div className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
-                <Tooltip
-                  content={
-                    isBoardOwner ? 'Delete this column' : 'Only board owners can delete columns'
-                  }
-                  className="right-0 left-auto transform-none"
+                <button
+                  className={`w-full text-left px-4 py-2 text-sm flex items-center ${
+                    isBoardOwner
+                      ? 'text-red-600 hover:bg-gray-100 cursor-pointer'
+                      : 'text-gray-400 cursor-not-allowed'
+                  }`}
+                  onClick={handleDeleteColumn}
+                  disabled={!isBoardOwner}
+                  data-testid={`delete-column-${id}`}
                 >
-                  <button
-                    className={`w-full text-left px-4 py-2 text-sm ${
-                      isBoardOwner
-                        ? 'text-red-600 hover:bg-gray-100 cursor-pointer'
-                        : 'text-gray-400 cursor-not-allowed'
-                    }`}
-                    onClick={handleDeleteColumn}
-                    disabled={!isBoardOwner}
-                    data-testid={`delete-column-${id}`}
-                  >
-                    Delete column
-                  </button>
-                </Tooltip>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete column
+                </button>
               </div>
             )}
           </div>
