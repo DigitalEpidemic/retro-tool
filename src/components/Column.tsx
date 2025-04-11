@@ -344,15 +344,6 @@ export default function Column({
         </div>
         <div className="flex items-center space-x-2 flex-shrink-0">
           <button
-            className={`flex items-center ${isDescriptionVisible ? 'text-blue-600' : 'text-gray-600'} hover:text-blue-700 cursor-pointer`}
-            onClick={toggleDescriptionVisibility}
-            title={isDescriptionVisible ? 'Hide description' : 'Show description'}
-            data-testid={`column-description-toggle-${id}`}
-          >
-            <AlignLeft className="h-4 w-4" />
-            <span className="sr-only">Toggle Description</span>
-          </button>
-          <button
             className="flex items-center text-blue-600 hover:text-blue-700 cursor-pointer"
             onClick={onSortToggle}
             data-testid={`sort-toggle-${id}`}
@@ -360,6 +351,15 @@ export default function Column({
             {sortByVotes && <span className="text-xs mr-1">Votes</span>}
             <ArrowUpDown className="h-4 w-4" />
             <span className="sr-only">Sort</span>
+          </button>
+          <button
+            className={`flex items-center ${isDescriptionVisible ? 'text-blue-600' : 'text-gray-600'} hover:text-blue-700 cursor-pointer`}
+            onClick={toggleDescriptionVisibility}
+            title={isDescriptionVisible ? 'Hide description' : 'Show description'}
+            data-testid={`column-description-toggle-${id}`}
+          >
+            <AlignLeft className="h-4 w-4" />
+            <span className="sr-only">Toggle Description</span>
           </button>
           <div className="relative" ref={menuRef}>
             <button
