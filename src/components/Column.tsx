@@ -22,6 +22,8 @@ interface ColumnProps {
   children: React.ReactNode; // To render Droppable content from Board.tsx
   onTitleUpdate?: (newTitle: string) => void; // Optional callback for title updates
   onDescriptionUpdate?: (description: string) => void; // Optional callback for description updates
+  columnIndex?: number; // Add column index prop
+  totalColumns?: number; // Add total columns prop
 }
 
 export default function Column({
@@ -35,6 +37,8 @@ export default function Column({
   children,
   onTitleUpdate,
   onDescriptionUpdate,
+  columnIndex,
+  totalColumns,
 }: ColumnProps) {
   const { user } = useFirebase();
   const [newCardContent, setNewCardContent] = React.useState('');
@@ -313,9 +317,9 @@ export default function Column({
   };
 
   return (
-    <div className="w-full h-full bg-white flex flex-col overflow-hidden">
+    <div className="w-full h-full bg-white flex flex-col overflow-hidden max-w-full">
       {/* Column header */}
-      <div className="flex justify-between items-center px-4 py-3 border-b border-gray-200 flex-shrink-0 h-[52px]">
+      <div className="flex justify-between items-center px-3 sm:px-4 py-3 border-b border-gray-200 flex-shrink-0 h-[52px]">
         <div className="h-[28px] flex items-center flex-grow overflow-hidden mr-2">
           {isEditingTitle ? (
             <input
@@ -326,19 +330,24 @@ export default function Column({
               onKeyDown={handleTitleInputKeyDown}
               onBlur={handleTitleInputBlur}
               autoFocus
-              className="text-lg font-medium text-gray-800 border border-gray-300 rounded px-2 leading-[28px] focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 h-[28px] w-full box-border"
+              className="text-base sm:text-lg font-medium text-gray-800 border border-gray-300 rounded px-2 leading-[28px] focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 h-[28px] w-full box-border"
               data-testid={`column-title-input-${id}`}
             />
           ) : (
             <h2
-              className={`text-lg font-medium text-gray-800 leading-[28px] flex items-center transition-colors duration-200 overflow-hidden text-ellipsis whitespace-nowrap ${isBoardOwner ? 'cursor-pointer hover:text-blue-600 group' : ''}`}
+              className={`text-base sm:text-lg font-medium text-gray-800 leading-[28px] flex items-center transition-colors duration-200 overflow-hidden text-ellipsis whitespace-nowrap ${isBoardOwner ? 'cursor-pointer hover:text-blue-600 group' : ''}`}
               onClick={handleTitleClick}
               data-testid={`column-title-${id}`}
             >
+              {columnIndex !== undefined && totalColumns !== undefined && (
+                <span className="text-xs text-gray-500 font-normal md:hidden mr-1">
+                  ({columnIndex + 1}/{totalColumns})
+                </span>
+              )}
               {getMappedTitle()}
               {isBoardOwner && (
                 <Tooltip content="Click to edit column title">
-                  <Edit2 className="h-3.5 w-3.5 ml-1.5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                  <Edit2 className="h-4 w-4 sm:h-3.5 sm:w-3.5 ml-1.5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                 </Tooltip>
               )}
             </h2>
@@ -347,23 +356,23 @@ export default function Column({
         <div className="flex items-center space-x-2 flex-shrink-0">
           <Tooltip content={sortByVotes ? 'Sort by position' : 'Sort by votes'}>
             <button
-              className="flex items-center text-blue-600 hover:text-blue-700 cursor-pointer"
+              className="flex items-center text-blue-600 hover:text-blue-700 active:text-blue-800 cursor-pointer p-1.5 rounded hover:bg-blue-50 active:bg-blue-100 transition-colors duration-300 touch-feedback"
               onClick={onSortToggle}
               data-testid={`sort-toggle-${id}`}
             >
-              {sortByVotes && <span className="text-xs mr-1">Votes</span>}
-              <ArrowUpDown className="h-4 w-4" />
+              <span className="text-xs mr-1">{sortByVotes ? 'Votes' : 'Order'}</span>
+              <ArrowUpDown className="h-5 w-5 sm:h-4 sm:w-4" />
               <span className="sr-only">Sort</span>
             </button>
           </Tooltip>
 
           <Tooltip content={isDescriptionVisible ? 'Hide description' : 'Show description'}>
             <button
-              className={`flex items-center ${isDescriptionVisible ? 'text-blue-600' : 'text-gray-600'} hover:text-blue-700 cursor-pointer`}
+              className={`flex items-center ${isDescriptionVisible ? 'text-blue-600' : 'text-gray-600'} hover:text-blue-700 active:text-blue-800 cursor-pointer p-1.5 rounded hover:bg-blue-50 active:bg-blue-100 transition-colors duration-300 touch-feedback`}
               onClick={toggleDescriptionVisibility}
               data-testid={`column-description-toggle-${id}`}
             >
-              <AlignLeft className="h-4 w-4" />
+              <AlignLeft className="h-5 w-5 sm:h-4 sm:w-4" />
               <span className="sr-only">Toggle Description</span>
             </button>
           </Tooltip>
@@ -371,11 +380,11 @@ export default function Column({
           <div className="relative" ref={menuRef}>
             <Tooltip content="Column options">
               <button
-                className="text-blue-600 hover:text-blue-700 cursor-pointer"
+                className="text-blue-600 hover:text-blue-700 active:text-blue-800 cursor-pointer p-1.5 rounded hover:bg-blue-50 active:bg-blue-100 transition-colors duration-300 touch-feedback"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 data-testid={`column-menu-${id}`}
               >
-                <MoreVertical className="h-4 w-4" />
+                <MoreVertical className="h-5 w-5 sm:h-4 sm:w-4" />
                 <span className="sr-only">More options</span>
               </button>
             </Tooltip>
@@ -385,14 +394,14 @@ export default function Column({
                 <button
                   className={`w-full text-left px-4 py-2 text-sm flex items-center ${
                     isBoardOwner
-                      ? 'text-red-600 hover:bg-gray-100 cursor-pointer'
+                      ? 'text-red-600 hover:text-red-700 active:text-red-800 hover:bg-red-50 active:bg-red-100 cursor-pointer transition-colors duration-300 touch-feedback'
                       : 'text-gray-400 cursor-not-allowed'
                   }`}
                   onClick={handleDeleteColumn}
                   disabled={!isBoardOwner}
                   data-testid={`delete-column-${id}`}
                 >
-                  <Trash2 className="h-4 w-4 mr-2" />
+                  <Trash2 className="h-5 w-5 sm:h-4 sm:w-4 mr-2" />
                   Delete column
                 </button>
               </div>
@@ -403,7 +412,7 @@ export default function Column({
 
       {/* Column Description Section */}
       {isDescriptionVisible && (
-        <div className="px-4 py-2 border-b border-gray-200 flex-shrink-0 bg-gray-50">
+        <div className="px-3 sm:px-4 py-2 border-b border-gray-200 flex-shrink-0 bg-gray-50">
           {isEditingDescription ? (
             <textarea
               ref={descriptionInputRef}
@@ -413,7 +422,7 @@ export default function Column({
               onBlur={handleDescriptionInputBlur}
               autoFocus
               placeholder="Add a description for this column..."
-              className="w-full p-2 text-gray-700 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 min-h-[60px] resize-y"
+              className="w-full p-2 text-base sm:text-sm text-gray-700 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 min-h-[60px] resize-y"
               data-testid={`column-description-input-${id}`}
             />
           ) : (
@@ -427,7 +436,7 @@ export default function Column({
                   {editableDescription}
                   {isBoardOwner && (
                     <Tooltip content="Click to edit description">
-                      <Edit2 className="h-3.5 w-3.5 ml-1.5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                      <Edit2 className="h-4 w-4 sm:h-3.5 sm:w-3.5 ml-1.5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                     </Tooltip>
                   )}
                 </span>
@@ -435,7 +444,7 @@ export default function Column({
                 isBoardOwner && (
                   <span className="text-gray-400 flex items-center">
                     <Tooltip content="Add a description for this column">
-                      <Edit2 className="h-3.5 w-3.5 mr-1" />
+                      <Edit2 className="h-4 w-4 sm:h-3.5 sm:w-3.5 mr-1" />
                     </Tooltip>
                     Add a description...
                   </span>
@@ -446,14 +455,14 @@ export default function Column({
         </div>
       )}
 
-      {/* Cards container - allow scrolling */}
-      <div className="flex-grow overflow-y-auto p-3 space-y-3">{children}</div>
+      {/* Cards container - allow scrolling but ensure fixed height */}
+      <div className="flex-1 overflow-y-auto p-2 sm:p-3 space-y-2 sm:space-y-3">{children}</div>
 
-      {/* Add card section */}
+      {/* Add card section - fixed at the bottom */}
       {isAddingCard ? (
         <form
           onSubmit={handleAddCard}
-          className="p-3 border-t border-gray-200 flex-shrink-0"
+          className="p-2 sm:p-3 border-t border-gray-200 flex-shrink-0"
           data-testid="add-card-form"
         >
           <textarea
@@ -461,7 +470,7 @@ export default function Column({
             onChange={e => setNewCardContent(e.target.value)}
             placeholder="Type here... Press Enter to save."
             rows={3}
-            className="w-full rounded-none border-none bg-gray-100 text-sm p-3 mb-2 resize-none focus:ring-0"
+            className="w-full rounded-none border-none bg-gray-100 text-base sm:text-sm p-3 mb-2 resize-none focus:ring-0"
             required
             autoFocus
             disabled={isSubmitting}
@@ -481,14 +490,14 @@ export default function Column({
             <button
               type="button"
               onClick={() => setIsAddingCard(false)}
-              className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded hover:bg-gray-200 cursor-pointer"
+              className="px-3 py-2 text-xs font-medium text-gray-600 bg-gray-100 rounded hover:bg-gray-200 active:bg-gray-300 cursor-pointer transition-colors duration-300 touch-feedback"
               disabled={isSubmitting}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-3 py-1.5 text-xs font-medium bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 cursor-pointer"
+              className="px-3 py-2 text-xs font-medium bg-blue-500 text-white rounded hover:bg-blue-600 active:bg-blue-700 disabled:opacity-50 cursor-pointer transition-colors duration-300 touch-feedback"
               disabled={!newCardContent.trim() || !user || isSubmitting}
             >
               {isSubmitting ? 'Saving...' : 'Save'}
@@ -496,17 +505,15 @@ export default function Column({
           </div>
         </form>
       ) : (
-        <div className="p-3 border-t border-gray-200 flex-shrink-0">
-          <Tooltip content="Add a new card to this column">
-            <button
-              onClick={() => setIsAddingCard(true)}
-              className="w-full p-2 text-sm text-blue-600 bg-gray-50 hover:bg-gray-100 rounded flex items-center justify-center cursor-pointer"
-              data-testid="add-column-button"
-            >
-              + Add a card
-            </button>
-          </Tooltip>
-        </div>
+        <Tooltip content="Add a new card to this column">
+          <button
+            onClick={() => setIsAddingCard(true)}
+            className="w-full py-4 text-sm text-blue-600 bg-gray-50 hover:bg-gray-100 active:bg-gray-200 border-t border-gray-200 flex items-center justify-center cursor-pointer transition-colors duration-300 touch-feedback"
+            data-testid="add-column-button"
+          >
+            + Add a card
+          </button>
+        </Tooltip>
       )}
     </div>
   );

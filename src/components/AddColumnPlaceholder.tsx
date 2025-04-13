@@ -45,7 +45,7 @@ export default function AddColumnPlaceholder({
 
   if (isAddingColumn) {
     return (
-      <div className="border-r border-l border-gray-200 bg-white rounded shadow-sm h-full flex flex-col overflow-hidden">
+      <div className="border-r border-l border-gray-200 bg-white rounded shadow-sm h-full flex flex-col overflow-hidden w-full">
         <div className="flex justify-between items-center px-4 py-3 border-b border-gray-200 flex-shrink-0">
           <h2 className="text-lg font-medium text-gray-800">New Column</h2>
         </div>
@@ -82,7 +82,7 @@ export default function AddColumnPlaceholder({
                 value={columnDescription}
                 onChange={e => setColumnDescription(e.target.value)}
                 placeholder="Add a description for this column"
-                className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[80px] resize-y"
+                className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[80px] resize-y text-base sm:text-sm"
               />
             </div>
 
@@ -90,14 +90,14 @@ export default function AddColumnPlaceholder({
               <button
                 type="button"
                 onClick={() => setIsAddingColumn(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded hover:bg-gray-200 cursor-pointer"
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded hover:bg-gray-200 active:bg-gray-300 cursor-pointer transition-colors duration-300 touch-feedback"
                 disabled={isSubmitting}
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 text-sm font-medium bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 cursor-pointer"
+                className="px-4 py-2 text-sm font-medium bg-blue-500 text-white rounded hover:bg-blue-600 active:bg-blue-700 disabled:opacity-50 cursor-pointer transition-colors duration-300 touch-feedback"
                 disabled={!columnTitle.trim() || isSubmitting}
               >
                 {isSubmitting ? 'Adding...' : 'Add Column'}
@@ -110,7 +110,7 @@ export default function AddColumnPlaceholder({
   }
 
   return (
-    <div className="border-2 border-dashed border-gray-300 bg-gray-50 rounded h-full flex flex-col overflow-hidden">
+    <div className="border-2 border-dashed border-gray-300 bg-gray-50 rounded h-full flex flex-col overflow-hidden w-full">
       <div className="flex-grow flex flex-col items-center justify-center p-6 text-center">
         <div className="bg-blue-100 rounded-full p-3 mb-4">
           <Plus className="h-6 w-6 text-blue-600" />
@@ -121,7 +121,7 @@ export default function AddColumnPlaceholder({
         </p>
         <button
           onClick={() => setIsAddingColumn(true)}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm font-medium transition-colors cursor-pointer"
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 active:bg-blue-700 text-sm font-medium transition-colors cursor-pointer touch-feedback"
           data-testid="add-column-button"
         >
           Create Column

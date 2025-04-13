@@ -83,7 +83,7 @@ export default function Card({ provided, card, isOwner }: CardProps) {
       }}
       {...provided.draggableProps}
       {...provided.dragHandleProps}
-      className={`${getCardColor()} rounded shadow-sm border-none mb-3 group p-0 min-h-[100px] relative flex flex-col overflow-hidden`}
+      className={`${getCardColor()} rounded shadow-sm border-none mb-3 group p-0 min-h-[9rem] relative flex flex-col overflow-hidden`}
     >
       {isEditing ? (
         <div className="p-3" style={{ height: `${cardHeight}px` }}>
@@ -91,21 +91,21 @@ export default function Card({ provided, card, isOwner }: CardProps) {
             value={content}
             onChange={e => setContent(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="w-full h-[calc(100%-40px)] rounded border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm p-2 resize-none"
+            className="w-full h-[calc(100%-40px)] rounded border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-base sm:text-sm p-2 resize-none"
             autoFocus
           />
           <div className="flex justify-end space-x-2 mt-2">
             <button
               aria-label="Cancel"
               onClick={() => setIsEditing(false)}
-              className="px-2.5 py-1 text-xs font-medium text-gray-700 bg-gray-100 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300 cursor-pointer"
+              className="px-2.5 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded hover:bg-gray-200 active:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-colors duration-300 cursor-pointer touch-feedback"
             >
               Cancel
             </button>
             <button
               aria-label="Save"
               onClick={handleSave}
-              className="px-2.5 py-1 text-xs font-medium bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+              className="px-2.5 py-1.5 text-xs font-medium bg-blue-500 text-white rounded hover:bg-blue-600 active:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-300 cursor-pointer touch-feedback"
             >
               Save
             </button>
@@ -113,34 +113,34 @@ export default function Card({ provided, card, isOwner }: CardProps) {
         </div>
       ) : (
         <>
-          {/* Position edit/delete buttons in top right corner */}
-          <div className="absolute right-0 top-0 flex flex-col items-center py-2 px-0 min-w-[30px] z-10">
+          {/* Position edit/delete buttons in top right corner with larger touch targets */}
+          <div className="absolute right-1 top-1 flex flex-col items-center z-10">
             {isOwner && (
               <>
                 {/* Delete button at top */}
                 <button
                   aria-label="Delete"
                   onClick={handleDelete}
-                  className="p-1 rounded text-red-600 hover:text-red-700 hover:bg-red-100 transition-colors cursor-pointer"
+                  className="p-1.5 rounded text-red-600 hover:text-red-700 active:text-red-800 hover:bg-red-100 active:bg-red-200 transition-colors duration-300 cursor-pointer touch-feedback"
                 >
-                  <Trash2 className="h-3 w-3" />
+                  <Trash2 className="h-5 w-5 sm:h-4 sm:w-4" />
                 </button>
 
                 {/* Edit button below delete */}
                 <button
                   aria-label="Edit"
                   onClick={handleEdit}
-                  className="p-1 mt-2 rounded text-blue-600 hover:text-blue-700 hover:bg-blue-100 transition-colors cursor-pointer"
+                  className="p-1.5 mt-1 rounded text-blue-600 hover:text-blue-700 active:text-blue-800 hover:bg-blue-100 active:bg-blue-200 transition-colors duration-300 cursor-pointer touch-feedback"
                 >
-                  <Edit2 className="h-3 w-3" />
+                  <Edit2 className="h-5 w-5 sm:h-4 sm:w-4" />
                 </button>
               </>
             )}
           </div>
 
           {/* Card content with padding to accommodate action buttons */}
-          <div className="flex-grow py-3 mr-[30px] ml-[30px]">
-            <p className="text-sm text-gray-800 whitespace-pre-wrap break-words leading-relaxed text-left">
+          <div className="flex-grow py-3 px-3 sm:mr-[30px] sm:ml-[30px]">
+            <p className="text-sm text-gray-800 whitespace-pre-wrap break-words leading-relaxed text-left max-w-full overflow-hidden">
               {card.content}
             </p>
           </div>
@@ -152,18 +152,18 @@ export default function Card({ provided, card, isOwner }: CardProps) {
               <div className="flex items-center">
                 <button
                   onClick={() => handleVote('up')}
-                  className="p-1 rounded flex items-center transition-colors cursor-pointer text-gray-500 hover:text-green-600 hover:bg-green-50"
+                  className="p-1.5 rounded flex items-center transition-colors duration-300 cursor-pointer text-gray-500 hover:text-green-600 active:text-green-700 hover:bg-green-50 active:bg-green-100 touch-feedback"
                 >
-                  <ThumbsUp aria-label="Upvote" className="h-3 w-3" />
+                  <ThumbsUp aria-label="Upvote" className="h-5 w-5 sm:h-4 sm:w-4" />
                 </button>
 
-                <span className="text-xs font-medium mx-1 text-gray-700">{card.votes}</span>
+                <span className="text-sm sm:text-xs font-medium mx-1.5 sm:mx-1 text-gray-700">{card.votes}</span>
 
                 <button
                   onClick={() => handleVote('down')}
-                  className="p-1 rounded flex items-center transition-colors cursor-pointer text-gray-500 hover:text-red-600 hover:bg-red-50"
+                  className="p-1.5 rounded flex items-center transition-colors duration-300 cursor-pointer text-gray-500 hover:text-red-600 active:text-red-700 hover:bg-red-50 active:bg-red-100 touch-feedback"
                 >
-                  <ThumbsDown aria-label="Downvote" className="h-3 w-3" />
+                  <ThumbsDown aria-label="Downvote" className="h-5 w-5 sm:h-4 sm:w-4" />
                 </button>
               </div>
 

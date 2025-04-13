@@ -66,22 +66,22 @@ const ActionPointsPanel = memo(
 
     return (
       <div
-        className="fixed right-0 top-0 h-screen w-80 bg-white shadow-lg border-l border-gray-200 z-20 overflow-y-auto"
+        className="fixed inset-0 bg-white z-50 flex flex-col md:inset-auto md:right-0 md:top-0 md:h-screen md:w-80 md:bg-white md:shadow-lg md:border-l md:border-gray-200 md:z-20 md:overflow-y-auto"
         data-testid="action-points-panel"
       >
-        <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+        <div className="border-b border-gray-200 flex justify-between items-center px-3 py-3">
           <h2 className="text-lg font-semibold text-gray-800">Action Points</h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 cursor-pointer"
+            className="text-gray-500 hover:text-gray-700 active:text-gray-900 cursor-pointer p-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors duration-300 touch-feedback"
             aria-label="Close panel"
             data-testid="close-panel"
           >
-            <X className="h-5 w-5" />
+            <X className="h-6 w-6 md:h-5 md:w-5" />
           </button>
         </div>
 
-        <div className="p-4">
+        <div className="flex-1 p-4 overflow-y-auto">
           <h3 className="text-sm font-semibold text-gray-600 mb-2">To do</h3>
 
           <ul className="space-y-3 mb-4">
@@ -93,7 +93,7 @@ const ActionPointsPanel = memo(
               actionPoints.map(actionPoint => (
                 <li
                   key={actionPoint.id}
-                  className="flex items-center justify-between py-2 px-3 rounded-md hover:bg-gray-50"
+                  className="flex items-center justify-between py-3 px-3 rounded-md hover:bg-gray-50"
                   data-testid={`action-point-${actionPoint.id}`}
                 >
                   <div className="flex items-center">
@@ -101,7 +101,7 @@ const ActionPointsPanel = memo(
                       type="checkbox"
                       checked={actionPoint.completed}
                       onChange={() => onToggleActionPoint(actionPoint.id)}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mr-3"
+                      className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mr-3"
                     />
                     <span
                       className={`text-sm ${
@@ -114,7 +114,7 @@ const ActionPointsPanel = memo(
 
                   <button
                     onClick={() => onDeleteActionPoint(actionPoint.id)}
-                    className="text-gray-400 hover:text-red-500 ml-2 cursor-pointer"
+                    className="text-gray-400 hover:text-red-500 active:text-red-700 ml-2 cursor-pointer p-2 rounded-full hover:bg-red-50 active:bg-red-100 transition-colors duration-300 touch-feedback"
                     aria-label="Delete action point"
                   >
                     <X className="h-4 w-4" />
@@ -139,14 +139,14 @@ const ActionPointsPanel = memo(
               <div className="flex justify-end mt-2 space-x-2">
                 <button
                   onClick={handleCancelAdd}
-                  className="px-2 py-1 text-xs text-gray-600 hover:text-gray-800 cursor-pointer"
+                  className="px-2 py-1 text-xs text-gray-600 hover:text-gray-800 active:text-gray-900 rounded hover:bg-gray-100 active:bg-gray-200 cursor-pointer transition-colors duration-300 touch-feedback"
                   data-testid="cancel-action-point"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleAddActionPoint}
-                  className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 cursor-pointer"
+                  className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 active:bg-blue-700 cursor-pointer transition-colors duration-300 touch-feedback"
                   data-testid="add-action-point"
                 >
                   Add
@@ -156,7 +156,7 @@ const ActionPointsPanel = memo(
           ) : (
             <button
               onClick={handleStartAdd}
-              className="flex items-center text-blue-600 hover:text-blue-700 font-medium text-sm cursor-pointer"
+              className="flex items-center text-blue-600 hover:text-blue-700 active:text-blue-800 font-medium text-sm p-2 rounded-full hover:bg-blue-50 active:bg-blue-100 cursor-pointer transition-colors duration-300 touch-feedback"
               data-testid="add-action-point-button"
             >
               <Plus className="h-4 w-4 mr-1" />

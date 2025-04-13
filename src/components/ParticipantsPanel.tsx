@@ -96,22 +96,22 @@ const ParticipantsPanel = memo(
 
     return (
       <div
-        className="fixed right-0 top-0 h-screen w-80 bg-white shadow-lg border-l border-gray-200 z-20 overflow-y-auto"
+        className="fixed inset-0 bg-white z-50 flex flex-col md:inset-auto md:right-0 md:top-0 md:h-screen md:w-80 md:bg-white md:shadow-lg md:border-l md:border-gray-200 md:z-20 md:overflow-y-auto"
         data-testid="participants-panel"
       >
-        <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+        <div className="border-b border-gray-200 flex justify-between items-center px-3 py-3">
           <h2 className="text-lg font-semibold text-gray-800">Participants</h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 cursor-pointer"
+            className="text-gray-500 hover:text-gray-700 active:text-gray-900 cursor-pointer p-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors duration-300 touch-feedback"
             aria-label="Close panel"
             data-testid="close-panel"
           >
-            <X className="h-5 w-5" />
+            <X className="h-6 w-6 md:h-5 md:w-5" />
           </button>
         </div>
 
-        <div className="p-4">
+        <div className="flex-1 p-4 overflow-y-auto">
           <ul className="space-y-3">
             {validParticipants.length === 0 ? (
               <li className="text-gray-500 italic">No participants yet</li>
@@ -119,7 +119,7 @@ const ParticipantsPanel = memo(
               validParticipants.map(participant => (
                 <li
                   key={participant.id}
-                  className="flex items-center justify-between py-2 px-3 rounded-md hover:bg-gray-50"
+                  className="flex items-center justify-between py-3 px-3 rounded-md hover:bg-gray-50"
                   data-testid={`participant-${participant.id}`}
                 >
                   <div className="flex flex-col w-full">
@@ -156,7 +156,7 @@ const ParticipantsPanel = memo(
                                 onClick={() => handleColorSelect(color.value)}
                                 className={`${
                                   color.value
-                                } w-7 h-7 rounded-full cursor-pointer shadow-sm transition-all 
+                                } w-7 h-7 rounded-full cursor-pointer shadow-sm transition-all touch-feedback
                                   ${
                                     newColor === color.value
                                       ? 'ring-2 ring-blue-500 scale-110'
@@ -187,7 +187,7 @@ const ParticipantsPanel = memo(
                           <div className="flex justify-end mt-3 gap-2">
                             <button
                               onClick={() => setEditingUser(null)}
-                              className="text-gray-600 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm font-medium cursor-pointer transition-colors"
+                              className="text-gray-600 bg-gray-100 px-3 py-1 rounded text-sm font-medium cursor-pointer hover:bg-gray-200 active:bg-gray-300 transition-colors duration-300 touch-feedback"
                               aria-label="Cancel changes"
                               data-testid={`cancel-changes-${participant.id}`}
                             >
@@ -195,7 +195,7 @@ const ParticipantsPanel = memo(
                             </button>
                             <button
                               onClick={handleSaveChanges}
-                              className="text-white bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded text-sm font-medium cursor-pointer transition-colors"
+                              className="text-white bg-blue-500 px-3 py-1 rounded text-sm font-medium cursor-pointer hover:bg-blue-600 active:bg-blue-700 transition-colors duration-300 touch-feedback"
                               aria-label="Save changes"
                               data-testid={`save-changes-${participant.id}`}
                             >
@@ -229,7 +229,7 @@ const ParticipantsPanel = memo(
                             onClick={() =>
                               handleStartEdit(participant.id, participant.name, participant.color)
                             }
-                            className="text-gray-400 hover:text-blue-500 cursor-pointer"
+                            className="text-gray-400 hover:text-blue-500 active:text-blue-700 p-2 rounded-full cursor-pointer hover:bg-gray-50 active:bg-gray-100 transition-colors duration-300 touch-feedback"
                             aria-label="Edit your name and color"
                             data-testid={`edit-name-${participant.id}`}
                           >
