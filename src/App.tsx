@@ -186,7 +186,7 @@ function Home() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50">
+      <div className="min-h-dvh flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-indigo-500 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading...</p>
@@ -196,7 +196,7 @@ function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-dvh bg-gradient-to-br from-blue-50 to-indigo-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl">
         <div className="p-8">
           <div className="flex items-center justify-center mb-6">
@@ -343,7 +343,7 @@ function Home() {
 
 function App() {
   return (
-    <div className="h-screen">
+    <div className="h-dvh">
       <main className="h-full">
         <Routes>
           <Route path="/" element={<Home />} />

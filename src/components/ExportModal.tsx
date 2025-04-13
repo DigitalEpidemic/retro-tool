@@ -115,7 +115,7 @@ export default function ExportModal({ isOpen, onClose, board, cards }: ExportMod
           <h2 className="text-xl font-semibold text-gray-800">Export Board as Markdown</h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 cursor-pointer"
+            className="text-gray-500 hover:text-gray-700 active:text-gray-900 cursor-pointer p-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors duration-300 touch-feedback"
             aria-label="Close panel"
           >
             <X className="h-5 w-5" />
@@ -134,14 +134,14 @@ export default function ExportModal({ isOpen, onClose, board, cards }: ExportMod
         <div className="flex justify-end space-x-3 border-t border-gray-200 p-4">
           <button
             onClick={handleCopyToClipboard}
-            className="flex items-center space-x-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300 cursor-pointer"
+            className="flex items-center space-x-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-800 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-300 cursor-pointer transition-colors duration-300 touch-feedback"
           >
             <Clipboard className="h-4 w-4" />
             <span>{copySuccess ? 'Copied!' : 'Copy to Clipboard'}</span>
           </button>
           <button
             onClick={handleSaveAsFile}
-            className="flex items-center space-x-1 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+            className="flex items-center space-x-1 px-4 py-2 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer transition-colors duration-300 touch-feedback"
           >
             <FileDown className="h-4 w-4" />
             <span>Save as File</span>

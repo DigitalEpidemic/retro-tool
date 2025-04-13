@@ -3,3 +3,123 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Global Responsive Styles */
+html, body {
+  @apply antialiased overflow-hidden h-full;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  position: fixed;
+  width: 100%;
+}
+
+/* Improve scrollbar styles for mobile and desktop */
+@media (max-width: 640px) {
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+}
+
+/* Typography adjustments for better readability on small screens */
+@media (max-width: 640px) {
+  h1, h2, h3, .text-lg, .text-xl, .text-2xl {
+    @apply tracking-tight;
+  }
+}
+
+/* Touch Feedback Animation for Mobile - iOS Compatible Version */
+@layer components {
+  .touch-feedback {
+    -webkit-tap-highlight-color: transparent;
+    position: relative;
+    overflow: hidden;
+    /* Disable text selection on touch */
+    -webkit-user-select: none;
+    user-select: none;
+    /* Ensure the element can receive touch events */
+    -webkit-touch-callout: none;
+    touch-action: manipulation;
+    /* Better iOS button support */
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  
+  /* High-contrast overlay for better visibility */
+  .touch-feedback::before {
+    content: '';
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: currentColor;
+    opacity: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    z-index: 1;
+  }
+  
+  .touch-feedback:active {
+    /* Scale the button slightly to give tactile feedback */
+    transform: scale(0.97);
+  }
+  
+  .touch-feedback:active::before {
+    /* Flash the overlay to highlight the button */
+    opacity: 0.1;
+    animation: button-flash 0.8s ease-out;
+  }
+  
+  /* Animation for the flash effect */
+  @keyframes button-flash {
+    0% { opacity: 0; }
+    10% { opacity: 0.15; }
+    100% { opacity: 0; }
+  }
+  
+  /* Explicit iOS targeting for better support */
+  @supports (-webkit-touch-callout: none) {
+    .touch-feedback:active {
+      /* Stronger scale effect for iOS */
+      transform: scale(0.94);
+    }
+    
+    .touch-feedback:active::before {
+      opacity: 0.2;
+    }
+    
+    /* Use a simpler animation with fewer keyframes for iOS */
+    @keyframes button-flash {
+      0%, 100% { opacity: 0; }
+      50% { opacity: 0.2; }
+    }
+  }
+}
+
+/* iOS Device Detection */
+@supports (-webkit-touch-callout: none) {
+  html body {
+    /* iOS-specific body styles */
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Enhanced iOS tap effects - stronger and more visible */
+  .touch-feedback:active {
+    transition: transform 0.05s ease-out !important; /* Very fast transition in */
+    transform: scale(0.92) !important; /* More noticeable scale */
+    box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.3) !important; /* Blue highlight glow */
+    filter: brightness(1.05) !important; /* Slight brightness boost */
+  }
+  
+  .touch-feedback:active::before {
+    opacity: 0.25 !important; /* More opaque flash */
+    animation: ios-button-flash 0.7s ease-out !important;
+  }
+  
+  @keyframes ios-button-flash {
+    0% { opacity: 0.3; }
+    100% { opacity: 0; }
+  }
+}
