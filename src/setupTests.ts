@@ -47,7 +47,8 @@ Object.defineProperty(window, 'ResizeObserver', {
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
   value: vi.fn().mockImplementation((query: string) => ({
-    matches: false,
+    // Simulate desktop view to ensure only one set of controls is visible during tests
+    matches: query.includes('(min-width:') || !query.includes('max-width:'),
     media: query,
     onchange: null,
     addListener: vi.fn(), // Deprecated

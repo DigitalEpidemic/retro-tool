@@ -1,5 +1,5 @@
 import type { DropResult } from '@hello-pangea/dnd';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { User as FirebaseUser } from 'firebase/auth';
 import * as firestore from 'firebase/firestore';
@@ -476,6 +476,16 @@ describe('Board', () => {
     mockDocExists = true;
     mockDocData = { name: 'Test Board' };
 
+    // Set desktop width as default for tests
+    Object.defineProperty(window, 'innerWidth', { 
+      writable: true, 
+      configurable: true, 
+      value: 1024 
+    });
+    
+    // Trigger resize event
+    window.dispatchEvent(new Event('resize'));
+
     vi.mocked(useFirebase).mockReturnValue({
       user: mockUser,
       loading: false,
@@ -875,11 +885,19 @@ describe('Board', () => {
     // Spy on console.error to verify it's called with the expected error
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
+    // Ensure desktop view
+    Object.defineProperty(window, 'innerWidth', { 
+      writable: true, 
+      configurable: true, 
+      value: 1024 
+    });
+    window.dispatchEvent(new Event('resize'));
+
     // Render the component
     await renderBoard();
 
-    // Find the play button
-    const playButton = screen.getByRole('button', { name: /start timer/i });
+    // Find the play button using the data-testid - in desktop view by default
+    const playButton = screen.getByTestId('desktop-timer-play-pause-button');
 
     // Setup the user event
     const user = userEvent.setup();
@@ -904,6 +922,14 @@ describe('Board', () => {
     // Spy on console.error to verify it's called with the expected error
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
+    // Ensure desktop view
+    Object.defineProperty(window, 'innerWidth', { 
+      writable: true, 
+      configurable: true, 
+      value: 1024 
+    });
+    window.dispatchEvent(new Event('resize'));
+
     // Setup: Mock a running board
     const runningBoard = {
       ...mockBoard,
@@ -918,8 +944,8 @@ describe('Board', () => {
     // Render the component
     await renderBoard();
 
-    // Find the pause button
-    const pauseButton = screen.getByRole('button', { name: /pause timer/i });
+    // Find the pause button using the data-testid - in desktop view by default
+    const pauseButton = screen.getByTestId('desktop-timer-play-pause-button');
 
     // Setup the user event
     const user = userEvent.setup();
@@ -945,11 +971,19 @@ describe('Board', () => {
     // Spy on console.error to verify it's called with the expected error
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
+    // Ensure desktop view
+    Object.defineProperty(window, 'innerWidth', { 
+      writable: true, 
+      configurable: true, 
+      value: 1024 
+    });
+    window.dispatchEvent(new Event('resize'));
+
     // Render the component
     await renderBoard();
 
-    // Find the reset button
-    const resetButton = screen.getByRole('button', { name: /reset timer/i });
+    // Find the reset button using the data-testid - in desktop view by default
+    const resetButton = screen.getByTestId('desktop-timer-reset-button');
 
     // Click the button
     await user.click(resetButton);
@@ -972,6 +1006,14 @@ describe('Board', () => {
     // Spy on console.error to verify it's called with the expected error
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
+    // Ensure desktop view
+    Object.defineProperty(window, 'innerWidth', { 
+      writable: true, 
+      configurable: true, 
+      value: 1024 
+    });
+    window.dispatchEvent(new Event('resize'));
+
     // Setup: Mock a paused board
     const pausedBoard = {
       ...mockBoard,
@@ -986,12 +1028,12 @@ describe('Board', () => {
     // Render the component
     await renderBoard();
 
-    // Find the timer display and click to activate edit mode
+    // Find the timer display 
     const timerDisplay = screen.getByText('2:00');
     await user.click(timerDisplay);
 
-    // Find the timer input now that it's in edit mode
-    const timerInput = screen.getByDisplayValue('2:00');
+    // Find the timer input now that it's in edit mode using the data-testid - in desktop view by default
+    const timerInput = screen.getByTestId('desktop-timer-input');
 
     // Clear and type in the input
     await user.clear(timerInput);
@@ -1432,5 +1474,82 @@ describe('Board', () => {
 
     // Verify update was not called
     expect(boardService.updateBoardName).not.toHaveBeenCalled();
+  });
+
+  it('should render only desktop timer controls on desktop view', async () => {
+    // Set desktop width
+    Object.defineProperty(window, 'innerWidth', { 
+      writable: true, 
+      configurable: true, 
+      value: 1024 
+    });
+    
+    // Trigger resize event
+    window.dispatchEvent(new Event('resize'));
+    
+    // Render the component
+    await renderBoard();
+    
+    // Check that desktop controls are visible
+    expect(screen.getByTestId('desktop-timer-controls')).toBeInTheDocument();
+    expect(screen.getByTestId('desktop-timer-play-pause-button')).toBeInTheDocument();
+    expect(screen.getByTestId('desktop-timer-reset-button')).toBeInTheDocument();
+    
+    // Check that mobile controls are not visible
+    expect(screen.queryByTestId('mobile-timer-controls')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('mobile-timer-play-pause-button')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('mobile-timer-reset-button')).not.toBeInTheDocument();
+  });
+
+  it('should render only mobile timer controls on mobile view', async () => {
+    // Set mobile width
+    Object.defineProperty(window, 'innerWidth', { 
+      writable: true, 
+      configurable: true, 
+      value: 480 
+    });
+    
+    // Trigger resize event
+    window.dispatchEvent(new Event('resize'));
+    
+    // Force re-render by cleaning up and re-rendering
+    cleanup();
+    
+    // Render the component
+    await renderBoard();
+    
+    // Check that mobile controls are visible
+    expect(screen.getByTestId('mobile-timer-controls')).toBeInTheDocument();
+    expect(screen.getByTestId('mobile-timer-play-pause-button')).toBeInTheDocument();
+    expect(screen.getByTestId('mobile-timer-reset-button')).toBeInTheDocument();
+    
+    // Check that desktop controls are not visible
+    expect(screen.queryByTestId('desktop-timer-controls')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('desktop-timer-play-pause-button')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('desktop-timer-reset-button')).not.toBeInTheDocument();
+    
+    // Add a mobile-specific test to ensure the timer functionality works in mobile view
+    // For example, test starting the timer in mobile view
+    const mockTimerError = new Error('Timer start failed');
+    vi.mocked(boardService.startTimer).mockRejectedValueOnce(mockTimerError);
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    
+    // Click the mobile play button
+    const user = userEvent.setup();
+    const mobilePlayButton = screen.getByTestId('mobile-timer-play-pause-button');
+    await user.click(mobilePlayButton);
+    
+    // Verify the error was logged to console
+    expect(consoleErrorSpy).toHaveBeenCalledWith('Error starting/resuming timer:', mockTimerError);
+    
+    // Reset to desktop width for other tests
+    Object.defineProperty(window, 'innerWidth', { 
+      writable: true, 
+      configurable: true, 
+      value: 1024 
+    });
+    
+    // Trigger resize event
+    window.dispatchEvent(new Event('resize'));
   });
 });

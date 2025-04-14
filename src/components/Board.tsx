@@ -1319,6 +1319,24 @@ export default function Board() {
     handleDragEnd(result, provided);
   };
 
+  const [isMobile, setIsMobile] = useState(false);
+  
+  // Set up viewport detection
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768); // 768px is md: breakpoint in Tailwind
+    };
+    
+    // Check initially
+    checkMobile();
+    
+    // Add resize listener
+    window.addEventListener('resize', checkMobile);
+    
+    // Clean up
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -1425,70 +1443,75 @@ export default function Board() {
             </div>
 
             {/* Mobile Timer Controls - moved under the title and hamburger */}
-            <div className="flex items-center justify-center mt-2 md:hidden border-t border-gray-200 pt-3 pb-1 timer-controls">
-              <div className="inline-flex items-center">
-                {/* Conditional Rendering: Input vs Clickable Span */}
-                {board?.timerIsRunning ? (
-                  <span
-                    className="text-gray-700 font-medium text-lg w-20 text-right pr-2"
-                    title="Remaining time"
-                  >
-                    {formatTime(remainingTime)}
-                  </span>
-                ) : isEditingTimer ? (
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    value={editableTimeStr}
-                    onChange={handleTimeInputChange}
-                    onKeyDown={handleTimeInputKeyDown}
-                    onBlur={handleTimeInputBlur}
-                    autoFocus
-                    className="text-gray-700 font-medium w-20 text-right pr-2 border border-gray-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-lg"
-                    title="Edit time (MM:SS)"
-                  />
-                ) : (
-                  <span
-                    className="text-gray-700 font-medium text-lg w-20 text-right pr-2 cursor-pointer hover:text-blue-500"
-                    title="Click to edit time"
-                    onClick={handleTimerClick}
-                  >
-                    {formatTime(remainingTime)}
-                  </span>
-                )}
-                
-                {/* Play/Pause Button */}
-                <button
-                  onClick={handleStartPauseTimer}
-                  className={`cursor-pointer p-1 rounded transition-colors duration-300 touch-feedback mx-4 ${
-                    board?.timerIsRunning
-                      ? 'text-orange-500 hover:text-orange-600 active:text-orange-700 hover:bg-orange-50 active:bg-orange-100'
-                      : 'text-blue-500 hover:text-blue-600 active:text-blue-700 hover:bg-blue-50 active:bg-blue-100'
-                  }`}
-                  aria-label={board?.timerIsRunning ? 'Pause timer' : 'Start timer'}
-                >
+            {isMobile && (
+              <div className="flex items-center justify-center mt-2 border-t border-gray-200 pt-3 pb-1 timer-controls" data-testid="mobile-timer-controls">
+                <div className="inline-flex items-center">
+                  {/* Conditional Rendering: Input vs Clickable Span */}
                   {board?.timerIsRunning ? (
-                    <Pause className="h-7 w-7" />
+                    <span
+                      className="text-gray-700 font-medium text-lg w-20 text-right pr-2"
+                      title="Remaining time"
+                    >
+                      {formatTime(remainingTime)}
+                    </span>
+                  ) : isEditingTimer ? (
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      value={editableTimeStr}
+                      onChange={handleTimeInputChange}
+                      onKeyDown={handleTimeInputKeyDown}
+                      onBlur={handleTimeInputBlur}
+                      autoFocus
+                      className="text-gray-700 font-medium w-20 text-right pr-2 border border-gray-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-lg"
+                      title="Edit time (MM:SS)"
+                      data-testid="mobile-timer-input"
+                    />
                   ) : (
-                    <Play className="h-7 w-7" />
+                    <span
+                      className="text-gray-700 font-medium text-lg w-20 text-right pr-2 cursor-pointer hover:text-blue-500"
+                      title="Click to edit time"
+                      onClick={handleTimerClick}
+                    >
+                      {formatTime(remainingTime)}
+                    </span>
                   )}
-                </button>
-                
-                {/* Reset Button */}
-                <button
-                  onClick={handleResetTimer}
-                  aria-label="Reset timer"
-                  disabled={!!board?.timerIsRunning}
-                  className={`p-1 rounded transition-colors duration-300 touch-feedback ${
-                    board?.timerIsRunning
-                      ? 'text-gray-400 opacity-50 cursor-not-allowed'
-                      : 'text-gray-600 hover:text-gray-800 active:text-gray-900 hover:bg-gray-50 active:bg-gray-100 cursor-pointer'
-                  }`}
-                >
-                  <RotateCcw className="h-5 w-5" />
-                </button>
+                  
+                  {/* Play/Pause Button */}
+                  <button
+                    onClick={handleStartPauseTimer}
+                    className={`cursor-pointer p-1 rounded transition-colors duration-300 touch-feedback mx-4 ${
+                      board?.timerIsRunning
+                        ? 'text-orange-500 hover:text-orange-600 active:text-orange-700 hover:bg-orange-50 active:bg-orange-100'
+                        : 'text-blue-500 hover:text-blue-600 active:text-blue-700 hover:bg-blue-50 active:bg-blue-100'
+                    }`}
+                    aria-label={board?.timerIsRunning ? 'Pause timer' : 'Start timer'}
+                    data-testid="mobile-timer-play-pause-button"
+                  >
+                    {board?.timerIsRunning ? (
+                      <Pause className="h-7 w-7" />
+                    ) : (
+                      <Play className="h-7 w-7" />
+                    )}
+                  </button>
+                  
+                  {/* Reset Button */}
+                  <button
+                    onClick={handleResetTimer}
+                    aria-label="Reset timer"
+                    disabled={!!board?.timerIsRunning}
+                    className={`p-1 rounded transition-colors duration-300 touch-feedback ${
+                      board?.timerIsRunning
+                        ? 'text-gray-400 opacity-50 cursor-not-allowed'
+                        : 'text-gray-600 hover:text-gray-800 active:text-gray-900 hover:bg-gray-50 active:bg-gray-100 cursor-pointer'
+                    }`}
+                    data-testid="mobile-timer-reset-button"
+                  >
+                    <RotateCcw className="h-5 w-5" />
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Mobile Menu Panel - shown when hamburger is clicked */}
             {isMobileMenuOpen && (
@@ -1586,128 +1609,133 @@ export default function Board() {
             )}
 
             {/* Desktop controls */}
-            <div className="hidden md:flex md:items-center md:space-x-4">
-              {/* Timer Display and Controls */}
-              <div className="flex items-center space-x-1 timer-controls">
-                {/* Conditional Rendering: Input vs Clickable Span */}
-                {board?.timerIsRunning ? (
-                  <span
-                    className="text-gray-700 font-medium w-12 text-right"
-                    title="Remaining time"
-                  >
-                    {formatTime(remainingTime)}
-                  </span>
-                ) : isEditingTimer ? (
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    value={editableTimeStr}
-                    onChange={handleTimeInputChange}
-                    onKeyDown={handleTimeInputKeyDown}
-                    onBlur={handleTimeInputBlur}
-                    autoFocus
-                    className="text-gray-700 font-medium w-12 text-right border border-gray-300 rounded px-1 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                    title="Edit time (MM:SS)"
-                  />
-                ) : (
-                  <span
-                    className="text-gray-700 font-medium w-12 text-right cursor-pointer hover:text-blue-500"
-                    title="Click to edit time"
-                    onClick={handleTimerClick}
-                  >
-                    {formatTime(remainingTime)}
-                  </span>
-                )}
-                {/* Play/Pause Button */}
-                <button
-                  onClick={handleStartPauseTimer}
-                  className={`cursor-pointer p-1 rounded transition-colors duration-300 touch-feedback ${
-                    board?.timerIsRunning
-                      ? 'text-orange-500 hover:text-orange-600 active:text-orange-700 hover:bg-orange-50 active:bg-orange-100'
-                      : 'text-blue-500 hover:text-blue-600 active:text-blue-700 hover:bg-blue-50 active:bg-blue-100'
-                  }`}
-                  aria-label={board?.timerIsRunning ? 'Pause timer' : 'Start timer'}
-                >
+            {!isMobile && (
+              <div className="flex items-center space-x-4">
+                {/* Timer Display and Controls */}
+                <div className="flex items-center space-x-1 timer-controls" data-testid="desktop-timer-controls">
+                  {/* Conditional Rendering: Input vs Clickable Span */}
                   {board?.timerIsRunning ? (
-                    <Pause className="h-4 w-4" /> // Show Pause icon when running
+                    <span
+                      className="text-gray-700 font-medium w-12 text-right"
+                      title="Remaining time"
+                    >
+                      {formatTime(remainingTime)}
+                    </span>
+                  ) : isEditingTimer ? (
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      value={editableTimeStr}
+                      onChange={handleTimeInputChange}
+                      onKeyDown={handleTimeInputKeyDown}
+                      onBlur={handleTimeInputBlur}
+                      autoFocus
+                      className="text-gray-700 font-medium w-12 text-right border border-gray-300 rounded px-1 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                      title="Edit time (MM:SS)"
+                      data-testid="desktop-timer-input"
+                    />
                   ) : (
-                    <Play className="h-4 w-4" /> // Show Play icon when stopped/paused
-                  )}
-                </button>
-                {/* Reset Button */}
-                <button
-                  onClick={handleResetTimer}
-                  aria-label="Reset timer"
-                  disabled={!!board?.timerIsRunning}
-                  className={`p-1 rounded transition-colors duration-300 touch-feedback ${
-                    board?.timerIsRunning
-                      ? 'text-gray-400 opacity-50 cursor-not-allowed'
-                      : 'text-gray-600 hover:text-gray-800 active:text-gray-900 hover:bg-gray-50 active:bg-gray-100 cursor-pointer'
-                  }`}
-                >
-                  <RotateCcw className="h-4 w-4" />
-                </button>
-              </div>
-
-              {/* Other Board Controls */}
-              <div className="flex space-x-5">
-                <button
-                  className={`text-gray-700 hover:text-gray-900 active:text-blue-800 flex items-center cursor-pointer p-2 rounded hover:bg-gray-50 active:bg-gray-100 transition-colors duration-300 touch-feedback ${
-                    isPanelOpen ? 'text-blue-500' : ''
-                  }`}
-                  onClick={toggleParticipantsPanel}
-                >
-                  <Users className="h-5 w-5" />
-                  <span className="ml-1 text-sm">Participants</span>
-                  {participants.length > 0 && (
-                    <span className="ml-1 bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full">
-                      {participants.length}
+                    <span
+                      className="text-gray-700 font-medium w-12 text-right cursor-pointer hover:text-blue-500"
+                      title="Click to edit time"
+                      onClick={handleTimerClick}
+                    >
+                      {formatTime(remainingTime)}
                     </span>
                   )}
-                </button>
+                  {/* Play/Pause Button */}
+                  <button
+                    onClick={handleStartPauseTimer}
+                    className={`cursor-pointer p-1 rounded transition-colors duration-300 touch-feedback ${
+                      board?.timerIsRunning
+                        ? 'text-orange-500 hover:text-orange-600 active:text-orange-700 hover:bg-orange-50 active:bg-orange-100'
+                        : 'text-blue-500 hover:text-blue-600 active:text-blue-700 hover:bg-blue-50 active:bg-blue-100'
+                    }`}
+                    aria-label={board?.timerIsRunning ? 'Pause timer' : 'Start timer'}
+                    data-testid="desktop-timer-play-pause-button"
+                  >
+                    {board?.timerIsRunning ? (
+                      <Pause className="h-4 w-4" /> // Show Pause icon when running
+                    ) : (
+                      <Play className="h-4 w-4" /> // Show Play icon when stopped/paused
+                    )}
+                  </button>
+                  {/* Reset Button */}
+                  <button
+                    onClick={handleResetTimer}
+                    aria-label="Reset timer"
+                    disabled={!!board?.timerIsRunning}
+                    className={`cursor-pointer p-1 rounded transition-colors duration-300 touch-feedback ${
+                      board?.timerIsRunning
+                        ? 'text-gray-400 opacity-50 cursor-not-allowed'
+                        : 'text-gray-600 hover:text-gray-800 active:text-gray-900 hover:bg-gray-50 active:bg-gray-100'
+                    }`}
+                    data-testid="desktop-timer-reset-button"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                  </button>
+                </div>
 
-                <button
-                  className={`text-gray-700 hover:text-gray-900 active:text-blue-800 flex items-center cursor-pointer p-2 rounded hover:bg-gray-50 active:bg-gray-100 transition-colors duration-300 touch-feedback ${
-                    isActionPointsPanelOpen ? 'text-blue-500' : ''
-                  }`}
-                  onClick={toggleActionPointsPanel}
-                >
-                  <TrendingUp className="h-5 w-5" />
-                  <span className="ml-1 text-sm">Action points</span>
-                  {actionPoints.length > 0 && (
-                    <span className="ml-1 bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full">
-                      {actionPoints.length}
-                    </span>
-                  )}
-                </button>
+                {/* Other Board Controls */}
+                <div className="flex space-x-5">
+                  <button
+                    className={`text-gray-700 hover:text-gray-900 active:text-blue-800 flex items-center cursor-pointer p-2 rounded hover:bg-gray-50 active:bg-gray-100 transition-colors duration-300 touch-feedback ${
+                      isPanelOpen ? 'text-blue-500' : ''
+                    }`}
+                    onClick={toggleParticipantsPanel}
+                  >
+                    <Users className="h-5 w-5" />
+                    <span className="ml-1 text-sm">Participants</span>
+                    {participants.length > 0 && (
+                      <span className="ml-1 bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full">
+                        {participants.length}
+                      </span>
+                    )}
+                  </button>
 
-                <button
-                  className="text-gray-700 hover:text-gray-900 active:text-blue-800 flex items-center cursor-pointer p-2 rounded hover:bg-gray-50 active:bg-gray-100 transition-colors duration-300 touch-feedback"
-                  onClick={handleExportClick}
-                >
-                  <Download className="h-5 w-5" />
-                  <span className="ml-1 text-sm">Export</span>
-                </button>
+                  <button
+                    className={`text-gray-700 hover:text-gray-900 active:text-blue-800 flex items-center cursor-pointer p-2 rounded hover:bg-gray-50 active:bg-gray-100 transition-colors duration-300 touch-feedback ${
+                      isActionPointsPanelOpen ? 'text-blue-500' : ''
+                    }`}
+                    onClick={toggleActionPointsPanel}
+                  >
+                    <TrendingUp className="h-5 w-5" />
+                    <span className="ml-1 text-sm">Action points</span>
+                    {actionPoints.length > 0 && (
+                      <span className="ml-1 bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full">
+                        {actionPoints.length}
+                      </span>
+                    )}
+                  </button>
 
-                <button
-                  className="text-gray-700 hover:text-gray-900 active:text-blue-800 flex items-center cursor-pointer p-2 rounded hover:bg-gray-50 active:bg-gray-100 transition-colors duration-300 touch-feedback"
-                  onClick={handleShareClick}
-                >
-                  <Share2 className="h-5 w-5" />
-                  <span className="ml-1 text-sm">Share</span>
-                </button>
+                  <button
+                    className="text-gray-700 hover:text-gray-900 active:text-blue-800 flex items-center cursor-pointer p-2 rounded hover:bg-gray-50 active:bg-gray-100 transition-colors duration-300 touch-feedback"
+                    onClick={handleExportClick}
+                  >
+                    <Download className="h-5 w-5" />
+                    <span className="ml-1 text-sm">Export</span>
+                  </button>
 
-                <button
-                  className={`text-gray-700 hover:text-gray-900 active:text-blue-800 flex items-center cursor-pointer p-2 rounded hover:bg-gray-50 active:bg-gray-100 transition-colors duration-300 touch-feedback ${
-                    isOptionsPanelOpen ? 'text-blue-500' : ''
-                  }`}
-                  onClick={toggleOptionsPanel}
-                >
-                  <Settings className="h-5 w-5" />
-                  <span className="ml-1 text-sm">Options</span>
-                </button>
+                  <button
+                    className="text-gray-700 hover:text-gray-900 active:text-blue-800 flex items-center cursor-pointer p-2 rounded hover:bg-gray-50 active:bg-gray-100 transition-colors duration-300 touch-feedback"
+                    onClick={handleShareClick}
+                  >
+                    <Share2 className="h-5 w-5" />
+                    <span className="ml-1 text-sm">Share</span>
+                  </button>
+
+                  <button
+                    className={`text-gray-700 hover:text-gray-900 active:text-blue-800 flex items-center cursor-pointer p-2 rounded hover:bg-gray-50 active:bg-gray-100 transition-colors duration-300 touch-feedback ${
+                      isOptionsPanelOpen ? 'text-blue-500' : ''
+                    }`}
+                    onClick={toggleOptionsPanel}
+                  >
+                    <Settings className="h-5 w-5" />
+                    <span className="ml-1 text-sm">Options</span>
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Export Modal */}

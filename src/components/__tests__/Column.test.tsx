@@ -108,9 +108,9 @@ describe('Column', () => {
     await act(async () => {
       renderColumn();
     });
-    // Look for the SVG elements with the specific classes instead of data-testid
-    expect(screen.getByRole('button', { name: 'Sort' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'More options' })).toBeInTheDocument();
+    // Look for the buttons with the correct accessible names
+    expect(screen.getByRole('button', { name: /Order Sort/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /More options/i })).toBeInTheDocument();
   });
 
   it('renders "Add a card" button initially', async () => {
@@ -228,7 +228,7 @@ describe('Column', () => {
     renderColumn();
 
     await act(async () => {
-      const sortButton = screen.getByRole('button', { name: /Sort/ }); // Use regex to find button containing "Sort"
+      const sortButton = screen.getByRole('button', { name: /(Order|Votes).*Sort/i }); // Match either "Order Sort" or "Votes Sort"
       fireEvent.click(sortButton);
     });
 
@@ -240,13 +240,18 @@ describe('Column', () => {
     await act(async () => {
       renderColumn({ sortByVotes: true });
     });
-    expect(screen.getByText('Votes')).toBeInTheDocument();
+    const sortButton = screen.getByTestId('sort-toggle-column-1');
+    expect(sortButton).toHaveTextContent('Votes');
+    expect(screen.getByRole('button', { name: /Votes Sort/i })).toBeInTheDocument();
   });
 
-  it('does not show "Votes" text when sortByVotes is false', async () => {
+  it('shows "Order" text when sortByVotes is false', async () => {
     await act(async () => {
       renderColumn({ sortByVotes: false });
     });
+    const sortButton = screen.getByTestId('sort-toggle-column-1');
+    expect(sortButton).toHaveTextContent('Order');
+    expect(screen.getByRole('button', { name: /Order Sort/i })).toBeInTheDocument();
     expect(screen.queryByText('Votes')).not.toBeInTheDocument();
   });
 
@@ -682,7 +687,7 @@ describe('Column', () => {
       const deleteButton = screen.getByTestId('delete-column-column-1');
       expect(deleteButton).not.toBeDisabled();
       expect(deleteButton).toHaveClass('text-red-600');
-      expect(deleteButton).toHaveClass('hover:bg-gray-100');
+      expect(deleteButton).toHaveClass('hover:bg-red-50');
       expect(deleteButton).toHaveClass('cursor-pointer');
     });
 

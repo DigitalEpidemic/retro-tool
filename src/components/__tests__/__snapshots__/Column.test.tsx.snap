@@ -3,16 +3,16 @@
 exports[`Column > matches snapshot 1`] = `
 <div>
   <div
-    class="w-full h-full bg-white flex flex-col overflow-hidden"
+    class="w-full h-full bg-white flex flex-col overflow-hidden max-w-full"
   >
     <div
-      class="flex justify-between items-center px-4 py-3 border-b border-gray-200 flex-shrink-0 h-[52px]"
+      class="flex justify-between items-center px-3 sm:px-4 py-3 border-b border-gray-200 flex-shrink-0 h-[52px]"
     >
       <div
         class="h-[28px] flex items-center flex-grow overflow-hidden mr-2"
       >
         <h2
-          class="text-lg font-medium text-gray-800 leading-[28px] flex items-center transition-colors duration-200 overflow-hidden text-ellipsis whitespace-nowrap "
+          class="text-base sm:text-lg font-medium text-gray-800 leading-[28px] flex items-center transition-colors duration-200 overflow-hidden text-ellipsis whitespace-nowrap "
           data-testid="column-title-column-1"
         >
           Mad
@@ -25,11 +25,16 @@ exports[`Column > matches snapshot 1`] = `
           class="relative inline-block"
         >
           <button
-            class="flex items-center text-blue-600 hover:text-blue-700 cursor-pointer"
+            class="flex items-center text-blue-600 hover:text-blue-700 active:text-blue-800 cursor-pointer p-1.5 rounded hover:bg-blue-50 active:bg-blue-100 transition-colors duration-300 touch-feedback"
             data-testid="sort-toggle-column-1"
           >
+            <span
+              class="text-xs mr-1"
+            >
+              Order
+            </span>
             <svg
-              class="lucide lucide-arrow-up-down h-4 w-4"
+              class="lucide lucide-arrow-up-down h-5 w-5 sm:h-4 sm:w-4"
               fill="none"
               height="24"
               stroke="currentColor"
@@ -64,11 +69,11 @@ exports[`Column > matches snapshot 1`] = `
           class="relative inline-block"
         >
           <button
-            class="flex items-center text-gray-600 hover:text-blue-700 cursor-pointer"
+            class="flex items-center text-gray-600 hover:text-blue-700 active:text-blue-800 cursor-pointer p-1.5 rounded hover:bg-blue-50 active:bg-blue-100 transition-colors duration-300 touch-feedback"
             data-testid="column-description-toggle-column-1"
           >
             <svg
-              class="lucide lucide-align-left h-4 w-4"
+              class="lucide lucide-align-left h-5 w-5 sm:h-4 sm:w-4"
               fill="none"
               height="24"
               stroke="currentColor"
@@ -103,11 +108,11 @@ exports[`Column > matches snapshot 1`] = `
             class="relative inline-block"
           >
             <button
-              class="text-blue-600 hover:text-blue-700 cursor-pointer"
+              class="text-blue-600 hover:text-blue-700 active:text-blue-800 cursor-pointer p-1.5 rounded hover:bg-blue-50 active:bg-blue-100 transition-colors duration-300 touch-feedback"
               data-testid="column-menu-column-1"
             >
               <svg
-                class="lucide lucide-ellipsis-vertical h-4 w-4"
+                class="lucide lucide-ellipsis-vertical h-5 w-5 sm:h-4 sm:w-4"
                 fill="none"
                 height="24"
                 stroke="currentColor"
@@ -145,25 +150,21 @@ exports[`Column > matches snapshot 1`] = `
       </div>
     </div>
     <div
-      class="flex-grow overflow-y-auto p-3 space-y-3"
+      class="flex-1 overflow-y-auto p-2 sm:p-3 space-y-2 sm:space-y-3"
     >
       <div>
         Card Content
       </div>
     </div>
     <div
-      class="p-3 border-t border-gray-200 flex-shrink-0"
+      class="relative inline-block"
     >
-      <div
-        class="relative inline-block"
+      <button
+        class="w-full py-4 text-sm text-blue-600 bg-gray-50 hover:bg-gray-100 active:bg-gray-200 border-t border-gray-200 flex items-center justify-center cursor-pointer transition-colors duration-300 touch-feedback"
+        data-testid="add-column-button"
       >
-        <button
-          class="w-full p-2 text-sm text-blue-600 bg-gray-50 hover:bg-gray-100 rounded flex items-center justify-center cursor-pointer"
-          data-testid="add-column-button"
-        >
-          + Add a card
-        </button>
-      </div>
+        + Add a card
+      </button>
     </div>
   </div>
 </div>
@@ -172,16 +173,16 @@ exports[`Column > matches snapshot 1`] = `
 exports[`Column > matches snapshot when adding card 1`] = `
 <div>
   <div
-    class="w-full h-full bg-white flex flex-col overflow-hidden"
+    class="w-full h-full bg-white flex flex-col overflow-hidden max-w-full"
   >
     <div
-      class="flex justify-between items-center px-4 py-3 border-b border-gray-200 flex-shrink-0 h-[52px]"
+      class="flex justify-between items-center px-3 sm:px-4 py-3 border-b border-gray-200 flex-shrink-0 h-[52px]"
     >
       <div
         class="h-[28px] flex items-center flex-grow overflow-hidden mr-2"
       >
         <h2
-          class="text-lg font-medium text-gray-800 leading-[28px] flex items-center transition-colors duration-200 overflow-hidden text-ellipsis whitespace-nowrap "
+          class="text-base sm:text-lg font-medium text-gray-800 leading-[28px] flex items-center transition-colors duration-200 overflow-hidden text-ellipsis whitespace-nowrap "
           data-testid="column-title-column-1"
         >
           Mad
@@ -194,11 +195,16 @@ exports[`Column > matches snapshot when adding card 1`] = `
           class="relative inline-block"
         >
           <button
-            class="flex items-center text-blue-600 hover:text-blue-700 cursor-pointer"
+            class="flex items-center text-blue-600 hover:text-blue-700 active:text-blue-800 cursor-pointer p-1.5 rounded hover:bg-blue-50 active:bg-blue-100 transition-colors duration-300 touch-feedback"
             data-testid="sort-toggle-column-1"
           >
+            <span
+              class="text-xs mr-1"
+            >
+              Order
+            </span>
             <svg
-              class="lucide lucide-arrow-up-down h-4 w-4"
+              class="lucide lucide-arrow-up-down h-5 w-5 sm:h-4 sm:w-4"
               fill="none"
               height="24"
               stroke="currentColor"
@@ -233,11 +239,11 @@ exports[`Column > matches snapshot when adding card 1`] = `
           class="relative inline-block"
         >
           <button
-            class="flex items-center text-gray-600 hover:text-blue-700 cursor-pointer"
+            class="flex items-center text-gray-600 hover:text-blue-700 active:text-blue-800 cursor-pointer p-1.5 rounded hover:bg-blue-50 active:bg-blue-100 transition-colors duration-300 touch-feedback"
             data-testid="column-description-toggle-column-1"
           >
             <svg
-              class="lucide lucide-align-left h-4 w-4"
+              class="lucide lucide-align-left h-5 w-5 sm:h-4 sm:w-4"
               fill="none"
               height="24"
               stroke="currentColor"
@@ -272,11 +278,11 @@ exports[`Column > matches snapshot when adding card 1`] = `
             class="relative inline-block"
           >
             <button
-              class="text-blue-600 hover:text-blue-700 cursor-pointer"
+              class="text-blue-600 hover:text-blue-700 active:text-blue-800 cursor-pointer p-1.5 rounded hover:bg-blue-50 active:bg-blue-100 transition-colors duration-300 touch-feedback"
               data-testid="column-menu-column-1"
             >
               <svg
-                class="lucide lucide-ellipsis-vertical h-4 w-4"
+                class="lucide lucide-ellipsis-vertical h-5 w-5 sm:h-4 sm:w-4"
                 fill="none"
                 height="24"
                 stroke="currentColor"
@@ -314,18 +320,18 @@ exports[`Column > matches snapshot when adding card 1`] = `
       </div>
     </div>
     <div
-      class="flex-grow overflow-y-auto p-3 space-y-3"
+      class="flex-1 overflow-y-auto p-2 sm:p-3 space-y-2 sm:space-y-3"
     >
       <div>
         Card Content
       </div>
     </div>
     <form
-      class="p-3 border-t border-gray-200 flex-shrink-0"
+      class="p-2 sm:p-3 border-t border-gray-200 flex-shrink-0"
       data-testid="add-card-form"
     >
       <textarea
-        class="w-full rounded-none border-none bg-gray-100 text-sm p-3 mb-2 resize-none focus:ring-0"
+        class="w-full rounded-none border-none bg-gray-100 text-base sm:text-sm p-3 mb-2 resize-none focus:ring-0"
         placeholder="Type here... Press Enter to save."
         required=""
         rows="3"
@@ -334,13 +340,13 @@ exports[`Column > matches snapshot when adding card 1`] = `
         class="flex justify-end space-x-2"
       >
         <button
-          class="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded hover:bg-gray-200 cursor-pointer"
+          class="px-3 py-2 text-xs font-medium text-gray-600 bg-gray-100 rounded hover:bg-gray-200 active:bg-gray-300 cursor-pointer transition-colors duration-300 touch-feedback"
           type="button"
         >
           Cancel
         </button>
         <button
-          class="px-3 py-1.5 text-xs font-medium bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 cursor-pointer"
+          class="px-3 py-2 text-xs font-medium bg-blue-500 text-white rounded hover:bg-blue-600 active:bg-blue-700 disabled:opacity-50 cursor-pointer transition-colors duration-300 touch-feedback"
           disabled=""
           type="submit"
         >
@@ -355,16 +361,16 @@ exports[`Column > matches snapshot when adding card 1`] = `
 exports[`Column > matches snapshot when sorted by votes 1`] = `
 <div>
   <div
-    class="w-full h-full bg-white flex flex-col overflow-hidden"
+    class="w-full h-full bg-white flex flex-col overflow-hidden max-w-full"
   >
     <div
-      class="flex justify-between items-center px-4 py-3 border-b border-gray-200 flex-shrink-0 h-[52px]"
+      class="flex justify-between items-center px-3 sm:px-4 py-3 border-b border-gray-200 flex-shrink-0 h-[52px]"
     >
       <div
         class="h-[28px] flex items-center flex-grow overflow-hidden mr-2"
       >
         <h2
-          class="text-lg font-medium text-gray-800 leading-[28px] flex items-center transition-colors duration-200 overflow-hidden text-ellipsis whitespace-nowrap "
+          class="text-base sm:text-lg font-medium text-gray-800 leading-[28px] flex items-center transition-colors duration-200 overflow-hidden text-ellipsis whitespace-nowrap "
           data-testid="column-title-column-1"
         >
           Mad
@@ -377,7 +383,7 @@ exports[`Column > matches snapshot when sorted by votes 1`] = `
           class="relative inline-block"
         >
           <button
-            class="flex items-center text-blue-600 hover:text-blue-700 cursor-pointer"
+            class="flex items-center text-blue-600 hover:text-blue-700 active:text-blue-800 cursor-pointer p-1.5 rounded hover:bg-blue-50 active:bg-blue-100 transition-colors duration-300 touch-feedback"
             data-testid="sort-toggle-column-1"
           >
             <span
@@ -386,7 +392,7 @@ exports[`Column > matches snapshot when sorted by votes 1`] = `
               Votes
             </span>
             <svg
-              class="lucide lucide-arrow-up-down h-4 w-4"
+              class="lucide lucide-arrow-up-down h-5 w-5 sm:h-4 sm:w-4"
               fill="none"
               height="24"
               stroke="currentColor"
@@ -421,11 +427,11 @@ exports[`Column > matches snapshot when sorted by votes 1`] = `
           class="relative inline-block"
         >
           <button
-            class="flex items-center text-gray-600 hover:text-blue-700 cursor-pointer"
+            class="flex items-center text-gray-600 hover:text-blue-700 active:text-blue-800 cursor-pointer p-1.5 rounded hover:bg-blue-50 active:bg-blue-100 transition-colors duration-300 touch-feedback"
             data-testid="column-description-toggle-column-1"
           >
             <svg
-              class="lucide lucide-align-left h-4 w-4"
+              class="lucide lucide-align-left h-5 w-5 sm:h-4 sm:w-4"
               fill="none"
               height="24"
               stroke="currentColor"
@@ -460,11 +466,11 @@ exports[`Column > matches snapshot when sorted by votes 1`] = `
             class="relative inline-block"
           >
             <button
-              class="text-blue-600 hover:text-blue-700 cursor-pointer"
+              class="text-blue-600 hover:text-blue-700 active:text-blue-800 cursor-pointer p-1.5 rounded hover:bg-blue-50 active:bg-blue-100 transition-colors duration-300 touch-feedback"
               data-testid="column-menu-column-1"
             >
               <svg
-                class="lucide lucide-ellipsis-vertical h-4 w-4"
+                class="lucide lucide-ellipsis-vertical h-5 w-5 sm:h-4 sm:w-4"
                 fill="none"
                 height="24"
                 stroke="currentColor"
@@ -502,25 +508,21 @@ exports[`Column > matches snapshot when sorted by votes 1`] = `
       </div>
     </div>
     <div
-      class="flex-grow overflow-y-auto p-3 space-y-3"
+      class="flex-1 overflow-y-auto p-2 sm:p-3 space-y-2 sm:space-y-3"
     >
       <div>
         Card Content
       </div>
     </div>
     <div
-      class="p-3 border-t border-gray-200 flex-shrink-0"
+      class="relative inline-block"
     >
-      <div
-        class="relative inline-block"
+      <button
+        class="w-full py-4 text-sm text-blue-600 bg-gray-50 hover:bg-gray-100 active:bg-gray-200 border-t border-gray-200 flex items-center justify-center cursor-pointer transition-colors duration-300 touch-feedback"
+        data-testid="add-column-button"
       >
-        <button
-          class="w-full p-2 text-sm text-blue-600 bg-gray-50 hover:bg-gray-100 rounded flex items-center justify-center cursor-pointer"
-          data-testid="add-column-button"
-        >
-          + Add a card
-        </button>
-      </div>
+        + Add a card
+      </button>
     </div>
   </div>
 </div>
