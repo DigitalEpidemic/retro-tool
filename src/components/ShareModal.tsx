@@ -60,9 +60,9 @@ export default function ShareModal({ isOpen, onClose, boardId }: ShareModalProps
   if (!isOpen) return null;
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-gray-500/30 p-2 sm:p-4"
-      onClick={(e) => {
+      onClick={e => {
         // Close modal when clicking outside the modal content
         if (e.target === e.currentTarget) {
           onClose();

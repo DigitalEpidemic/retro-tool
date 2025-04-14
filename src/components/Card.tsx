@@ -157,7 +157,9 @@ export default function Card({ provided, card, isOwner }: CardProps) {
                   <ThumbsUp aria-label="Upvote" className="h-5 w-5 sm:h-4 sm:w-4" />
                 </button>
 
-                <span className="text-sm sm:text-xs font-medium mx-1.5 sm:mx-1 text-gray-700">{card.votes}</span>
+                <span className="text-sm sm:text-xs font-medium mx-1.5 sm:mx-1 text-gray-700">
+                  {card.votes}
+                </span>
 
                 <button
                   onClick={() => handleVote('down')}
