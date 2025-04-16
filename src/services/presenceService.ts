@@ -6,8 +6,23 @@ import {
   ref,
   serverTimestamp as rtdbTimestamp,
   set,
+  query as rtdbQuery,
+  orderByChild,
+  equalTo,
+  DataSnapshot,
 } from 'firebase/database';
-import { doc, getDoc } from 'firebase/firestore';
+import { 
+  doc, 
+  getDoc, 
+  collection, 
+  query, 
+  where, 
+  getDocs,
+  deleteDoc,
+  writeBatch,
+  updateDoc,
+  serverTimestamp
+} from 'firebase/firestore';
 import { auth, db, OnlineUser, rtdb } from './firebase';
 
 // Generate a consistent Tailwind color class for a user based on their ID
@@ -51,16 +66,20 @@ export const setupPresence = async (boardId: string, displayName: string): Promi
     return () => {}; // Return empty cleanup function
   }
 
+  // Clean up inactive boards when a user joins any board
+  await cleanupInactiveBoards();
+
   const userId = auth.currentUser.uid;
   const userStatusRef = ref(rtdb, `status/${userId}`);
   const userBoardRef = ref(rtdb, `boards/${boardId}/participants/${userId}`);
+  const boardLastActiveRef = ref(rtdb, `boards/${boardId}/lastActive`);
+  const userDocRef = doc(db, 'users', userId);
 
   // Try to get the user's color from Firestore, or generate one if not available
   let userColor;
 
   try {
-    const userRef = doc(db, 'users', userId);
-    const userSnap = await getDoc(userRef);
+    const userSnap = await getDoc(userDocRef);
 
     if (userSnap.exists() && userSnap.data().color) {
       // Use color from Firestore
@@ -84,6 +103,17 @@ export const setupPresence = async (boardId: string, displayName: string): Promi
     lastOnline: Date.now(),
   };
 
+  // Update the user's boardId in Firestore
+  try {
+    await updateDoc(userDocRef, {
+      boardId,
+      lastActive: serverTimestamp(),
+    });
+  } catch (error) {
+    console.error('Error updating user boardId in Firestore:', error);
+    // Continue anyway - the joinBoard function may have already updated this
+  }
+
   // When this device disconnects, update the user's status
   onDisconnect(userStatusRef).set({
     online: false,
@@ -92,6 +122,10 @@ export const setupPresence = async (boardId: string, displayName: string): Promi
 
   // When this user leaves this board, remove their presence
   onDisconnect(userBoardRef).remove();
+  
+  // When this user leaves, update the board's lastActive timestamp
+  // This will help track when the last user left the board
+  onDisconnect(boardLastActiveRef).set(rtdbTimestamp());
 
   // Set the user as online
   set(userStatusRef, {
@@ -101,12 +135,16 @@ export const setupPresence = async (boardId: string, displayName: string): Promi
 
   // Add the user to the board's participants
   set(userBoardRef, userData);
+  
+  // Update the board's lastActive timestamp
+  set(boardLastActiveRef, rtdbTimestamp());
 
   // Return a cleanup function
   return () => {
     // Cancel any pending onDisconnect operations
     onDisconnect(userStatusRef).cancel();
     onDisconnect(userBoardRef).cancel();
+    onDisconnect(boardLastActiveRef).cancel();
 
     // Explicitly set the user's status to offline
     set(userStatusRef, {
@@ -116,6 +154,19 @@ export const setupPresence = async (boardId: string, displayName: string): Promi
 
     // Remove the user from the board's participants
     set(userBoardRef, null);
+    
+    // Update the board's lastActive timestamp when the user leaves
+    set(boardLastActiveRef, rtdbTimestamp());
+    
+    // Update the user's boardId to null in Firestore
+    try {
+      updateDoc(userDocRef, {
+        boardId: null,
+        lastActive: serverTimestamp(),
+      });
+    } catch (error) {
+      console.error('Error updating user boardId to null:', error);
+    }
   };
 };
 
@@ -211,5 +262,114 @@ export const updateParticipantColor = async (
   } catch (error) {
     console.error('Error updating participant color in RTDB:', error);
     throw error;
+  }
+};
+
+/**
+ * Checks for and deletes boards that have been inactive (no participants) for at least 1 minute
+ * This is called when a user joins any board to clean up abandoned boards
+ */
+export const cleanupInactiveBoards = async (): Promise<void> => {
+  try {
+    // Get all board references from RTDB
+    const boardsRef = ref(rtdb, 'boards');
+    const boardsSnapshot = await get(boardsRef);
+    
+    if (!boardsSnapshot.exists()) {
+      return; // No boards to check
+    }
+    
+    const now = Date.now();
+    const inactiveThreshold = 60 * 1000; // 1 minute in milliseconds
+    const inactiveBoardIds: string[] = [];
+    
+    // Iterate through all boards in RTDB
+    boardsSnapshot.forEach((boardSnapshot: DataSnapshot) => {
+      const boardId = boardSnapshot.key;
+      if (!boardId) return;
+      
+      // Check if the board has any participants
+      const participantsSnapshot = boardSnapshot.child('participants');
+      
+      if (!participantsSnapshot.exists() || participantsSnapshot.size === 0) {
+        // No participants, check when the last participant left
+        const lastActiveSnapshot = boardSnapshot.child('lastActive');
+        
+        if (lastActiveSnapshot.exists()) {
+          let lastActiveTime = lastActiveSnapshot.val();
+          
+          // Handle Firebase server timestamp format (it could be a number or an object with .seconds)
+          if (typeof lastActiveTime === 'object' && lastActiveTime !== null) {
+            // Convert server timestamp to milliseconds
+            if (lastActiveTime.seconds) {
+              lastActiveTime = lastActiveTime.seconds * 1000;
+            } else {
+              // If we can't interpret the timestamp format, use current time - we don't want to delete too quickly
+              lastActiveTime = now;
+            }
+          }
+          
+          // If the board has been inactive for more than the threshold, mark for deletion
+          if (now - lastActiveTime > inactiveThreshold) {
+            inactiveBoardIds.push(boardId);
+          }
+        } else {
+          // If there's no lastActive timestamp, add one now and don't delete yet
+          set(ref(rtdb, `boards/${boardId}/lastActive`), rtdbTimestamp());
+        }
+      } else {
+        // Board has participants, update the lastActive time
+        set(ref(rtdb, `boards/${boardId}/lastActive`), rtdbTimestamp());
+      }
+    });
+    
+    // Delete all inactive boards and their cards
+    for (const boardId of inactiveBoardIds) {
+      await deleteInactiveBoard(boardId);
+    }
+    
+    if (inactiveBoardIds.length > 0) {
+      console.log(`Cleaned up ${inactiveBoardIds.length} inactive boards`);
+    }
+  } catch (error) {
+    console.error('Error cleaning up inactive boards:', error);
+  }
+};
+
+/**
+ * Deletes an inactive board and all associated cards
+ * @param boardId ID of the board to delete
+ */
+const deleteInactiveBoard = async (boardId: string): Promise<void> => {
+  try {
+    // First, verify the board exists in Firestore
+    const boardRef = doc(db, 'boards', boardId);
+    const boardSnap = await getDoc(boardRef);
+    
+    if (!boardSnap.exists()) {
+      // If the board doesn't exist in Firestore, just clean up RTDB
+      await set(ref(rtdb, `boards/${boardId}`), null);
+      return;
+    }
+    
+    // Step 1: Delete all cards associated with this board
+    const cardsQuery = query(collection(db, 'cards'), where('boardId', '==', boardId));
+    const cardsSnapshot = await getDocs(cardsQuery);
+    
+    if (cardsSnapshot.size > 0) {
+      const batch = writeBatch(db);
+      cardsSnapshot.docs.forEach(doc => batch.delete(doc.ref));
+      await batch.commit();
+    }
+    
+    // Step 2: Delete the board itself from Firestore
+    await deleteDoc(boardRef);
+    
+    // Step 3: Clean up the RTDB entry
+    await set(ref(rtdb, `boards/${boardId}`), null);
+    
+    console.log(`Successfully deleted inactive board ${boardId} and all associated cards`);
+  } catch (error) {
+    console.error(`Error deleting inactive board ${boardId}:`, error);
   }
 };
