@@ -1,27 +1,24 @@
 import {
+  DataSnapshot,
   get,
   off,
   onDisconnect,
   onValue,
   ref,
   serverTimestamp as rtdbTimestamp,
-  set,
-  query as rtdbQuery,
-  orderByChild,
-  equalTo,
-  DataSnapshot,
+  set
 } from 'firebase/database';
 import {
+  collection,
+  deleteDoc,
   doc,
   getDoc,
-  collection,
-  query,
-  where,
   getDocs,
-  deleteDoc,
-  writeBatch,
-  updateDoc,
+  query,
   serverTimestamp,
+  updateDoc,
+  where,
+  writeBatch,
 } from 'firebase/firestore';
 import { auth, db, OnlineUser, rtdb } from './firebase';
 

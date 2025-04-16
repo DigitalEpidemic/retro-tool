@@ -532,11 +532,16 @@ describe('Timer Functionality', () => {
   });
 
   it('prevents saving edited time when timer is running', async () => {
+    // Use fake timers for consistent behavior
+    vi.useFakeTimers();
+
     const runningBoard = {
       ...mockBoard,
       timerIsRunning: true,
       timerStartTime: Timestamp.now(),
+      timerDurationSeconds: 300, // 5 minutes
     };
+
     vi.mocked(boardService.subscribeToBoard).mockImplementation((_, cb) => {
       act(() => cb(runningBoard));
       return vi.fn();
@@ -552,12 +557,20 @@ describe('Timer Functionality', () => {
       );
     });
 
+    // Verify we can't edit the timer when it's running
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
-    const timerDisplay = screen.getByText('5:00');
-    expect(timerDisplay).toBeInTheDocument();
-    expect(timerDisplay.tagName).toBe('SPAN'); // Ensure it's not an input
 
+    // Get the timer display and try to click it - should not become editable
+    const timerDisplay = screen.getByText('5:00');
+    fireEvent.click(timerDisplay);
+
+    // Still should not be editable
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    expect(timerDisplay.tagName).toBe('SPAN'); // Ensure it's not an input
     expect(vi.mocked(updateDoc)).not.toHaveBeenCalled();
+
+    // Restore real timers
+    vi.useRealTimers();
   });
 
   it('reverts timer input to last valid time on invalid entry (Enter)', async () => {
