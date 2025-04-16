@@ -2,33 +2,31 @@ import {
   DatabaseReference,
   DataSnapshot,
   get,
-  off,
   onDisconnect,
   onValue,
   ref,
   set,
 } from 'firebase/database';
 import {
+  collection,
+  deleteDoc,
   doc,
   DocumentReference,
   DocumentSnapshot,
   getDoc,
-  deleteDoc,
-  collection,
-  query,
-  where,
   getDocs,
-  writeBatch,
+  query,
   updateDoc,
-  serverTimestamp,
+  where,
+  writeBatch,
 } from 'firebase/firestore';
-import { beforeEach, describe, expect, it, vi, Mock } from 'vitest';
+import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { auth, rtdb } from '../firebase';
 import {
+  cleanupInactiveBoards,
   setupPresence,
   subscribeToParticipants,
   updateParticipantName,
-  cleanupInactiveBoards,
 } from '../presenceService';
 
 // Mock firebase/database
@@ -101,7 +99,7 @@ describe('presenceService', () => {
     vi.clearAllMocks();
 
     // Mock to handle the boardsSnapshot for cleanupInactiveBoards
-    (get as unknown as Mock).mockImplementation((path: any) => {
+    (get as unknown as Mock).mockImplementation((path: DatabaseReference) => {
       if (path === mockBoardRef) {
         return Promise.resolve(mockSnapshot);
       }
@@ -112,7 +110,7 @@ describe('presenceService', () => {
     });
 
     // Set up common mocks
-    (ref as unknown as Mock).mockImplementation((db: any, path: string) => {
+    (ref as unknown as Mock).mockImplementation((_db: unknown, path: string) => {
       if (path === `status/${mockUserId}`) {
         return mockStatusRef;
       } else if (path === `boards/${mockBoardId}/participants/${mockUserId}`) {
@@ -128,10 +126,10 @@ describe('presenceService', () => {
     (doc as unknown as Mock).mockReturnValue(mockUserRef);
     (getDoc as unknown as Mock).mockResolvedValue(mockUserSnap);
     (onDisconnect as unknown as Mock).mockReturnValue(mockOnDisconnect);
-    (onValue as unknown as Mock).mockImplementation((ref, callback) => {
+    (onValue as unknown as Mock).mockImplementation((_ref, callback) => {
       callback({
         exists: () => true,
-        forEach: (cb: (snap: any) => void) => {
+        forEach: (cb: (snap: DataSnapshot) => void) => {
           cb({
             val: () => ({
               id: mockUserId,
@@ -139,7 +137,10 @@ describe('presenceService', () => {
               color: '#ff0000',
               boardId: mockBoardId,
             }),
-          });
+            exists: () => true,
+            key: mockUserId,
+            ref: {} as DatabaseReference,
+          } as unknown as DataSnapshot);
         },
       });
       return mockUnsubscribe;
@@ -333,7 +334,7 @@ describe('presenceService', () => {
 
     it('should handle empty participants list', () => {
       // Mock onValue to simulate no participants
-      (onValue as unknown as Mock).mockImplementationOnce((ref, callback) => {
+      (onValue as unknown as Mock).mockImplementationOnce((_ref, callback) => {
         callback({
           exists: () => false,
         });
@@ -449,7 +450,7 @@ describe('presenceService', () => {
     };
 
     beforeEach(() => {
-      (ref as unknown as Mock).mockImplementation((db: any, path: string) => {
+      (ref as unknown as Mock).mockImplementation((_db: unknown, path: string) => {
         if (path === 'boards') {
           return mockBoardsRef;
         }

@@ -6,7 +6,7 @@ import {
   onValue,
   ref,
   serverTimestamp as rtdbTimestamp,
-  set
+  set,
 } from 'firebase/database';
 import {
   collection,
