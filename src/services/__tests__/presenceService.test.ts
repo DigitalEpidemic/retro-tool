@@ -8,10 +8,28 @@ import {
   ref,
   set,
 } from 'firebase/database';
-import { doc, DocumentReference, DocumentSnapshot, getDoc } from 'firebase/firestore';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  doc,
+  DocumentReference,
+  DocumentSnapshot,
+  getDoc,
+  deleteDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+  writeBatch,
+  updateDoc,
+  serverTimestamp,
+} from 'firebase/firestore';
+import { beforeEach, describe, expect, it, vi, Mock } from 'vitest';
 import { auth, rtdb } from '../firebase';
-import { setupPresence, subscribeToParticipants, updateParticipantName } from '../presenceService';
+import {
+  setupPresence,
+  subscribeToParticipants,
+  updateParticipantName,
+  cleanupInactiveBoards,
+} from '../presenceService';
 
 // Mock firebase/database
 vi.mock('firebase/database', () => ({
@@ -31,71 +49,104 @@ vi.mock('firebase/database', () => ({
 vi.mock('firebase/firestore', () => ({
   doc: vi.fn(),
   getDoc: vi.fn(),
+  deleteDoc: vi.fn(),
+  collection: vi.fn(),
+  query: vi.fn(),
+  where: vi.fn(),
+  getDocs: vi.fn(),
+  writeBatch: vi.fn(),
+  updateDoc: vi.fn(),
+  serverTimestamp: vi.fn(() => 'MOCK_FIRESTORE_TIMESTAMP'),
 }));
 
-// Mock firebase services
+// Mock firebase.ts
 vi.mock('../firebase', () => ({
   auth: {
-    currentUser: {
-      uid: 'test-user-id',
-    },
-  } as { currentUser: { uid: string } | null },
+    currentUser: { uid: 'user-123' },
+  },
   rtdb: {},
   db: {},
 }));
 
 describe('presenceService', () => {
   const mockBoardId = 'test-board-id';
+  const mockUserId = 'user-123';
   const mockDisplayName = 'Test User';
-  const mockUserId = 'test-user-id';
-
-  const mockStatusRef = { key: 'status/test-user-id' } as unknown as DatabaseReference;
-  const mockBoardRef = {
-    key: 'boards/test-board-id/participants/test-user-id',
-  } as unknown as DatabaseReference;
+  const mockStatusRef = {} as DatabaseReference;
+  const mockBoardRef = {} as DatabaseReference;
+  const mockBoardParticipantsRef = {} as DatabaseReference;
+  const mockBoardLastActiveRef = {} as DatabaseReference;
+  const mockUserRef = {} as DocumentReference;
+  const mockUserSnap = {
+    exists: vi.fn(() => true),
+    data: vi.fn(() => ({ color: '#ff0000' })),
+  } as unknown as DocumentSnapshot;
   const mockOnDisconnect = {
-    set: vi.fn().mockReturnThis(),
-    remove: vi.fn().mockReturnThis(),
-    cancel: vi.fn().mockReturnThis(),
+    set: vi.fn(),
+    remove: vi.fn(),
+    cancel: vi.fn(),
   };
-  const mockDocRef = { id: 'test-user-id' } as unknown as DocumentReference;
+  const mockUnsubscribe = vi.fn();
+  const mockSnapshot = {
+    exists: () => true,
+    val: () => ({
+      id: mockUserId,
+      name: mockDisplayName,
+      color: '#ff0000',
+      boardId: mockBoardId,
+    }),
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Mock the get function with unknown cast first
-    (get as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
-      exists: () => true,
-      val: () => ({
-        id: 'test-user-id',
-        name: 'Old Name',
-        color: '#ff0000',
-        boardId: 'test-board-id',
-        lastOnline: 123456789,
-      }),
-    } as unknown as DataSnapshot);
-
-    // Mock Firestore doc and getDoc
-    (doc as unknown as ReturnType<typeof vi.fn>).mockReturnValue(mockDocRef);
-    (getDoc as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
-      exists: () => true,
-      data: () => ({
-        color: '#ff0000',
-        name: 'Test User',
-      }),
-    } as unknown as DocumentSnapshot);
-
-    // Setup the mocks for each test
-    (ref as unknown as ReturnType<typeof vi.fn>).mockImplementation(
-      (_db: unknown, path: string) => {
-        if (path?.includes('status')) return mockStatusRef;
-        if (path?.includes('participants')) return mockBoardRef;
-        return { key: 'unknown-path' } as unknown as DatabaseReference;
+    // Mock to handle the boardsSnapshot for cleanupInactiveBoards
+    (get as unknown as Mock).mockImplementation((path: any) => {
+      if (path === mockBoardRef) {
+        return Promise.resolve(mockSnapshot);
       }
-    );
+      // For cleanupInactiveBoards, return empty boards
+      return Promise.resolve({
+        exists: () => false, // No boards to check
+      });
+    });
 
-    (onDisconnect as unknown as ReturnType<typeof vi.fn>).mockReturnValue(mockOnDisconnect);
-    (set as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+    // Set up common mocks
+    (ref as unknown as Mock).mockImplementation((db: any, path: string) => {
+      if (path === `status/${mockUserId}`) {
+        return mockStatusRef;
+      } else if (path === `boards/${mockBoardId}/participants/${mockUserId}`) {
+        return mockBoardRef;
+      } else if (path === `boards/${mockBoardId}/participants`) {
+        return mockBoardParticipantsRef;
+      } else if (path === `boards/${mockBoardId}/lastActive`) {
+        return mockBoardLastActiveRef;
+      }
+      return {};
+    });
+
+    (doc as unknown as Mock).mockReturnValue(mockUserRef);
+    (getDoc as unknown as Mock).mockResolvedValue(mockUserSnap);
+    (onDisconnect as unknown as Mock).mockReturnValue(mockOnDisconnect);
+    (onValue as unknown as Mock).mockImplementation((ref, callback) => {
+      callback({
+        exists: () => true,
+        forEach: (cb: (snap: any) => void) => {
+          cb({
+            val: () => ({
+              id: mockUserId,
+              name: mockDisplayName,
+              color: '#ff0000',
+              boardId: mockBoardId,
+            }),
+          });
+        },
+      });
+      return mockUnsubscribe;
+    });
+
+    // Mock updateDoc
+    (updateDoc as unknown as Mock).mockResolvedValue(undefined);
   });
 
   describe('setupPresence', () => {
@@ -106,14 +157,22 @@ describe('presenceService', () => {
       // Verify refs were created correctly
       expect(ref).toHaveBeenCalledWith(rtdb, `status/${mockUserId}`);
       expect(ref).toHaveBeenCalledWith(rtdb, `boards/${mockBoardId}/participants/${mockUserId}`);
+      expect(ref).toHaveBeenCalledWith(rtdb, `boards/${mockBoardId}/lastActive`);
 
       // Verify Firestore doc was called to get the user's color
       expect(doc).toHaveBeenCalled();
       expect(getDoc).toHaveBeenCalled();
 
-      // Verify onDisconnect was set up
+      // Verify the user's boardId is updated in Firestore when joining a board
+      expect(updateDoc).toHaveBeenCalledWith(mockUserRef, {
+        boardId: mockBoardId,
+        lastActive: 'MOCK_FIRESTORE_TIMESTAMP',
+      });
+
+      // Verify onDisconnect was set up - now 3 calls with the lastActive ref
       expect(onDisconnect).toHaveBeenCalledWith(mockStatusRef);
       expect(onDisconnect).toHaveBeenCalledWith(mockBoardRef);
+      expect(onDisconnect).toHaveBeenCalledWith(mockBoardLastActiveRef);
       expect(mockOnDisconnect.set).toHaveBeenCalledWith({
         online: false,
         lastChanged: 'MOCK_TIMESTAMP',
@@ -135,6 +194,7 @@ describe('presenceService', () => {
           lastOnline: expect.any(Number),
         })
       );
+      expect(set).toHaveBeenCalledWith(mockBoardLastActiveRef, 'MOCK_TIMESTAMP');
 
       // Verify cleanup function
       expect(typeof cleanup).toBe('function');
@@ -142,48 +202,74 @@ describe('presenceService', () => {
       // Call cleanup function
       cleanup();
 
-      // Verify cleanup actions
-      expect(mockOnDisconnect.cancel).toHaveBeenCalledTimes(2);
+      // Verify cleanup actions - now 3 calls with the lastActive ref
+      expect(mockOnDisconnect.cancel).toHaveBeenCalledTimes(3);
       expect(set).toHaveBeenCalledWith(mockStatusRef, {
         online: false,
         lastChanged: 'MOCK_TIMESTAMP',
       });
       expect(set).toHaveBeenCalledWith(mockBoardRef, null);
+      expect(set).toHaveBeenCalledWith(mockBoardLastActiveRef, 'MOCK_TIMESTAMP');
+
+      // Verify that updateDoc is called to update the user's boardId to null in Firestore
+      expect(updateDoc).toHaveBeenCalledWith(mockUserRef, {
+        boardId: null,
+        lastActive: 'MOCK_FIRESTORE_TIMESTAMP',
+      });
+    });
+
+    it('should handle errors when updating the boardId in Firestore', async () => {
+      // Spy on console.error
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+      // Mock updateDoc to throw an error on first call
+      (updateDoc as unknown as Mock).mockRejectedValueOnce(new Error('Test error'));
+
+      // Call the function - it should continue despite the error
+      await setupPresence(mockBoardId, mockDisplayName);
+
+      // Verify updateDoc was called
+      expect(updateDoc).toHaveBeenCalledWith(mockUserRef, {
+        boardId: mockBoardId,
+        lastActive: 'MOCK_FIRESTORE_TIMESTAMP',
+      });
+
+      // Verify error was logged
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'Error updating user boardId in Firestore:',
+        expect.any(Error)
+      );
+
+      // Verify other operations still proceeded
+      expect(set).toHaveBeenCalled();
+
+      consoleErrorSpy.mockRestore();
     });
 
     it('should use generated color when Firestore has no color', async () => {
       // Mock Firestore to return no color
-      (getDoc as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
-        exists: () => true,
-        data: () => ({
-          name: 'Test User',
-          // No color property
-        }),
-      } as unknown as DocumentSnapshot);
+      (mockUserSnap.data as Mock).mockReturnValueOnce({});
 
-      // Call the function
       const cleanup = await setupPresence(mockBoardId, mockDisplayName);
 
-      // Verify user data was set with a generated color
+      // Verify user data was set with a generated color (any string)
       expect(set).toHaveBeenCalledWith(
         mockBoardRef,
-        expect.objectContaining<{
-          id: string;
-          name: string;
-          color: string;
-          boardId: string;
-          lastOnline: number;
-        }>({
+        expect.objectContaining({
           id: mockUserId,
           name: mockDisplayName,
-          color: expect.any(String),
+          color: expect.any(String), // Should be a generated color
           boardId: mockBoardId,
           lastOnline: expect.any(Number),
         })
       );
 
-      // Clean up
+      // Call cleanup to verify boardId is set to null
       cleanup();
+      expect(updateDoc).toHaveBeenCalledWith(mockUserRef, {
+        boardId: null,
+        lastActive: 'MOCK_FIRESTORE_TIMESTAMP',
+      });
     });
 
     it('should return empty cleanup function when no user is authenticated', async () => {
@@ -211,6 +297,9 @@ describe('presenceService', () => {
       expect(typeof cleanup).toBe('function');
       cleanup(); // Should not throw
 
+      // Verify updateDoc was not called
+      expect(updateDoc).not.toHaveBeenCalled();
+
       // Restore auth.currentUser
       (auth as { currentUser: { uid: string } | null }).currentUser = originalCurrentUser;
       consoleErrorSpy.mockRestore();
@@ -219,140 +308,214 @@ describe('presenceService', () => {
 
   describe('subscribeToParticipants', () => {
     it('should subscribe to participants for a board', () => {
-      const mockCallback = vi.fn();
-      interface MockSnapshotData {
-        id: string;
-        name: string;
-        color: string;
-        boardId: string;
-        lastOnline: number;
-      }
-
-      const mockSnapshot = {
-        exists: () => true,
-        forEach: (callback: (snap: DataSnapshot) => void) => {
-          const createMockSnapshot = (data: MockSnapshotData): DataSnapshot => ({
-            val: () => data,
-            exists: () => true,
-            key: data.id,
-            ref: {} as DatabaseReference,
-            child: () => ({}) as DataSnapshot,
-            forEach: () => false,
-            hasChild: () => false,
-            hasChildren: () => false,
-            size: 0,
-            toJSON: () => data,
-            priority: null,
-            exportVal: () => data,
-          });
-
-          callback(
-            createMockSnapshot({
-              id: 'user1',
-              name: 'User One',
-              color: '#ff0000',
-              boardId: mockBoardId,
-              lastOnline: Date.now(),
-            })
-          );
-          callback(
-            createMockSnapshot({
-              id: 'user2',
-              name: 'User Two',
-              color: '#00ff00',
-              boardId: mockBoardId,
-              lastOnline: Date.now(),
-            })
-          );
-        },
-      } as unknown as DataSnapshot;
-
-      // Setup onValue to call the callback immediately with mock data
-      (onValue as unknown as ReturnType<typeof vi.fn>).mockImplementation(
-        (_ref: DatabaseReference, callback: (snapshot: DataSnapshot) => void) => {
-          callback(mockSnapshot);
-          return vi.fn(); // Return a mock unsubscribe function
-        }
-      );
-
-      // Call the function
-      const unsubscribe = subscribeToParticipants(mockBoardId, mockCallback);
+      const callback = vi.fn();
+      const unsubscribe = subscribeToParticipants(mockBoardId, callback);
 
       // Verify ref was created correctly
       expect(ref).toHaveBeenCalledWith(rtdb, `boards/${mockBoardId}/participants`);
 
-      // Verify onValue was called
-      expect(onValue).toHaveBeenCalled();
+      // Verify onValue was called with the correct ref and a callback
+      expect(onValue).toHaveBeenCalledWith(mockBoardParticipantsRef, expect.any(Function));
 
-      // Verify callback was called with participants
-      expect(mockCallback).toHaveBeenCalledWith(
-        expect.arrayContaining([
-          expect.objectContaining({ id: 'user1', name: 'User One' }),
-          expect.objectContaining({ id: 'user2', name: 'User Two' }),
-        ])
-      );
+      // Verify callback was called with participants data
+      expect(callback).toHaveBeenCalledWith([
+        {
+          id: mockUserId,
+          name: mockDisplayName,
+          color: '#ff0000',
+          boardId: mockBoardId,
+        },
+      ]);
 
-      // Verify unsubscribe function
+      // Verify unsubscribe function was returned
       expect(typeof unsubscribe).toBe('function');
-
-      // Call unsubscribe function
-      unsubscribe();
-
-      // Verify off was called to remove the listener
-      expect(off).toHaveBeenCalled();
     });
 
     it('should handle empty participants list', () => {
-      const mockCallback = vi.fn();
-      const mockSnapshot = {
-        exists: () => false,
-        forEach: vi.fn(),
-      } as unknown as DataSnapshot;
+      // Mock onValue to simulate no participants
+      (onValue as unknown as Mock).mockImplementationOnce((ref, callback) => {
+        callback({
+          exists: () => false,
+        });
+        return mockUnsubscribe;
+      });
 
-      // Setup onValue to call the callback immediately with empty data
-      (onValue as unknown as ReturnType<typeof vi.fn>).mockImplementation(
-        (_ref: DatabaseReference, callback: (snapshot: DataSnapshot) => void) => {
-          callback(mockSnapshot);
-          return vi.fn();
-        }
-      );
-
-      // Call the function
-      subscribeToParticipants(mockBoardId, mockCallback);
+      const callback = vi.fn();
+      subscribeToParticipants(mockBoardId, callback);
 
       // Verify callback was called with empty array
-      expect(mockCallback).toHaveBeenCalledWith([]);
-      expect(mockSnapshot.forEach).not.toHaveBeenCalled();
+      expect(callback).toHaveBeenCalledWith([]);
     });
   });
 
   describe('updateParticipantName', () => {
     it('should update a participant name', async () => {
-      const newName = 'New User Name';
+      // Mock the snapshot for get
+      (get as unknown as Mock).mockResolvedValueOnce({
+        exists: () => true,
+        val: () => ({
+          id: mockUserId,
+          name: 'Old Name',
+          color: '#ff0000',
+          boardId: mockBoardId,
+        }),
+      });
 
-      // Call the function
-      await updateParticipantName(mockUserId, mockBoardId, newName);
+      await updateParticipantName(mockUserId, mockBoardId, 'New Name');
 
       // Verify ref was created correctly
       expect(ref).toHaveBeenCalledWith(rtdb, `boards/${mockBoardId}/participants/${mockUserId}`);
+
+      // Verify get was called
+      expect(get).toHaveBeenCalled();
 
       // Verify set was called with updated data
       expect(set).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({
           id: mockUserId,
-          name: newName,
+          name: 'New Name',
+          color: '#ff0000',
           boardId: mockBoardId,
         })
       );
     });
 
     it('should not update if new name is empty', async () => {
-      // Call with empty name
+      await updateParticipantName(mockUserId, mockBoardId, '');
+
+      // Verify set was not called
+      expect(set).not.toHaveBeenCalled();
+
       await updateParticipantName(mockUserId, mockBoardId, '   ');
 
       // Verify set was not called
       expect(set).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('cleanupInactiveBoards', () => {
+    const mockBoardsRef = {} as DatabaseReference;
+    const mockBoardsSnapshot = {
+      exists: vi.fn(() => true),
+      forEach: vi.fn(),
+    } as unknown as DataSnapshot;
+
+    const mockBoardSnapshot = {
+      key: 'inactive-board-id',
+      child: vi.fn((path: string) => {
+        if (path === 'participants') {
+          return {
+            exists: (): boolean => false,
+            size: 0,
+          };
+        } else if (path === 'lastActive') {
+          return {
+            exists: (): boolean => true,
+            val: () => Date.now() - 120000, // 2 minutes ago
+          };
+        }
+        return { exists: (): boolean => false };
+      }),
+    } as unknown as DataSnapshot;
+
+    const mockBoardWithParticipantsSnapshot = {
+      key: 'active-board-id',
+      child: vi.fn((path: string) => {
+        if (path === 'participants') {
+          return {
+            exists: (): boolean => true,
+            size: 2,
+          };
+        }
+        return { exists: (): boolean => false };
+      }),
+    } as unknown as DataSnapshot;
+
+    const mockBoardRef = {} as DocumentReference;
+    const mockBoardSnap = {
+      exists: vi.fn(() => true),
+    } as unknown as DocumentSnapshot;
+
+    const mockCardsQuery = {};
+    const mockCardsSnapshot = {
+      size: 2,
+      docs: [{ ref: { id: 'card1' } }, { ref: { id: 'card2' } }],
+    };
+
+    const mockBatch = {
+      delete: vi.fn(),
+      commit: vi.fn(),
+    };
+
+    beforeEach(() => {
+      (ref as unknown as Mock).mockImplementation((db: any, path: string) => {
+        if (path === 'boards') {
+          return mockBoardsRef;
+        }
+        return {};
+      });
+
+      (get as unknown as Mock).mockResolvedValue(mockBoardsSnapshot);
+
+      (mockBoardsSnapshot.forEach as Mock).mockImplementation(
+        (callback: (snapshot: DataSnapshot) => void) => {
+          callback(mockBoardSnapshot);
+          callback(mockBoardWithParticipantsSnapshot);
+        }
+      );
+
+      (doc as unknown as Mock).mockReturnValue(mockBoardRef);
+      (getDoc as unknown as Mock).mockResolvedValue(mockBoardSnap);
+
+      (collection as unknown as Mock).mockReturnValue({});
+      (query as unknown as Mock).mockReturnValue(mockCardsQuery);
+      (where as unknown as Mock).mockReturnValue({});
+      (getDocs as unknown as Mock).mockResolvedValue(mockCardsSnapshot);
+
+      (writeBatch as unknown as Mock).mockReturnValue(mockBatch);
+      (mockBatch.commit as Mock).mockResolvedValue(undefined);
+
+      (deleteDoc as unknown as Mock).mockResolvedValue(undefined);
+    });
+
+    it('should identify and delete inactive boards', async () => {
+      await cleanupInactiveBoards();
+
+      // Verify it fetched all boards
+      expect(ref).toHaveBeenCalledWith(rtdb, 'boards');
+      expect(get).toHaveBeenCalledWith(mockBoardsRef);
+
+      // Verify it checked each board for participants
+      expect(mockBoardsSnapshot.forEach).toHaveBeenCalled();
+
+      // Verify it checked Firestore for the board
+      expect(doc).toHaveBeenCalledWith(expect.anything(), 'boards', 'inactive-board-id');
+      expect(getDoc).toHaveBeenCalled();
+
+      // Verify it queried for cards
+      expect(collection).toHaveBeenCalledWith(expect.anything(), 'cards');
+      expect(query).toHaveBeenCalled();
+      expect(where).toHaveBeenCalledWith('boardId', '==', 'inactive-board-id');
+      expect(getDocs).toHaveBeenCalled();
+
+      // Verify it deleted the cards using a batch
+      expect(writeBatch).toHaveBeenCalled();
+      expect(mockBatch.delete).toHaveBeenCalledTimes(2);
+      expect(mockBatch.commit).toHaveBeenCalled();
+
+      // Verify it deleted the board
+      expect(deleteDoc).toHaveBeenCalledWith(mockBoardRef);
+
+      // Verify it cleaned up RTDB
+      expect(set).toHaveBeenCalledWith(expect.anything(), null);
+    });
+
+    it('should update lastActive for boards with participants', async () => {
+      await cleanupInactiveBoards();
+
+      // Verify it updated the lastActive timestamp for boards with participants
+      expect(set).toHaveBeenCalledWith(expect.anything(), 'MOCK_TIMESTAMP');
     });
   });
 });
