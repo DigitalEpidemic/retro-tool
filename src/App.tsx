@@ -196,19 +196,19 @@ function Home() {
   }
 
   return (
-    <div className="min-h-dvh bg-gradient-to-br from-blue-50 to-indigo-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl">
-        <div className="p-8">
-          <div className="flex items-center justify-center mb-6">
-            <ClipboardCheck className="h-10 w-10 text-indigo-600" />
-            <h1 className="ml-2 text-2xl font-bold text-gray-800">Retrospective Board</h1>
+    <div className="min-h-dvh bg-gradient-to-br from-blue-50 to-indigo-50 py-6 px-3 sm:py-8 sm:px-6 lg:px-8 overflow-auto flex flex-col items-center justify-center">
+      <div className="max-w-md w-full mx-auto bg-white rounded-xl shadow-md overflow-hidden md:max-w-2xl mb-4">
+        <div className="p-4 sm:p-6 md:p-8">
+          <div className="flex items-center justify-center mb-4">
+            <ClipboardCheck className="h-8 w-8 sm:h-10 sm:w-10 text-indigo-600" />
+            <h1 className="ml-2 text-xl sm:text-2xl font-bold text-gray-800">Retrospective Board</h1>
           </div>
 
-          <p className="text-gray-600 mb-8 text-center">
+          <p className="text-gray-600 mb-6 text-center text-sm sm:text-base">
             Create a new retrospective board to collaborate with your team
           </p>
 
-          <form onSubmit={handleCreateBoard} className="space-y-6">
+          <form onSubmit={handleCreateBoard} className="space-y-4 sm:space-y-6">
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700">
                 Your Name
@@ -262,7 +262,7 @@ function Home() {
                       type="button"
                       onClick={() => handleColorChange(color.value)}
                       disabled={isUpdatingColor}
-                      className={`h-8 w-8 rounded-full cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
+                      className={`h-7 w-7 sm:h-8 sm:w-8 rounded-full cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
                         userColor === color.value ? 'ring-2 ring-offset-2 ring-indigo-500' : ''
                       } ${isUpdatingColor ? 'opacity-50 cursor-not-allowed' : ''} ${color.value}`}
                       title={color.name}
@@ -273,18 +273,18 @@ function Home() {
                     type="button"
                     onClick={handleRandomColor}
                     disabled={isUpdatingColor}
-                    className={`h-8 w-8 rounded-full bg-white border border-gray-300 flex items-center justify-center cursor-pointer ${
+                    className={`h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-white border border-gray-300 flex items-center justify-center cursor-pointer ${
                       isUpdatingColor ? 'opacity-50 cursor-not-allowed' : ''
                     }`}
                     title="Random color"
                   >
-                    <Shuffle className="h-4 w-4 text-gray-500" />
+                    <Shuffle className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500" />
                   </button>
                 </div>
               </div>
             </div>
 
-            <div className="pt-2">
+            <div className="pt-1 sm:pt-2">
               <button
                 type="submit"
                 disabled={isLoading || authLoading}
@@ -295,10 +295,10 @@ function Home() {
             </div>
           </form>
 
-          <div className="mt-6 text-center text-sm text-gray-500">
+          <div className="mt-4 sm:mt-6 text-center text-sm text-gray-500">
             <p>
               {showJoinInput ? (
-                <form onSubmit={handleJoinBoard} className="mt-4">
+                <form onSubmit={handleJoinBoard} className="mt-3">
                   <div className="flex items-center">
                     <input
                       type="text"
@@ -309,7 +309,7 @@ function Home() {
                     />
                     <button
                       type="submit"
-                      className="inline-flex items-center px-4 py-2 border border-transparent rounded-r-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer"
+                      className="inline-flex items-center px-3 sm:px-4 py-2 border border-transparent rounded-r-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer"
                     >
                       Join
                     </button>
@@ -331,7 +331,7 @@ function Home() {
         </div>
       </div>
 
-      <div className="mt-8 max-w-md mx-auto text-center text-sm text-gray-500">
+      <div className="max-w-md w-full mx-auto text-center text-xs sm:text-sm text-gray-500 pb-4">
         <p>
           A collaborative tool for team retrospectives. Share ideas, vote on topics, and track
           action items.
