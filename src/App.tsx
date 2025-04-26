@@ -22,7 +22,6 @@ function Home() {
   const [joinBoardId, setJoinBoardId] = useState('');
   const [showJoinInput, setShowJoinInput] = useState(false);
   const [isUpdatingColor, setIsUpdatingColor] = useState(false);
-  const [colorUpdateStatus, setColorUpdateStatus] = useState<string | null>(null);
 
   // Set initial username from Firebase user when available
   useEffect(() => {
@@ -69,65 +68,31 @@ function Home() {
     loadUserColor();
   }, [user]);
 
-  const handleRandomColor = async () => {
-    if (isUpdatingColor || !user) return;
+  // Update color preference locally without Firestore updates
+  const handleColorChange = (color: string) => {
+    if (isUpdatingColor) return;
+
+    setIsUpdatingColor(true);
+
+    try {
+      // Only update local state
+      setUserColor(color);
+      
+      // Clear status after a short delay
+      setTimeout(() => setIsUpdatingColor(false), 300);
+    } catch (error) {
+      console.error('Error updating color:', error);
+      setIsUpdatingColor(false);
+    }
+  };
+
+  const handleRandomColor = () => {
+    if (isUpdatingColor) return;
 
     const randomIndex = Math.floor(Math.random() * colorOptions.length);
     const newColor = colorOptions[randomIndex].value;
 
-    await handleColorChange(newColor);
-  };
-
-  // Update color preference in Firestore without updating cards
-  const handleColorChange = async (color: string) => {
-    if (isUpdatingColor || !user) return;
-
-    setIsUpdatingColor(true);
-    setColorUpdateStatus('Updating color preference...');
-
-    try {
-      setUserColor(color);
-
-      // Update in Firestore - this only updates the preference, not the cards
-      const userRef = doc(db, 'users', user.uid);
-      await updateDoc(userRef, { color });
-
-      // Check if the user is in a board
-      const userSnap = await getDoc(userRef);
-      const currentBoardId = userSnap.exists() ? userSnap.data().boardId : null;
-
-      // Update in realtime database if the user is in a board
-      if (currentBoardId) {
-        try {
-          // Only update the participant color in the realtime database
-          // We won't update card colors here - that will happen in the Board component
-          // when the user is confirmed to be in the participants list
-          await updateParticipantColor(user.uid, currentBoardId, color);
-          setColorUpdateStatus(
-            'Color preference saved. Your cards will update when you are active in a board.'
-          );
-        } catch (rtdbError) {
-          console.error('Error updating realtime database color:', rtdbError);
-          setColorUpdateStatus(
-            'Color preference saved. Your cards will update when you are active in a board.'
-          );
-        }
-      } else {
-        // User is not in any board, just save the preference
-        setColorUpdateStatus(
-          'Color preference saved. Your cards will update when you join boards.'
-        );
-      }
-
-      // Clear status after 3 seconds
-      setTimeout(() => setColorUpdateStatus(null), 3000);
-    } catch (error) {
-      console.error('Error updating color:', error);
-      setColorUpdateStatus('Error updating color preference.');
-      setTimeout(() => setColorUpdateStatus(null), 5000);
-    } finally {
-      setIsUpdatingColor(false);
-    }
+    handleColorChange(newColor);
   };
 
   const handleCreateBoard = async (e: FormEvent) => {
@@ -177,10 +142,46 @@ function Home() {
     }
   };
 
-  const handleJoinBoard = (e: FormEvent) => {
+  const handleJoinBoard = async (e: FormEvent) => {
     e.preventDefault();
-    if (joinBoardId.trim()) {
+    if (!joinBoardId.trim() || authLoading || !user) return;
+    
+    setIsLoading(true);
+    
+    try {
+      // First update the user's display name if needed
+      if (updateUserDisplayName && username !== user.displayName) {
+        updateUserDisplayName(username);
+      }
+      
+      // Check if user document exists
+      const userRef = doc(db, 'users', user.uid);
+      const userSnap = await getDoc(userRef);
+      
+      if (userSnap.exists()) {
+        // Update existing user document
+        await updateDoc(userRef, {
+          name: username,
+          color: userColor,
+          boardId: joinBoardId.trim(),
+          lastActive: new Date()
+        });
+      } else {
+        // Create new user document
+        await setDoc(userRef, {
+          id: user.uid,
+          name: username,
+          color: userColor,
+          lastActive: new Date(),
+          boardId: joinBoardId.trim()
+        });
+      }
+      
+      // Navigate to the board
       navigate(`/board/${joinBoardId.trim()}`);
+    } catch (error) {
+      console.error('Error joining board:', error);
+      setIsLoading(false);
     }
   };
 
@@ -251,9 +252,6 @@ function Home() {
                   </div>
                 </div>
               )}
-              {colorUpdateStatus && (
-                <p className="text-xs text-blue-600 mb-2">{colorUpdateStatus}</p>
-              )}
               <div className="mt-2 flex items-center">
                 <div className="flex flex-wrap gap-2">
                   {colorOptions.map(color => (
@@ -296,37 +294,37 @@ function Home() {
           </form>
 
           <div className="mt-4 sm:mt-6 text-center text-sm text-gray-500">
-            <p>
-              {showJoinInput ? (
-                <form onSubmit={handleJoinBoard} className="mt-3">
-                  <div className="flex items-center">
-                    <input
-                      type="text"
-                      value={joinBoardId}
-                      onChange={e => setJoinBoardId(e.target.value)}
-                      placeholder="Enter board ID"
-                      className="flex-1 rounded-l-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                    />
-                    <button
-                      type="submit"
-                      className="inline-flex items-center px-3 sm:px-4 py-2 border border-transparent rounded-r-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer"
-                    >
-                      Join
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                <>
-                  Already have a board?{' '}
+            {showJoinInput ? (
+              <form onSubmit={handleJoinBoard} className="mt-3">
+                <div className="flex items-center">
+                  <input
+                    type="text"
+                    value={joinBoardId}
+                    onChange={e => setJoinBoardId(e.target.value)}
+                    placeholder="Enter board ID"
+                    className="flex-1 rounded-l-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    disabled={isLoading}
+                  />
                   <button
-                    onClick={() => setShowJoinInput(true)}
-                    className="text-indigo-600 hover:text-indigo-500 cursor-pointer"
+                    type="submit"
+                    disabled={isLoading || !joinBoardId.trim()}
+                    className="inline-flex items-center px-3 sm:px-4 py-2 border border-transparent rounded-r-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Join an existing board
+                    {isLoading ? 'Joining...' : 'Join'}
                   </button>
-                </>
-              )}
-            </p>
+                </div>
+              </form>
+            ) : (
+              <div>
+                Already have a board?{' '}
+                <button
+                  onClick={() => setShowJoinInput(true)}
+                  className="text-indigo-600 hover:text-indigo-500 cursor-pointer"
+                >
+                  Join an existing board
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
