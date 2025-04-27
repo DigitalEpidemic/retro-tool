@@ -58,7 +58,7 @@ export default function Column({
   const [editableDescription, setEditableDescription] = useState(description ?? '');
   const descriptionInputRef = useRef<HTMLTextAreaElement>(null);
   const descriptionEscapePressedRef = useRef(false);
-  const [isDescriptionVisible, setIsDescriptionVisible] = useState(false);
+  const [isDescriptionVisible, setIsDescriptionVisible] = useState(true);
 
   // Close menu when clicking outside
   React.useEffect(() => {
@@ -362,17 +362,6 @@ export default function Column({
             </button>
           </Tooltip>
 
-          <Tooltip content={isDescriptionVisible ? 'Hide description' : 'Show description'}>
-            <button
-              className={`flex items-center ${isDescriptionVisible ? 'text-blue-600' : 'text-gray-600'} hover:text-blue-700 active:text-blue-800 cursor-pointer p-1.5 rounded hover:bg-blue-50 active:bg-blue-100 transition-colors duration-300 touch-feedback`}
-              onClick={toggleDescriptionVisibility}
-              data-testid={`column-description-toggle-${id}`}
-            >
-              <AlignLeft className="h-5 w-5 sm:h-4 sm:w-4" />
-              <span className="sr-only">Toggle Description</span>
-            </button>
-          </Tooltip>
-
           <div className="relative" ref={menuRef}>
             <Tooltip content="Column options">
               <button
@@ -387,6 +376,17 @@ export default function Column({
 
             {isMenuOpen && (
               <div className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
+                <button
+                  className={`w-full text-left px-4 py-2 text-sm flex items-center text-gray-700 hover:text-gray-900 hover:bg-gray-50 active:bg-gray-100 cursor-pointer transition-colors duration-300 touch-feedback`}
+                  onClick={() => {
+                    toggleDescriptionVisibility();
+                    setIsMenuOpen(false);
+                  }}
+                  data-testid={`toggle-description-${id}`}
+                >
+                  <AlignLeft className="h-5 w-5 sm:h-4 sm:w-4 mr-2" />
+                  {isDescriptionVisible ? 'Hide description' : 'Show description'}
+                </button>
                 <button
                   className={`w-full text-left px-4 py-2 text-sm flex items-center ${
                     isBoardOwner
