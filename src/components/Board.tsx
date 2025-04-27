@@ -13,7 +13,6 @@ import { DragDropContext, Draggable, Droppable, DropResult } from '@hello-pangea
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import {
   Download,
-  Edit2,
   Menu,
   Pause,
   Play, // Import Pause icon

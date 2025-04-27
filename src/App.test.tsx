@@ -67,7 +67,7 @@ describe('App Routing', () => {
     mockNavigate.mockReset();
     vi.useFakeTimers();
   });
-  
+
   afterEach(() => {
     vi.useRealTimers();
   });
@@ -119,7 +119,7 @@ describe('App Routing', () => {
     // Check if the "Page Not Found" text is displayed
     expect(screen.getByText(/Page Not Found/i)).toBeInTheDocument();
   });
-  
+
   it('allows color selection before creating a board', async () => {
     render(
       <FirebaseContext.FirebaseProvider>
@@ -128,11 +128,11 @@ describe('App Routing', () => {
         </MemoryRouter>
       </FirebaseContext.FirebaseProvider>
     );
-    
+
     // Find a color button (red) and click it
     const redColorButton = screen.getAllByRole('button')[0]; // First color is red
     fireEvent.click(redColorButton);
-    
+
     // Check that the button now has the selected state (has a ring)
     expect(redColorButton).toHaveClass('ring-2');
   });
@@ -141,11 +141,11 @@ describe('App Routing', () => {
     // Setup test-specific mocks
     const mockSetDoc = vi.fn().mockResolvedValue(undefined);
     const mockUpdateDoc = vi.fn().mockResolvedValue(undefined);
-    
+
     // Override the mocks for this test
     vi.mocked(setDoc).mockImplementation(mockSetDoc);
     vi.mocked(updateDoc).mockImplementation(mockUpdateDoc);
-    
+
     render(
       <FirebaseContext.FirebaseProvider>
         <MemoryRouter initialEntries={['/']}>
@@ -153,23 +153,23 @@ describe('App Routing', () => {
         </MemoryRouter>
       </FirebaseContext.FirebaseProvider>
     );
-    
+
     // Find the "Join an existing board" button and click it
     const joinButton = screen.getByText(/Join an existing board/i);
     fireEvent.click(joinButton);
-    
+
     // Enter a board ID
     const boardIdInput = screen.getByPlaceholderText(/Enter board ID/i);
     fireEvent.change(boardIdInput, { target: { value: 'test-board-123' } });
-    
+
     // Submit the form
     const submitButton = screen.getByText(/^Join$/i);
-    
+
     // Wrap in act to handle async operations
     await vi.runAllTimersAsync();
     fireEvent.click(submitButton);
     await vi.runAllTimersAsync();
-    
+
     // Verify navigation was called with the correct path
     expect(mockNavigate).toHaveBeenCalledWith('/board/test-board-123');
   });

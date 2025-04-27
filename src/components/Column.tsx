@@ -1,15 +1,15 @@
 import { doc, getDoc } from 'firebase/firestore';
-import { ArrowUpDown, Edit2, MoreVertical, AlignLeft, Trash2 } from 'lucide-react'; // Added Trash2 icon
+import { AlignLeft, ArrowUpDown, MoreVertical, Trash2 } from 'lucide-react'; // Added Trash2 icon
 import React, { KeyboardEvent, useRef, useState } from 'react';
+import Tooltip from '../components/Tooltip'; // Use absolute path for component
 import { useFirebase } from '../contexts/useFirebase'; // To get user ID
 import {
   addCard,
   deleteColumn,
-  updateColumnTitle,
   updateColumnDescription,
+  updateColumnTitle,
 } from '../services/boardService'; // Added updateColumnDescription
 import { db } from '../services/firebase';
-import Tooltip from '../components/Tooltip'; // Use absolute path for component
 
 interface ColumnProps {
   id: string;
@@ -341,9 +341,9 @@ export default function Column({
               title={getMappedTitle()}
             >
               <span className="flex-shrink-0 text-xs text-gray-500 font-normal md:hidden mr-1">
-                {columnIndex !== undefined && totalColumns !== undefined && (
-                  `(${columnIndex + 1}/${totalColumns})`
-                )}
+                {columnIndex !== undefined &&
+                  totalColumns !== undefined &&
+                  `(${columnIndex + 1}/${totalColumns})`}
               </span>
               <span className="truncate min-w-0 max-w-full">{getMappedTitle()}</span>
             </h2>
@@ -428,15 +428,9 @@ export default function Column({
               data-testid={`column-description-${id}`}
             >
               {editableDescription ? (
-                <span className="whitespace-pre-wrap flex items-center">
-                  {editableDescription}
-                </span>
+                <span className="whitespace-pre-wrap flex items-center">{editableDescription}</span>
               ) : (
-                isBoardOwner && (
-                  <span className="text-gray-400">
-                    Add a description...
-                  </span>
-                )
+                isBoardOwner && <span className="text-gray-400">Add a description...</span>
               )}
             </div>
           )}

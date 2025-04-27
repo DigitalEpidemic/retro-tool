@@ -9,7 +9,6 @@ import { useFirebase } from './contexts/useFirebase';
 import './index.css';
 import { createBoard } from './services/boardService';
 import { db } from './services/firebase';
-import { updateParticipantColor } from './services/presenceService';
 
 // A simple component for the root path
 function Home() {
@@ -77,7 +76,7 @@ function Home() {
     try {
       // Only update local state
       setUserColor(color);
-      
+
       // Clear status after a short delay
       setTimeout(() => setIsUpdatingColor(false), 300);
     } catch (error) {
@@ -145,26 +144,26 @@ function Home() {
   const handleJoinBoard = async (e: FormEvent) => {
     e.preventDefault();
     if (!joinBoardId.trim() || authLoading || !user) return;
-    
+
     setIsLoading(true);
-    
+
     try {
       // First update the user's display name if needed
       if (updateUserDisplayName && username !== user.displayName) {
         updateUserDisplayName(username);
       }
-      
+
       // Check if user document exists
       const userRef = doc(db, 'users', user.uid);
       const userSnap = await getDoc(userRef);
-      
+
       if (userSnap.exists()) {
         // Update existing user document
         await updateDoc(userRef, {
           name: username,
           color: userColor,
           boardId: joinBoardId.trim(),
-          lastActive: new Date()
+          lastActive: new Date(),
         });
       } else {
         // Create new user document
@@ -173,10 +172,10 @@ function Home() {
           name: username,
           color: userColor,
           lastActive: new Date(),
-          boardId: joinBoardId.trim()
+          boardId: joinBoardId.trim(),
         });
       }
-      
+
       // Navigate to the board
       navigate(`/board/${joinBoardId.trim()}`);
     } catch (error) {
@@ -202,7 +201,9 @@ function Home() {
         <div className="p-4 sm:p-6 md:p-8">
           <div className="flex items-center justify-center mb-4">
             <ClipboardCheck className="h-8 w-8 sm:h-10 sm:w-10 text-indigo-600" />
-            <h1 className="ml-2 text-xl sm:text-2xl font-bold text-gray-800">Retrospective Board</h1>
+            <h1 className="ml-2 text-xl sm:text-2xl font-bold text-gray-800">
+              Retrospective Board
+            </h1>
           </div>
 
           <p className="text-gray-600 mb-6 text-center text-sm sm:text-base">
