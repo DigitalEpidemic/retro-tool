@@ -1401,9 +1401,140 @@ export default function Board() {
       {!loading && board && boardId && (
         <>
           {/* Top Board Header */}
-          <div className="px-3 sm:px-6 py-3 border-b border-gray-200 bg-white flex flex-col md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3 flex-1 max-w-[75%]">
+          <div className="px-3 sm:px-6 py-3 border-b border-gray-200 bg-white flex flex-col md:flex-row md:items-center">
+            {!isMobile && (
+              <div className="flex items-center space-x-4 mr-4 shrink-0 order-2 md:order-1">
+                {/* Timer Display and Controls */}
+                <div
+                  className="flex items-center space-x-1 timer-controls"
+                  data-testid="desktop-timer-controls"
+                >
+                  {/* Conditional Rendering: Input vs Clickable Span */}
+                  {board?.timerIsRunning ? (
+                    <span
+                      className="text-gray-700 font-medium w-12 text-right"
+                      title="Remaining time"
+                    >
+                      {formatTime(remainingTime)}
+                    </span>
+                  ) : isEditingTimer ? (
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      value={editableTimeStr}
+                      onChange={handleTimeInputChange}
+                      onKeyDown={handleTimeInputKeyDown}
+                      onBlur={handleTimeInputBlur}
+                      autoFocus
+                      className="text-gray-700 font-medium w-12 text-right border border-gray-300 rounded px-1 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                      title="Edit time (MM:SS)"
+                      data-testid="desktop-timer-input"
+                    />
+                  ) : (
+                    <span
+                      className="text-gray-700 font-medium w-12 text-right cursor-pointer hover:text-blue-500"
+                      title="Click to edit time"
+                      onClick={handleTimerClick}
+                    >
+                      {formatTime(remainingTime)}
+                    </span>
+                  )}
+                  {/* Play/Pause Button */}
+                  <button
+                    onClick={handleStartPauseTimer}
+                    className={`cursor-pointer p-1 rounded transition-colors duration-300 touch-feedback ${
+                      board?.timerIsRunning
+                        ? 'text-orange-500 hover:text-orange-600 active:text-orange-700 hover:bg-orange-50 active:bg-orange-100'
+                        : 'text-blue-500 hover:text-blue-600 active:text-blue-700 hover:bg-blue-50 active:bg-blue-100'
+                    }`}
+                    aria-label={board?.timerIsRunning ? 'Pause timer' : 'Start timer'}
+                    data-testid="desktop-timer-play-pause-button"
+                  >
+                    {board?.timerIsRunning ? (
+                      <Pause className="h-4 w-4" /> // Show Pause icon when running
+                    ) : (
+                      <Play className="h-4 w-4" /> // Show Play icon when stopped/paused
+                    )}
+                  </button>
+                  {/* Reset Button */}
+                  <button
+                    onClick={handleResetTimer}
+                    aria-label="Reset timer"
+                    disabled={!!board?.timerIsRunning}
+                    className={`cursor-pointer p-1 rounded transition-colors duration-300 touch-feedback ${
+                      board?.timerIsRunning
+                        ? 'text-gray-400 opacity-50 cursor-not-allowed'
+                        : 'text-gray-600 hover:text-gray-800 active:text-gray-900 hover:bg-gray-50 active:bg-gray-100'
+                    }`}
+                    data-testid="desktop-timer-reset-button"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                  </button>
+                </div>
+
+                {/* Other Board Controls */}
+                <div className="flex space-x-5">
+                  <button
+                    className={`text-gray-700 hover:text-gray-900 active:text-blue-800 flex items-center cursor-pointer p-2 rounded hover:bg-gray-50 active:bg-gray-100 transition-colors duration-300 touch-feedback ${
+                      isPanelOpen ? 'text-blue-500' : ''
+                    }`}
+                    onClick={toggleParticipantsPanel}
+                  >
+                    <Users className="h-5 w-5" />
+                    <span className="ml-1 text-sm">Participants</span>
+                    {participants.length > 0 && (
+                      <span className="ml-1 bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full">
+                        {participants.length}
+                      </span>
+                    )}
+                  </button>
+
+                  <button
+                    className={`text-gray-700 hover:text-gray-900 active:text-blue-800 flex items-center cursor-pointer p-2 rounded hover:bg-gray-50 active:bg-gray-100 transition-colors duration-300 touch-feedback ${
+                      isActionPointsPanelOpen ? 'text-blue-500' : ''
+                    }`}
+                    onClick={toggleActionPointsPanel}
+                  >
+                    <TrendingUp className="h-5 w-5" />
+                    <span className="ml-1 text-sm">Action points</span>
+                    {actionPoints.length > 0 && (
+                      <span className="ml-1 bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full">
+                        {actionPoints.length}
+                      </span>
+                    )}
+                  </button>
+
+                  <button
+                    className="text-gray-700 hover:text-gray-900 active:text-blue-800 flex items-center cursor-pointer p-2 rounded hover:bg-gray-50 active:bg-gray-100 transition-colors duration-300 touch-feedback"
+                    onClick={handleExportClick}
+                  >
+                    <Download className="h-5 w-5" />
+                    <span className="ml-1 text-sm">Export</span>
+                  </button>
+
+                  <button
+                    className="text-gray-700 hover:text-gray-900 active:text-blue-800 flex items-center cursor-pointer p-2 rounded hover:bg-gray-50 active:bg-gray-100 transition-colors duration-300 touch-feedback"
+                    onClick={handleShareClick}
+                  >
+                    <Share2 className="h-5 w-5" />
+                    <span className="ml-1 text-sm">Share</span>
+                  </button>
+
+                  <button
+                    className={`text-gray-700 hover:text-gray-900 active:text-blue-800 flex items-center cursor-pointer p-2 rounded hover:bg-gray-50 active:bg-gray-100 transition-colors duration-300 touch-feedback ${
+                      isOptionsPanelOpen ? 'text-blue-500' : ''
+                    }`}
+                    onClick={toggleOptionsPanel}
+                  >
+                    <Settings className="h-5 w-5" />
+                    <span className="ml-1 text-sm">Options</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between md:order-1 md:order-none md:mr-4 md:min-w-0 md:flex-1">
+              <div className="flex items-center space-x-3 truncate min-w-0">
                 {isEditingBoardName ? (
                   <input
                     ref={boardNameInputRef}
@@ -1413,7 +1544,7 @@ export default function Board() {
                     onKeyDown={handleBoardNameInputKeyDown}
                     onBlur={handleBoardNameInputBlur}
                     autoFocus
-                    className="text-lg font-semibold text-gray-800 border border-gray-300 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 w-full"
+                    className="text-lg font-semibold text-gray-800 border border-gray-300 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 w-full max-w-md"
                     data-testid="board-name-input"
                   />
                 ) : (
@@ -1421,7 +1552,7 @@ export default function Board() {
                     className={`text-lg font-semibold text-gray-800 ${isBoardOwner ? 'cursor-pointer hover:text-blue-600 group' : ''} truncate w-full`}
                     onClick={handleBoardNameClick}
                     data-testid="board-name"
-                    title={isBoardOwner ? 'Click to edit board name' : ''}
+                    title={board.name ?? 'Unnamed Board'}
                   >
                     {board.name ?? 'Unnamed Board'}
                     {isBoardOwner && (
@@ -1606,138 +1737,6 @@ export default function Board() {
                       <span className="ml-4 text-lg">Options</span>
                     </button>
                   </div>
-                </div>
-              </div>
-            )}
-
-            {/* Desktop controls */}
-            {!isMobile && (
-              <div className="flex items-center space-x-4">
-                {/* Timer Display and Controls */}
-                <div
-                  className="flex items-center space-x-1 timer-controls"
-                  data-testid="desktop-timer-controls"
-                >
-                  {/* Conditional Rendering: Input vs Clickable Span */}
-                  {board?.timerIsRunning ? (
-                    <span
-                      className="text-gray-700 font-medium w-12 text-right"
-                      title="Remaining time"
-                    >
-                      {formatTime(remainingTime)}
-                    </span>
-                  ) : isEditingTimer ? (
-                    <input
-                      ref={inputRef}
-                      type="text"
-                      value={editableTimeStr}
-                      onChange={handleTimeInputChange}
-                      onKeyDown={handleTimeInputKeyDown}
-                      onBlur={handleTimeInputBlur}
-                      autoFocus
-                      className="text-gray-700 font-medium w-12 text-right border border-gray-300 rounded px-1 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                      title="Edit time (MM:SS)"
-                      data-testid="desktop-timer-input"
-                    />
-                  ) : (
-                    <span
-                      className="text-gray-700 font-medium w-12 text-right cursor-pointer hover:text-blue-500"
-                      title="Click to edit time"
-                      onClick={handleTimerClick}
-                    >
-                      {formatTime(remainingTime)}
-                    </span>
-                  )}
-                  {/* Play/Pause Button */}
-                  <button
-                    onClick={handleStartPauseTimer}
-                    className={`cursor-pointer p-1 rounded transition-colors duration-300 touch-feedback ${
-                      board?.timerIsRunning
-                        ? 'text-orange-500 hover:text-orange-600 active:text-orange-700 hover:bg-orange-50 active:bg-orange-100'
-                        : 'text-blue-500 hover:text-blue-600 active:text-blue-700 hover:bg-blue-50 active:bg-blue-100'
-                    }`}
-                    aria-label={board?.timerIsRunning ? 'Pause timer' : 'Start timer'}
-                    data-testid="desktop-timer-play-pause-button"
-                  >
-                    {board?.timerIsRunning ? (
-                      <Pause className="h-4 w-4" /> // Show Pause icon when running
-                    ) : (
-                      <Play className="h-4 w-4" /> // Show Play icon when stopped/paused
-                    )}
-                  </button>
-                  {/* Reset Button */}
-                  <button
-                    onClick={handleResetTimer}
-                    aria-label="Reset timer"
-                    disabled={!!board?.timerIsRunning}
-                    className={`cursor-pointer p-1 rounded transition-colors duration-300 touch-feedback ${
-                      board?.timerIsRunning
-                        ? 'text-gray-400 opacity-50 cursor-not-allowed'
-                        : 'text-gray-600 hover:text-gray-800 active:text-gray-900 hover:bg-gray-50 active:bg-gray-100'
-                    }`}
-                    data-testid="desktop-timer-reset-button"
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                  </button>
-                </div>
-
-                {/* Other Board Controls */}
-                <div className="flex space-x-5">
-                  <button
-                    className={`text-gray-700 hover:text-gray-900 active:text-blue-800 flex items-center cursor-pointer p-2 rounded hover:bg-gray-50 active:bg-gray-100 transition-colors duration-300 touch-feedback ${
-                      isPanelOpen ? 'text-blue-500' : ''
-                    }`}
-                    onClick={toggleParticipantsPanel}
-                  >
-                    <Users className="h-5 w-5" />
-                    <span className="ml-1 text-sm">Participants</span>
-                    {participants.length > 0 && (
-                      <span className="ml-1 bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full">
-                        {participants.length}
-                      </span>
-                    )}
-                  </button>
-
-                  <button
-                    className={`text-gray-700 hover:text-gray-900 active:text-blue-800 flex items-center cursor-pointer p-2 rounded hover:bg-gray-50 active:bg-gray-100 transition-colors duration-300 touch-feedback ${
-                      isActionPointsPanelOpen ? 'text-blue-500' : ''
-                    }`}
-                    onClick={toggleActionPointsPanel}
-                  >
-                    <TrendingUp className="h-5 w-5" />
-                    <span className="ml-1 text-sm">Action points</span>
-                    {actionPoints.length > 0 && (
-                      <span className="ml-1 bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full">
-                        {actionPoints.length}
-                      </span>
-                    )}
-                  </button>
-
-                  <button
-                    className="text-gray-700 hover:text-gray-900 active:text-blue-800 flex items-center cursor-pointer p-2 rounded hover:bg-gray-50 active:bg-gray-100 transition-colors duration-300 touch-feedback"
-                    onClick={handleExportClick}
-                  >
-                    <Download className="h-5 w-5" />
-                    <span className="ml-1 text-sm">Export</span>
-                  </button>
-
-                  <button
-                    className="text-gray-700 hover:text-gray-900 active:text-blue-800 flex items-center cursor-pointer p-2 rounded hover:bg-gray-50 active:bg-gray-100 transition-colors duration-300 touch-feedback"
-                    onClick={handleShareClick}
-                  >
-                    <Share2 className="h-5 w-5" />
-                    <span className="ml-1 text-sm">Share</span>
-                  </button>
-
-                  <button
-                    className={`text-gray-700 hover:text-gray-900 active:text-blue-800 flex items-center cursor-pointer p-2 rounded hover:bg-gray-50 active:bg-gray-100 transition-colors duration-300 touch-feedback ${
-                      isOptionsPanelOpen ? 'text-blue-500' : ''
-                    }`}
-                    onClick={toggleOptionsPanel}
-                  >
-                    <Settings className="h-5 w-5" />
-                    <span className="ml-1 text-sm">Options</span>
-                  </button>
                 </div>
               </div>
             )}
