@@ -324,10 +324,6 @@ export const cleanupInactiveBoards = async (): Promise<void> => {
     for (const boardId of inactiveBoardIds) {
       await deleteInactiveBoard(boardId);
     }
-
-    if (inactiveBoardIds.length > 0) {
-      console.log(`Cleaned up ${inactiveBoardIds.length} inactive boards`);
-    }
   } catch (error) {
     console.error('Error cleaning up inactive boards:', error);
   }
@@ -364,8 +360,6 @@ const deleteInactiveBoard = async (boardId: string): Promise<void> => {
 
     // Step 3: Clean up the RTDB entry
     await set(ref(rtdb, `boards/${boardId}`), null);
-
-    console.log(`Successfully deleted inactive board ${boardId} and all associated cards`);
   } catch (error) {
     console.error(`Error deleting inactive board ${boardId}:`, error);
   }

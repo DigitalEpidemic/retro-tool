@@ -263,7 +263,7 @@ export default function Column({
     if (trimmedDescription !== description) {
       try {
         const result = await updateColumnDescription(boardId, id, trimmedDescription);
-        if (result.success) {
+        if (result?.success) {
           // Notify parent component if callback exists
           if (onDescriptionUpdate) {
             onDescriptionUpdate(trimmedDescription);
@@ -271,7 +271,7 @@ export default function Column({
         } else {
           // Revert to original description if update failed
           setEditableDescription(description ?? '');
-          console.error('Failed to update column description:', result.error);
+          console.error('Failed to update column description:', result?.error ?? 'Unknown error');
         }
       } catch (error) {
         console.error('Error updating column description:', error);

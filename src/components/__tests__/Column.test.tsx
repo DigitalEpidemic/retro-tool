@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { User } from 'firebase/auth'; // Import User type
 import { DocumentSnapshot, getDoc } from 'firebase/firestore'; // Import getDoc from firebase/firestore
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -6,8 +6,8 @@ import { useFirebase } from '../../contexts/useFirebase'; // Adjust the import p
 import {
   addCard,
   deleteColumn,
-  updateColumnTitle,
   updateColumnDescription,
+  updateColumnTitle,
 } from '../../services/boardService'; // Add updateColumnDescription
 import Column from '../Column'; // This is the real component
 
@@ -771,6 +771,408 @@ describe('Column', () => {
       // Now the dropdown should be hidden
       expect(screen.queryByText('Delete column')).not.toBeInTheDocument();
     });
+
+    it('hides description section and toggle button for non-owner users when no description exists', async () => {
+      // Reset DOM to ensure clean test
+      cleanup();
+
+      // Render column as non-owner with no description
+      renderColumn({ isBoardOwner: false, description: '' });
+
+      // Open the menu
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-menu-column-1'));
+      });
+
+      // Description toggle button should not be in the menu
+      expect(screen.queryByTestId('toggle-description-column-1')).not.toBeInTheDocument();
+
+      // Description section should not be visible
+      const descriptionElement = screen.queryByText((_content, element) => {
+        return Boolean(element?.textContent?.includes('Add a description'));
+      });
+      expect(descriptionElement).not.toBeInTheDocument();
+    });
+
+    it('shows description section and toggle button for non-owner users when description exists', async () => {
+      // Reset DOM
+      cleanup();
+
+      // Render column as non-owner WITH a description
+      renderColumn({ isBoardOwner: false, description: 'Test description for non-owner' });
+
+      // Description section should be visible initially with the description
+      expect(screen.getByTestId('column-description-column-1')).toBeInTheDocument();
+
+      // Check description content using the description element directly
+      const descriptionElement = screen.getByTestId('column-description-column-1');
+      expect(descriptionElement.textContent).toContain('Test description for non-owner');
+
+      // Open the menu
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-menu-column-1'));
+      });
+
+      // Wait for the dropdown to appear with the description toggle
+      await waitFor(() => {
+        expect(screen.getByText('Hide description')).toBeInTheDocument();
+      });
+
+      // Description toggle button should be in the menu
+      expect(screen.getByTestId('toggle-description-column-1')).toBeInTheDocument();
+    });
+
+    it('shows description section and toggle button for board owners even with empty description', async () => {
+      // Reset DOM
+      cleanup();
+
+      // Render column as board owner WITH empty description
+      renderColumn({ isBoardOwner: true, description: '' });
+
+      // Check for the placeholder using the description element directly
+      const descriptionElement = screen.getByTestId('column-description-column-1');
+      expect(descriptionElement.textContent).toContain('Add a description');
+
+      // Open the menu
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-menu-column-1'));
+      });
+
+      // Wait for the dropdown to appear with the description toggle
+      await waitFor(() => {
+        expect(screen.getByText('Hide description')).toBeInTheDocument();
+      });
+
+      // Description toggle button should be in the menu
+      expect(screen.getByTestId('toggle-description-column-1')).toBeInTheDocument();
+    });
+
+    it('shows description for non-owners when description exists', async () => {
+      renderColumn({ isBoardOwner: false, description: 'Test description for non-owner' });
+
+      // Description should be initially visible (isDescriptionVisible is true by default)
+      const descriptionElement = screen.getByTestId('column-description-column-1');
+      expect(descriptionElement.textContent).toContain('Test description for non-owner');
+
+      // Open menu
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-menu-column-1'));
+      });
+
+      // Wait for dropdown to appear
+      await waitFor(() => {
+        expect(screen.getByText('Hide description')).toBeInTheDocument();
+      });
+
+      // Click toggle to hide description
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('toggle-description-column-1'));
+      });
+
+      // Now description should be hidden
+      expect(screen.queryByTestId('column-description-column-1')).not.toBeInTheDocument();
+    });
+
+    it('renders description toggle button for board owners', async () => {
+      renderColumn({ isBoardOwner: true });
+
+      // Open menu to see toggle button
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-menu-column-1'));
+      });
+
+      expect(screen.getByTestId('toggle-description-column-1')).toBeInTheDocument();
+    });
+
+    it('does not render description toggle button for non-owners without description', async () => {
+      renderColumn({ isBoardOwner: false, description: '' });
+
+      // Open menu
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-menu-column-1'));
+      });
+
+      expect(screen.queryByTestId('toggle-description-column-1')).not.toBeInTheDocument();
+    });
+
+    it('toggles description visibility when clicked for board owner', async () => {
+      // First reset and create a clean instance
+      cleanup();
+
+      // Create component with board owner and description
+      renderColumn({ isBoardOwner: true, description: 'Test description' });
+
+      // Description should be initially visible (isDescriptionVisible is true by default)
+      const descriptionText = screen.queryByText('Test description');
+      expect(descriptionText).toBeInTheDocument();
+
+      // Open menu and toggle off description visibility
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-menu-column-1'));
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('toggle-description-column-1'));
+      });
+
+      // Now description should be hidden
+      const hiddenDescriptionText = screen.queryByText('Test description');
+      expect(hiddenDescriptionText).not.toBeInTheDocument();
+
+      // Toggle it back on again
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-menu-column-1'));
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('toggle-description-column-1'));
+      });
+
+      // Check if description is visible again
+      const visibleDescriptionText = screen.queryByText('Test description');
+      expect(visibleDescriptionText).toBeInTheDocument();
+    });
+
+    it('shows placeholder for board owners when no description exists', async () => {
+      // First reset and create a clean instance
+      cleanup();
+
+      // Render component as board owner with no description
+      renderColumn({ isBoardOwner: true, description: '' });
+
+      // Initially the description is visible with placeholder (isDescriptionVisible is true by default)
+      const placeholderText = screen.queryByText(content => {
+        return Boolean(typeof content === 'string' && content.includes('Add a description'));
+      });
+      expect(placeholderText).toBeInTheDocument();
+
+      // Open menu and toggle off description visibility
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-menu-column-1'));
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('toggle-description-column-1'));
+      });
+
+      // Now the placeholder should be hidden
+      const hiddenPlaceholderText = screen.queryByText(content => {
+        return Boolean(typeof content === 'string' && content.includes('Add a description'));
+      });
+      expect(hiddenPlaceholderText).not.toBeInTheDocument();
+    });
+
+    it('shows description for non-owners when description exists', async () => {
+      renderColumn({ isBoardOwner: false, description: 'Test description for non-owner' });
+
+      // Description should be initially visible (isDescriptionVisible is true by default)
+      const descriptionText = screen.queryByText('Test description for non-owner');
+      expect(descriptionText).toBeInTheDocument();
+
+      // Open menu and click the toggle button to hide it
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-menu-column-1'));
+      });
+
+      // Description toggle button should be in the menu
+      expect(screen.getByTestId('toggle-description-column-1')).toBeInTheDocument();
+
+      // Click toggle to hide description
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('toggle-description-column-1'));
+      });
+
+      // Now description should be hidden
+      const hiddenDescriptionText = screen.queryByText('Test description for non-owner');
+      expect(hiddenDescriptionText).not.toBeInTheDocument();
+    });
+
+    it('allows board owner to edit description when clicked', async () => {
+      // Reset DOM
+      cleanup();
+
+      renderColumn({ isBoardOwner: true, description: 'Test description' });
+
+      // Description should be visible initially
+      expect(screen.getByTestId('column-description-column-1')).toBeInTheDocument();
+
+      // Click the description to edit
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-description-column-1'));
+      });
+
+      // Description should now be in edit mode
+      expect(screen.getByTestId('column-description-input-column-1')).toBeInTheDocument();
+      expect(screen.queryByTestId('column-description-column-1')).not.toBeInTheDocument();
+    });
+
+    it('does not allow non-board owner to edit description', async () => {
+      // Reset DOM
+      cleanup();
+
+      renderColumn({ isBoardOwner: false, description: 'Test description' });
+
+      // Description should be visible initially
+      expect(screen.getByTestId('column-description-column-1')).toBeInTheDocument();
+
+      // Click the description
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-description-column-1'));
+      });
+
+      // Description should still be in view mode, not edit mode
+      expect(screen.queryByTestId('column-description-input-column-1')).not.toBeInTheDocument();
+      expect(screen.getByTestId('column-description-column-1')).toBeInTheDocument();
+    });
+
+    it('saves description when Enter is pressed', async () => {
+      // Reset DOM
+      cleanup();
+
+      // Set up mock to return success
+      vi.mocked(updateColumnDescription).mockClear();
+      vi.mocked(updateColumnDescription).mockResolvedValue({ success: true });
+
+      renderColumn({ isBoardOwner: true, description: 'Test description' });
+
+      // Click the description to edit
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-description-column-1'));
+      });
+
+      const descriptionInput = screen.getByTestId(
+        'column-description-input-column-1'
+      ) as HTMLTextAreaElement;
+
+      // Change the description
+      await act(async () => {
+        fireEvent.change(descriptionInput, { target: { value: 'Updated description' } });
+      });
+
+      // Press Enter to save
+      await act(async () => {
+        fireEvent.keyDown(descriptionInput, { key: 'Enter', code: 'Enter' });
+      });
+
+      // Textarea should be gone, back to view mode
+      expect(screen.queryByTestId('column-description-input-column-1')).not.toBeInTheDocument();
+      expect(screen.getByTestId('column-description-column-1')).toBeInTheDocument();
+
+      // Check if updateColumnDescription was called correctly
+      expect(updateColumnDescription).toHaveBeenCalledWith(
+        mockBoardId,
+        mockColumnId,
+        'Updated description'
+      );
+    });
+
+    it('reverts description when Escape is pressed', async () => {
+      // Reset DOM
+      cleanup();
+
+      renderColumn({ isBoardOwner: true, description: 'Test description' });
+
+      // Click the description to edit
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-description-column-1'));
+      });
+
+      const descriptionInput = screen.getByTestId(
+        'column-description-input-column-1'
+      ) as HTMLTextAreaElement;
+
+      // Change the description
+      await act(async () => {
+        fireEvent.change(descriptionInput, { target: { value: 'Updated description' } });
+      });
+
+      // Press Escape to cancel
+      await act(async () => {
+        fireEvent.keyDown(descriptionInput, { key: 'Escape', code: 'Escape' });
+      });
+
+      // Textarea should be gone, back to view mode
+      expect(screen.queryByTestId('column-description-input-column-1')).not.toBeInTheDocument();
+      expect(screen.getByTestId('column-description-column-1')).toBeInTheDocument();
+
+      // Check the content of the description element
+      const descriptionElement = screen.getByTestId('column-description-column-1');
+      expect(descriptionElement.textContent).toContain('Test description');
+
+      // updateColumnDescription should not have been called
+      expect(updateColumnDescription).not.toHaveBeenCalled();
+    });
+
+    it('saves description on blur', async () => {
+      // Reset DOM
+      cleanup();
+
+      // Set up mock to return success
+      vi.mocked(updateColumnDescription).mockClear();
+      vi.mocked(updateColumnDescription).mockResolvedValue({ success: true });
+
+      renderColumn({ isBoardOwner: true, description: 'Test description' });
+
+      // Click the description to edit
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-description-column-1'));
+      });
+
+      const descriptionInput = screen.getByTestId(
+        'column-description-input-column-1'
+      ) as HTMLTextAreaElement;
+
+      // Change the description
+      await act(async () => {
+        fireEvent.change(descriptionInput, { target: { value: 'Updated description' } });
+      });
+
+      // Blur the textarea to save
+      await act(async () => {
+        fireEvent.blur(descriptionInput);
+      });
+
+      // Textarea should be gone, back to view mode
+      expect(screen.queryByTestId('column-description-input-column-1')).not.toBeInTheDocument();
+      expect(screen.getByTestId('column-description-column-1')).toBeInTheDocument();
+
+      // Check if updateColumnDescription was called correctly
+      expect(updateColumnDescription).toHaveBeenCalledWith(
+        mockBoardId,
+        mockColumnId,
+        'Updated description'
+      );
+    });
+
+    it('does not save description when Shift+Enter is pressed', async () => {
+      // Reset DOM
+      cleanup();
+
+      renderColumn({ isBoardOwner: true, description: 'Test description' });
+
+      // Click the description to edit
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-description-column-1'));
+      });
+
+      const descriptionInput = screen.getByTestId(
+        'column-description-input-column-1'
+      ) as HTMLTextAreaElement;
+
+      // Change the description
+      await act(async () => {
+        fireEvent.change(descriptionInput, { target: { value: 'Updated description' } });
+      });
+
+      // Press Shift+Enter to add a new line
+      await act(async () => {
+        fireEvent.keyDown(descriptionInput, { key: 'Enter', code: 'Enter', shiftKey: true });
+      });
+
+      // Textarea should still be visible in edit mode
+      expect(screen.getByTestId('column-description-input-column-1')).toBeInTheDocument();
+      expect(screen.queryByTestId('column-description-column-1')).not.toBeInTheDocument();
+
+      // updateColumnDescription should not have been called
+      expect(updateColumnDescription).not.toHaveBeenCalled();
+    });
   });
 
   // --- Title Editing Tests ---
@@ -934,242 +1336,120 @@ describe('Column', () => {
   describe('Column description editing', () => {
     beforeEach(() => {
       // Reset the mocks before each test
+      cleanup(); // Clean up after each test
       vi.mocked(updateColumnDescription).mockClear();
       vi.mocked(updateColumnDescription).mockResolvedValue({ success: true });
     });
 
-    it('renders description toggle button', async () => {
+    it('renders description toggle button for board owners', async () => {
       renderColumn({ isBoardOwner: true });
 
-      expect(screen.getByTestId('column-description-toggle-column-1')).toBeInTheDocument();
+      // Open menu to see toggle button
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-menu-column-1'));
+      });
+
+      expect(screen.getByTestId('toggle-description-column-1')).toBeInTheDocument();
     });
 
-    it('toggles description visibility when button is clicked', async () => {
+    it('does not render description toggle button for non-owners without description', async () => {
+      renderColumn({ isBoardOwner: false, description: '' });
+
+      // Open menu
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('column-menu-column-1'));
+      });
+
+      expect(screen.queryByTestId('toggle-description-column-1')).not.toBeInTheDocument();
+    });
+
+    it('toggles description visibility when clicked for board owner', async () => {
+      // First reset and create a clean instance
+      cleanup();
+
+      // Create component with board owner and description
       renderColumn({ isBoardOwner: true, description: 'Test description' });
 
-      // Description should be hidden initially
-      expect(screen.queryByTestId('column-description-column-1')).not.toBeInTheDocument();
+      // Description should be initially visible (isDescriptionVisible is true by default)
+      const descriptionText = screen.queryByText('Test description');
+      expect(descriptionText).toBeInTheDocument();
 
-      // Click the toggle button
+      // Open menu and toggle off description visibility
       await act(async () => {
-        fireEvent.click(screen.getByTestId('column-description-toggle-column-1'));
+        fireEvent.click(screen.getByTestId('column-menu-column-1'));
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('toggle-description-column-1'));
       });
 
-      // Description should now be visible
-      expect(screen.getByTestId('column-description-column-1')).toBeInTheDocument();
-      expect(screen.getByText('Test description')).toBeInTheDocument();
+      // Now description should be hidden
+      const hiddenDescriptionText = screen.queryByText('Test description');
+      expect(hiddenDescriptionText).not.toBeInTheDocument();
 
-      // Click toggle button again
+      // Toggle it back on again
       await act(async () => {
-        fireEvent.click(screen.getByTestId('column-description-toggle-column-1'));
+        fireEvent.click(screen.getByTestId('column-menu-column-1'));
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('toggle-description-column-1'));
       });
 
-      // Description should be hidden again
-      expect(screen.queryByTestId('column-description-column-1')).not.toBeInTheDocument();
+      // Check if description is visible again
+      const visibleDescriptionText = screen.queryByText('Test description');
+      expect(visibleDescriptionText).toBeInTheDocument();
     });
 
-    it('allows board owner to edit description when clicked', async () => {
-      renderColumn({ isBoardOwner: true, description: 'Test description' });
+    it('shows placeholder for board owners when no description exists', async () => {
+      // First reset and create a clean instance
+      cleanup();
 
-      // Toggle description visibility
+      // Render component as board owner with no description
+      renderColumn({ isBoardOwner: true, description: '' });
+
+      // Initially the description is visible with placeholder (isDescriptionVisible is true by default)
+      const placeholderText = screen.queryByText(content => {
+        return Boolean(typeof content === 'string' && content.includes('Add a description'));
+      });
+      expect(placeholderText).toBeInTheDocument();
+
+      // Open menu and toggle off description visibility
       await act(async () => {
-        fireEvent.click(screen.getByTestId('column-description-toggle-column-1'));
+        fireEvent.click(screen.getByTestId('column-menu-column-1'));
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('toggle-description-column-1'));
       });
 
-      // Description should be in view mode
-      expect(screen.queryByTestId('column-description-input-column-1')).not.toBeInTheDocument();
-      expect(screen.getByTestId('column-description-column-1')).toBeInTheDocument();
-
-      // Click the description to edit
-      await act(async () => {
-        fireEvent.click(screen.getByTestId('column-description-column-1'));
+      // Now the placeholder should be hidden
+      const hiddenPlaceholderText = screen.queryByText(content => {
+        return Boolean(typeof content === 'string' && content.includes('Add a description'));
       });
-
-      // Description should now be in edit mode
-      expect(screen.getByTestId('column-description-input-column-1')).toBeInTheDocument();
-      expect(screen.queryByTestId('column-description-column-1')).not.toBeInTheDocument();
+      expect(hiddenPlaceholderText).not.toBeInTheDocument();
     });
 
-    it('does not allow non-board owner to edit description', async () => {
-      renderColumn({ isBoardOwner: false, description: 'Test description' });
+    it('shows description for non-owners when description exists', async () => {
+      renderColumn({ isBoardOwner: false, description: 'Test description for non-owner' });
 
-      // Toggle description visibility
+      // Description should be initially visible (isDescriptionVisible is true by default)
+      const descriptionText = screen.queryByText('Test description for non-owner');
+      expect(descriptionText).toBeInTheDocument();
+
+      // Open menu and click the toggle button to hide it
       await act(async () => {
-        fireEvent.click(screen.getByTestId('column-description-toggle-column-1'));
+        fireEvent.click(screen.getByTestId('column-menu-column-1'));
       });
 
-      // Description should be visible but not editable
-      expect(screen.getByTestId('column-description-column-1')).toBeInTheDocument();
+      // Description toggle button should be in the menu
+      expect(screen.getByTestId('toggle-description-column-1')).toBeInTheDocument();
 
-      // Click the description
+      // Click toggle to hide description
       await act(async () => {
-        fireEvent.click(screen.getByTestId('column-description-column-1'));
+        fireEvent.click(screen.getByTestId('toggle-description-column-1'));
       });
 
-      // Description should still be in view mode
-      expect(screen.queryByTestId('column-description-input-column-1')).not.toBeInTheDocument();
-      expect(screen.getByTestId('column-description-column-1')).toBeInTheDocument();
-    });
-
-    it('saves description when Enter is pressed', async () => {
-      renderColumn({ isBoardOwner: true, description: 'Test description' });
-
-      // Toggle description visibility
-      await act(async () => {
-        fireEvent.click(screen.getByTestId('column-description-toggle-column-1'));
-      });
-
-      // Click the description to edit
-      await act(async () => {
-        fireEvent.click(screen.getByTestId('column-description-column-1'));
-      });
-
-      const descriptionInput = screen.getByTestId(
-        'column-description-input-column-1'
-      ) as HTMLTextAreaElement;
-
-      // Change the description
-      await act(async () => {
-        fireEvent.change(descriptionInput, { target: { value: 'Updated description' } });
-      });
-
-      // Press Enter to save
-      await act(async () => {
-        fireEvent.keyDown(descriptionInput, { key: 'Enter', code: 'Enter' });
-      });
-
-      // Textarea should be gone, back to view mode
-      expect(screen.queryByTestId('column-description-input-column-1')).not.toBeInTheDocument();
-      expect(screen.getByTestId('column-description-column-1')).toBeInTheDocument();
-
-      // Check if updateColumnDescription was called correctly
-      expect(updateColumnDescription).toHaveBeenCalledWith(
-        mockBoardId,
-        mockColumnId,
-        'Updated description'
-      );
-    });
-
-    it('reverts description when Escape is pressed', async () => {
-      renderColumn({ isBoardOwner: true, description: 'Test description' });
-
-      // Toggle description visibility
-      await act(async () => {
-        fireEvent.click(screen.getByTestId('column-description-toggle-column-1'));
-      });
-
-      // Click the description to edit
-      await act(async () => {
-        fireEvent.click(screen.getByTestId('column-description-column-1'));
-      });
-
-      const descriptionInput = screen.getByTestId(
-        'column-description-input-column-1'
-      ) as HTMLTextAreaElement;
-
-      // Change the description
-      await act(async () => {
-        fireEvent.change(descriptionInput, { target: { value: 'Updated description' } });
-      });
-
-      // Press Escape to cancel
-      await act(async () => {
-        fireEvent.keyDown(descriptionInput, { key: 'Escape', code: 'Escape' });
-      });
-
-      // Textarea should be gone, back to view mode
-      expect(screen.queryByTestId('column-description-input-column-1')).not.toBeInTheDocument();
-      expect(screen.getByTestId('column-description-column-1')).toBeInTheDocument();
-      expect(screen.getByText('Test description')).toBeInTheDocument();
-
-      // updateColumnDescription should not have been called
-      expect(updateColumnDescription).not.toHaveBeenCalled();
-    });
-
-    it('saves description on blur', async () => {
-      renderColumn({ isBoardOwner: true, description: 'Test description' });
-
-      // Toggle description visibility
-      await act(async () => {
-        fireEvent.click(screen.getByTestId('column-description-toggle-column-1'));
-      });
-
-      // Click the description to edit
-      await act(async () => {
-        fireEvent.click(screen.getByTestId('column-description-column-1'));
-      });
-
-      const descriptionInput = screen.getByTestId(
-        'column-description-input-column-1'
-      ) as HTMLTextAreaElement;
-
-      // Change the description
-      await act(async () => {
-        fireEvent.change(descriptionInput, { target: { value: 'Updated description' } });
-      });
-
-      // Blur the textarea to save
-      await act(async () => {
-        fireEvent.blur(descriptionInput);
-      });
-
-      // Textarea should be gone, back to view mode
-      expect(screen.queryByTestId('column-description-input-column-1')).not.toBeInTheDocument();
-      expect(screen.getByTestId('column-description-column-1')).toBeInTheDocument();
-
-      // Check if updateColumnDescription was called correctly
-      expect(updateColumnDescription).toHaveBeenCalledWith(
-        mockBoardId,
-        mockColumnId,
-        'Updated description'
-      );
-    });
-
-    it('shows add description placeholder for board owner when no description exists', async () => {
-      renderColumn({ isBoardOwner: true });
-
-      // Toggle description visibility
-      await act(async () => {
-        fireEvent.click(screen.getByTestId('column-description-toggle-column-1'));
-      });
-
-      // Should see "Add a description..." placeholder
-      expect(screen.getByText('Add a description...')).toBeInTheDocument();
-    });
-
-    it('does not save description when Shift+Enter is pressed', async () => {
-      renderColumn({ isBoardOwner: true, description: 'Test description' });
-
-      // Toggle description visibility
-      await act(async () => {
-        fireEvent.click(screen.getByTestId('column-description-toggle-column-1'));
-      });
-
-      // Click the description to edit
-      await act(async () => {
-        fireEvent.click(screen.getByTestId('column-description-column-1'));
-      });
-
-      const descriptionInput = screen.getByTestId(
-        'column-description-input-column-1'
-      ) as HTMLTextAreaElement;
-
-      // Change the description
-      await act(async () => {
-        fireEvent.change(descriptionInput, { target: { value: 'Updated description' } });
-      });
-
-      // Press Shift+Enter to add a new line
-      await act(async () => {
-        fireEvent.keyDown(descriptionInput, { key: 'Enter', code: 'Enter', shiftKey: true });
-      });
-
-      // Textarea should still be visible in edit mode
-      expect(screen.getByTestId('column-description-input-column-1')).toBeInTheDocument();
-      expect(screen.queryByTestId('column-description-column-1')).not.toBeInTheDocument();
-
-      // updateColumnDescription should not have been called
-      expect(updateColumnDescription).not.toHaveBeenCalled();
+      // Now description should be hidden
+      const hiddenDescriptionText = screen.queryByText('Test description for non-owner');
+      expect(hiddenDescriptionText).not.toBeInTheDocument();
     });
   });
 });
