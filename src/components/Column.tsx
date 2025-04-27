@@ -320,7 +320,7 @@ export default function Column({
     <div className="w-full h-full bg-white flex flex-col overflow-hidden max-w-full">
       {/* Column header */}
       <div className="flex justify-between items-center px-3 sm:px-4 py-3 border-b border-gray-200 flex-shrink-0 h-[52px]">
-        <div className="h-[28px] flex items-center flex-grow overflow-hidden mr-2">
+        <div className="h-[28px] flex items-center flex-grow min-w-0 overflow-hidden mr-2">
           {isEditingTitle ? (
             <input
               ref={titleInputRef}
@@ -335,21 +335,17 @@ export default function Column({
             />
           ) : (
             <h2
-              className={`text-base sm:text-lg font-medium text-gray-800 leading-[28px] flex items-center transition-colors duration-200 overflow-hidden text-ellipsis whitespace-nowrap ${isBoardOwner ? 'cursor-pointer hover:text-blue-600 group' : ''}`}
+              className={`text-base sm:text-lg font-medium text-gray-800 leading-[28px] flex items-center transition-colors duration-200 truncate max-w-full ${isBoardOwner ? 'cursor-pointer hover:text-blue-600 group' : ''}`}
               onClick={handleTitleClick}
               data-testid={`column-title-${id}`}
+              title={getMappedTitle()}
             >
-              {columnIndex !== undefined && totalColumns !== undefined && (
-                <span className="text-xs text-gray-500 font-normal md:hidden mr-1">
-                  ({columnIndex + 1}/{totalColumns})
-                </span>
-              )}
-              {getMappedTitle()}
-              {isBoardOwner && (
-                <Tooltip content="Click to edit column title">
-                  <Edit2 className="h-4 w-4 sm:h-3.5 sm:w-3.5 ml-1.5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
-                </Tooltip>
-              )}
+              <span className="flex-shrink-0 text-xs text-gray-500 font-normal md:hidden mr-1">
+                {columnIndex !== undefined && totalColumns !== undefined && (
+                  `(${columnIndex + 1}/${totalColumns})`
+                )}
+              </span>
+              <span className="truncate min-w-0 max-w-full">{getMappedTitle()}</span>
             </h2>
           )}
         </div>
@@ -434,18 +430,10 @@ export default function Column({
               {editableDescription ? (
                 <span className="whitespace-pre-wrap flex items-center">
                   {editableDescription}
-                  {isBoardOwner && (
-                    <Tooltip content="Click to edit description">
-                      <Edit2 className="h-4 w-4 sm:h-3.5 sm:w-3.5 ml-1.5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
-                    </Tooltip>
-                  )}
                 </span>
               ) : (
                 isBoardOwner && (
-                  <span className="text-gray-400 flex items-center">
-                    <Tooltip content="Add a description for this column">
-                      <Edit2 className="h-4 w-4 sm:h-3.5 sm:w-3.5 mr-1" />
-                    </Tooltip>
+                  <span className="text-gray-400">
                     Add a description...
                   </span>
                 )

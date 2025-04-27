@@ -1555,9 +1555,6 @@ export default function Board() {
                     title={board.name ?? 'Unnamed Board'}
                   >
                     {board.name ?? 'Unnamed Board'}
-                    {isBoardOwner && (
-                      <Edit2 className="h-3.5 w-3.5 ml-1.5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity inline-block" />
-                    )}
                   </h1>
                 )}
               </div>
